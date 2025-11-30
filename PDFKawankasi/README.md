@@ -78,7 +78,7 @@ PDF Kawankasi is a powerful Windows desktop application for manipulating, editin
 #### Build from Source
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/bentopdf.git
+git clone https://github.com/Han-Anonymous/bentopdf.git
 cd bentopdf/PDFKawankasi
 
 # Restore dependencies
@@ -180,8 +180,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/bentopdf/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/bentopdf/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Han-Anonymous/bentopdf/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Han-Anonymous/bentopdf/discussions)
 
 ---
 

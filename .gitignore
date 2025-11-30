@@ -21,6 +21,7 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
+!PDFKawankasi/*.sln
 *.sw?
 # Coverage reports
 coverage/

@@ -3,7 +3,9 @@ using PDFKawankasi.Models;
 namespace PDFKawankasi.Services;
 
 /// <summary>
-/// Service that provides the list of available PDF tools
+/// Service that provides the list of available PDF tools.
+/// Note: The Popular Tools category contains references to tools that also appear 
+/// in their respective functional categories. This mirrors the BentoPDF web app design.
 /// </summary>
 public static class ToolsService
 {
@@ -19,13 +21,14 @@ public static class ToolsService
                 Name = "Popular Tools",
                 Tools = new List<PdfTool>
                 {
-                    new() { Id = "merge", Name = "Merge PDF", Icon = "📄+", Subtitle = "Combine multiple PDFs into one file.", Category = "Popular", ToolType = ToolType.Merge },
-                    new() { Id = "split", Name = "Split PDF", Icon = "✂️", Subtitle = "Extract a range of pages into a new PDF.", Category = "Popular", ToolType = ToolType.Split },
-                    new() { Id = "compress", Name = "Compress PDF", Icon = "⚡", Subtitle = "Reduce the file size of your PDF.", Category = "Popular", ToolType = ToolType.Compress },
-                    new() { Id = "jpg-to-pdf", Name = "JPG to PDF", Icon = "🖼️", Subtitle = "Create a PDF from one or more JPG images.", Category = "Popular", ToolType = ToolType.JpgToPdf },
-                    new() { Id = "extract-pages", Name = "Extract Pages", Icon = "📑", Subtitle = "Save a selection of pages as new files.", Category = "Popular", ToolType = ToolType.ExtractPages },
-                    new() { Id = "delete-pages", Name = "Delete Pages", Icon = "🗑️", Subtitle = "Remove specific pages from your document.", Category = "Popular", ToolType = ToolType.DeletePages },
-                    new() { Id = "rotate", Name = "Rotate PDF", Icon = "🔄", Subtitle = "Turn pages in 90-degree increments.", Category = "Popular", ToolType = ToolType.Rotate },
+                    // Popular tools are quick-access shortcuts to commonly used tools
+                    new() { Id = "popular-merge", Name = "Merge PDF", Icon = "📄+", Subtitle = "Combine multiple PDFs into one file.", Category = "Popular", ToolType = ToolType.Merge },
+                    new() { Id = "popular-split", Name = "Split PDF", Icon = "✂️", Subtitle = "Extract a range of pages into a new PDF.", Category = "Popular", ToolType = ToolType.Split },
+                    new() { Id = "popular-compress", Name = "Compress PDF", Icon = "⚡", Subtitle = "Reduce the file size of your PDF.", Category = "Popular", ToolType = ToolType.Compress },
+                    new() { Id = "popular-jpg-to-pdf", Name = "JPG to PDF", Icon = "🖼️", Subtitle = "Create a PDF from one or more JPG images.", Category = "Popular", ToolType = ToolType.JpgToPdf },
+                    new() { Id = "popular-extract", Name = "Extract Pages", Icon = "📑", Subtitle = "Save a selection of pages as new files.", Category = "Popular", ToolType = ToolType.ExtractPages },
+                    new() { Id = "popular-delete", Name = "Delete Pages", Icon = "🗑️", Subtitle = "Remove specific pages from your document.", Category = "Popular", ToolType = ToolType.DeletePages },
+                    new() { Id = "popular-rotate", Name = "Rotate PDF", Icon = "🔄", Subtitle = "Turn pages in 90-degree increments.", Category = "Popular", ToolType = ToolType.Rotate },
                 }
             },
             new ToolCategoryModel
