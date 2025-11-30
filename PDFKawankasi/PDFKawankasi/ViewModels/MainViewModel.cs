@@ -84,6 +84,8 @@ public partial class MainViewModel : ObservableObject
         SelectedTool = tool;
         IsToolViewVisible = true;
         SelectedFiles.Clear();
+        PagePreviews.Clear();
+        IsSplitPreviewVisible = false;
         StatusMessage = $"Selected: {tool.Name}";
     }
 
@@ -93,26 +95,68 @@ public partial class MainViewModel : ObservableObject
         IsToolViewVisible = false;
         SelectedTool = null;
         SelectedFiles.Clear();
+        PagePreviews.Clear();
+        IsSplitPreviewVisible = false;
         StatusMessage = "Ready";
     }
 
     [RelayCommand]
     private void AddFiles(string[] filePaths)
     {
-        foreach (var path in filePaths)
+        // For Split PDF, only allow one file at a time and show preview
+        if (SelectedTool?.ToolType == ToolType.Split)
         {
-            if (!SelectedFiles.Contains(path))
+            if (filePaths.Length > 0)
             {
-                SelectedFiles.Add(path);
+                var filePath = filePaths[0];
+                SelectedFiles.Clear();
+                SelectedFiles.Add(filePath);
+                LoadPagePreviews(filePath);
             }
         }
-        StatusMessage = $"{SelectedFiles.Count} file(s) selected";
+        else
+        {
+            foreach (var path in filePaths)
+            {
+                if (!SelectedFiles.Contains(path))
+                {
+                    SelectedFiles.Add(path);
+                }
+            }
+            StatusMessage = $"{SelectedFiles.Count} file(s) selected";
+        }
+    }
+
+    private void LoadPagePreviews(string filePath)
+    {
+        try
+        {
+            var previews = _pdfService.GetPagePreviews(filePath);
+            PagePreviews.Clear();
+            foreach (var preview in previews)
+            {
+                PagePreviews.Add(preview);
+            }
+            IsSplitPreviewVisible = true;
+            SplitMode = SplitMode.SingleFile;
+            StatusMessage = $"Loaded {PagePreviews.Count} pages. Select pages to split.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading PDF: {ex.Message}";
+            IsSplitPreviewVisible = false;
+        }
     }
 
     [RelayCommand]
     private void RemoveFile(string filePath)
     {
         SelectedFiles.Remove(filePath);
+        if (SelectedTool?.ToolType == ToolType.Split)
+        {
+            PagePreviews.Clear();
+            IsSplitPreviewVisible = false;
+        }
         StatusMessage = $"{SelectedFiles.Count} file(s) selected";
     }
 
@@ -120,8 +164,52 @@ public partial class MainViewModel : ObservableObject
     private void ClearFiles()
     {
         SelectedFiles.Clear();
+        PagePreviews.Clear();
+        IsSplitPreviewVisible = false;
         StatusMessage = "Files cleared";
     }
+
+    // Split PDF specific properties
+    [ObservableProperty]
+    private ObservableCollection<PagePreviewModel> _pagePreviews = new();
+
+    [ObservableProperty]
+    private bool _isSplitPreviewVisible;
+
+    [ObservableProperty]
+    private SplitMode _splitMode = SplitMode.SingleFile;
+
+    [RelayCommand]
+    private void SelectAllPages()
+    {
+        foreach (var page in PagePreviews)
+        {
+            page.IsSelected = true;
+        }
+        StatusMessage = $"All {PagePreviews.Count} pages selected";
+    }
+
+    [RelayCommand]
+    private void DeselectAllPages()
+    {
+        foreach (var page in PagePreviews)
+        {
+            page.IsSelected = false;
+        }
+        StatusMessage = "All pages deselected";
+    }
+
+    [RelayCommand]
+    private void TogglePageSelection(PagePreviewModel page)
+    {
+        page.IsSelected = !page.IsSelected;
+        var selectedCount = PagePreviews.Count(p => p.IsSelected);
+        StatusMessage = $"{selectedCount} page(s) selected";
+    }
+
+    public int SelectedPageCount => PagePreviews.Count(p => p.IsSelected);
+
+    public bool HasSelectedPages => PagePreviews.Any(p => p.IsSelected);
 
     // Additional properties for tool-specific inputs
     [ObservableProperty]
@@ -182,7 +270,60 @@ public partial class MainViewModel : ObservableObject
                 case ToolType.Split:
                     if (SelectedFiles.Count > 0)
                     {
-                        result = await _pdfService.SplitPdfAsync(SelectedFiles[0], StartPage, EndPage, progress);
+                        var selectedPageNumbers = PagePreviews
+                            .Where(p => p.IsSelected)
+                            .Select(p => p.PageNumber)
+                            .OrderBy(p => p)
+                            .ToArray();
+
+                        if (selectedPageNumbers.Length == 0)
+                        {
+                            StatusMessage = "Please select at least one page to split";
+                            IsProcessing = false;
+                            return;
+                        }
+
+                        if (SplitMode == SplitMode.SeparateFiles)
+                        {
+                            // Split into separate files
+                            var separateResults = await _pdfService.SplitPdfToSeparateFilesAsync(SelectedFiles[0], selectedPageNumbers, progress);
+                            
+                            // Save each file separately - use OpenFolderDialog from WPF
+                            var baseName = Path.GetFileNameWithoutExtension(SelectedFiles[0]);
+                            
+                            // Use a SaveFileDialog to get the destination directory
+                            var dialog = new Microsoft.Win32.SaveFileDialog
+                            {
+                                Title = "Select folder to save split PDFs",
+                                FileName = "Select_Folder",
+                                Filter = "Folder|no_files",
+                                CheckFileExists = false,
+                                CheckPathExists = true
+                            };
+
+                            if (dialog.ShowDialog() == true)
+                            {
+                                var folderPath = Path.GetDirectoryName(dialog.FileName);
+                                if (!string.IsNullOrEmpty(folderPath))
+                                {
+                                    for (int i = 0; i < separateResults.Count; i++)
+                                    {
+                                        var fileName = Path.Combine(folderPath, $"{baseName}_page_{selectedPageNumbers[i]}.pdf");
+                                        await File.WriteAllBytesAsync(fileName, separateResults[i]);
+                                    }
+                                    StatusMessage = $"Saved {separateResults.Count} PDF files to {folderPath}";
+                                }
+                            }
+                            else
+                            {
+                                StatusMessage = "Save cancelled";
+                            }
+                        }
+                        else
+                        {
+                            // Split into single file with selected pages
+                            result = await _pdfService.ExtractPagesAsync(SelectedFiles[0], selectedPageNumbers, progress);
+                        }
                     }
                     break;
 

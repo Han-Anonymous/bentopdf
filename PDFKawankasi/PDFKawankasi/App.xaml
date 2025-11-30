@@ -17,6 +17,10 @@
             <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
             <converters:NonZeroToVisibilityConverter x:Key="NonZeroToVisibilityConverter"/>
             <converters:NonZeroToBoolConverter x:Key="NonZeroToBoolConverter"/>
+            <converters:ToolTypeToSplitVisibilityConverter x:Key="ToolTypeToSplitVisibilityConverter"/>
+            <converters:ToolTypeToNotSplitVisibilityConverter x:Key="ToolTypeToNotSplitVisibilityConverter"/>
+            <converters:SplitModeToSingleFileConverter x:Key="SplitModeToSingleFileConverter"/>
+            <converters:SplitModeToSeparateFilesConverter x:Key="SplitModeToSeparateFilesConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
