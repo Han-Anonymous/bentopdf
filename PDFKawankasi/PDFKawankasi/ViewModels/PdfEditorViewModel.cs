@@ -16,6 +16,12 @@ namespace PDFKawankasi.ViewModels;
 /// </summary>
 public partial class PdfEditorViewModel : ObservableObject
 {
+    // Constants for default page dimensions
+    private const int DefaultPageWidth = 800;
+    private const int DefaultPageHeight = 1000;
+    private const int ThumbnailWidth = 100;
+    private const int ThumbnailHeight = 140;
+    
     private IDocLib? _docLib;
     private string? _currentFilePath;
     private byte[]? _pdfBytes;
@@ -136,10 +142,15 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             try
             {
-                // For now, save the original PDF with annotations embedded
-                // In a full implementation, we would flatten annotations into the PDF
+                // Note: Current implementation saves the original PDF
+                // Full annotation embedding will be implemented in a future update
                 File.WriteAllBytes(dialog.FileName, _pdfBytes);
                 StatusMessage = $"Saved: {dialog.FileName}";
+                
+                if (AllAnnotations.Count > 0)
+                {
+                    StatusMessage += $" (Note: {AllAnnotations.Count} annotation(s) are session-only and not embedded in PDF yet)";
+                }
             }
             catch (Exception ex)
             {
@@ -342,7 +353,7 @@ public partial class PdfEditorViewModel : ObservableObject
 
         try
         {
-            using var reader = _docLib!.GetDocReader(_pdfBytes, new PageDimensions(100, 140));
+            using var reader = _docLib!.GetDocReader(_pdfBytes, new PageDimensions(ThumbnailWidth, ThumbnailHeight));
 
             for (int i = 0; i < TotalPages; i++)
             {
@@ -373,8 +384,8 @@ public partial class PdfEditorViewModel : ObservableObject
 
         try
         {
-            var scaledWidth = (int)(800 * ZoomLevel);
-            var scaledHeight = (int)(1000 * ZoomLevel);
+            var scaledWidth = (int)(DefaultPageWidth * ZoomLevel);
+            var scaledHeight = (int)(DefaultPageHeight * ZoomLevel);
 
             using var reader = _docLib!.GetDocReader(_pdfBytes, new PageDimensions(scaledWidth, scaledHeight));
             using var pageReader = reader.GetPageReader(CurrentPage - 1);
