@@ -1,3 +1,4 @@
+using System.IO;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Pdf.IO;
 using SixLabors.ImageSharp;
