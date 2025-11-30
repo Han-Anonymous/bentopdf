@@ -2,12 +2,19 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using Docnet.Core;
 using Docnet.Core.Models;
-using PdfSharpCore.Pdf;
-using PdfSharpCore.Pdf.IO;
+using iText.IO.Image;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
+
+// Use aliases to avoid conflicts between PdfSharpCore and iText7
+using PdfSharpDocument = PdfSharpCore.Pdf.PdfDocument;
+using PdfSharpReader = PdfSharpCore.Pdf.IO.PdfReader;
+using PdfSharpOpenMode = PdfSharpCore.Pdf.IO.PdfDocumentOpenMode;
 
 namespace PDFKawankasi.Services;
 
@@ -23,13 +30,13 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var outputDocument = new PdfDocument();
+            using var outputDocument = new PdfSharpDocument();
             var files = filePaths.ToList();
             var processed = 0;
 
             foreach (var filePath in files)
             {
-                using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
+                using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
                 
                 foreach (var page in inputDocument.Pages)
                 {
@@ -53,8 +60,8 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var totalPages = endPage - startPage + 1;
             var processed = 0;
@@ -79,8 +86,8 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var processed = 0;
 
@@ -107,8 +114,8 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var pagesToDelete = new HashSet<int>(pageNumbers);
             var processed = 0;
@@ -136,67 +143,85 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            // Use Import mode instead of Modify to avoid issues with corrupted PDFs
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var pagesToRotate = pageNumbers != null 
                 ? new HashSet<int>(pageNumbers) 
-                : Enumerable.Range(1, document.PageCount).ToHashSet();
+                : Enumerable.Range(1, inputDocument.PageCount).ToHashSet();
 
             var processed = 0;
 
-            for (int i = 0; i < document.PageCount; i++)
+            for (int i = 0; i < inputDocument.PageCount; i++)
             {
+                var page = outputDocument.AddPage(inputDocument.Pages[i]);
+                
                 if (pagesToRotate.Contains(i + 1))
                 {
-                    var page = document.Pages[i];
                     page.Rotate = (page.Rotate + degrees) % 360;
                 }
+                
                 processed++;
-                progress?.Report((int)((double)processed / document.PageCount * 100));
+                progress?.Report((int)((double)processed / inputDocument.PageCount * 100));
             }
 
             using var stream = new MemoryStream();
-            document.Save(stream);
+            outputDocument.Save(stream);
             return stream.ToArray();
         });
     }
 
     /// <summary>
-    /// Convert images to PDF
+    /// Convert images to PDF using iText7 (no ImageSharp version conflicts)
     /// </summary>
     public async Task<byte[]> ImagesToPdfAsync(IEnumerable<string> imagePaths, IProgress<int>? progress = null)
     {
         return await Task.Run(() =>
         {
-            using var document = new PdfDocument();
             var images = imagePaths.ToList();
             var processed = 0;
+            
+            using var outputStream = new MemoryStream();
+            using var writer = new PdfWriter(outputStream);
+            using var pdfDoc = new iText.Kernel.Pdf.PdfDocument(writer);
+            using var document = new Document(pdfDoc);
+            
+            // Remove default margins to let images fill the page
+            document.SetMargins(0, 0, 0, 0);
 
             foreach (var imagePath in images)
             {
-                using var image = SixLabors.ImageSharp.Image.Load(imagePath);
-                
-                // Create a page with image dimensions
-                var page = document.AddPage();
-                page.Width = image.Width;
-                page.Height = image.Height;
-
-                // Convert image to PNG bytes
-                using var imageStream = new MemoryStream();
-                image.Save(imageStream, new PngEncoder());
-                imageStream.Position = 0;
-
-                using var xImage = PdfSharpCore.Drawing.XImage.FromStream(() => imageStream);
-                using var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
-                gfx.DrawImage(xImage, 0, 0, page.Width, page.Height);
-
-                processed++;
-                progress?.Report((int)((double)processed / images.Count * 100));
+                try
+                {
+                    // Read image file
+                    var imageBytes = File.ReadAllBytes(imagePath);
+                    var imageData = ImageDataFactory.Create(imageBytes);
+                    var image = new iText.Layout.Element.Image(imageData);
+                    
+                    // Create a page with the same size as the image
+                    var pageSize = new iText.Kernel.Geom.PageSize(imageData.GetWidth(), imageData.GetHeight());
+                    pdfDoc.AddNewPage(pageSize);
+                    
+                    // Scale image to fit the page exactly
+                    image.ScaleToFit(pageSize.GetWidth(), pageSize.GetHeight());
+                    image.SetFixedPosition(pdfDoc.GetNumberOfPages(), 0, 0);
+                    
+                    document.Add(image);
+                    
+                    processed++;
+                    progress?.Report((int)((double)processed / images.Count * 100));
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle individual image errors
+                    System.Diagnostics.Debug.WriteLine($"Failed to process image {imagePath}: {ex.Message}");
+                    throw new InvalidOperationException($"Failed to process image: {Path.GetFileName(imagePath)}", ex);
+                }
             }
 
-            using var stream = new MemoryStream();
-            document.Save(stream);
-            return stream.ToArray();
+            document.Close();
+            return outputStream.ToArray();
         });
     }
 
@@ -205,7 +230,7 @@ public class PdfService
     /// </summary>
     public int GetPageCount(string filePath)
     {
-        using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+        using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
         return document.PageCount;
     }
 
@@ -214,7 +239,7 @@ public class PdfService
     /// </summary>
     public PdfMetadata GetMetadata(string filePath)
     {
-        using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+        using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
         
         return new PdfMetadata
         {
@@ -238,18 +263,26 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
-            if (metadata.Title != null) document.Info.Title = metadata.Title;
-            if (metadata.Author != null) document.Info.Author = metadata.Author;
-            if (metadata.Subject != null) document.Info.Subject = metadata.Subject;
-            if (metadata.Keywords != null) document.Info.Keywords = metadata.Keywords;
-            if (metadata.Creator != null) document.Info.Creator = metadata.Creator;
+            // Copy metadata
+            if (metadata.Title != null) outputDocument.Info.Title = metadata.Title;
+            if (metadata.Author != null) outputDocument.Info.Author = metadata.Author;
+            if (metadata.Subject != null) outputDocument.Info.Subject = metadata.Subject;
+            if (metadata.Keywords != null) outputDocument.Info.Keywords = metadata.Keywords;
+            if (metadata.Creator != null) outputDocument.Info.Creator = metadata.Creator;
+            
+            // Copy all pages
+            foreach (var page in inputDocument.Pages)
+            {
+                outputDocument.AddPage(page);
+            }
 
             progress?.Report(70);
             using var stream = new MemoryStream();
-            document.Save(stream);
+            outputDocument.Save(stream);
             progress?.Report(100);
             return stream.ToArray();
         });
@@ -262,8 +295,8 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var processed = 0;
 
@@ -287,8 +320,8 @@ public class PdfService
     {
         return await Task.Run(() =>
         {
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
 
             var processed = 0;
             var inserted = false;
@@ -330,7 +363,7 @@ public class PdfService
         return await Task.Run(() =>
         {
             var results = new List<byte[]>();
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+            using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
             
             for (int i = 0; i < document.PageCount; i++)
             {
@@ -352,7 +385,7 @@ public class PdfService
         return await Task.Run(() =>
         {
             var results = new List<byte[]>();
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+            using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
             
             for (int i = 0; i < document.PageCount; i++)
             {
@@ -376,8 +409,8 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
             // Placeholder: Copy all pages - actual greyscale conversion would need iText or direct content stream manipulation
@@ -403,8 +436,8 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
             foreach (var page in inputDocument.Pages)
@@ -428,12 +461,12 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             // Set compression options
-            outputDocument.Options.FlateEncodeMode = PdfFlateEncodeMode.BestCompression;
-            outputDocument.Options.UseFlateDecoderForJpegImages = PdfUseFlateDecoderForJpegImages.Automatic;
+            outputDocument.Options.FlateEncodeMode = PdfSharpCore.Pdf.PdfFlateEncodeMode.BestCompression;
+            outputDocument.Options.UseFlateDecoderForJpegImages = PdfSharpCore.Pdf.PdfUseFlateDecoderForJpegImages.Automatic;
             outputDocument.Options.NoCompression = false;
             outputDocument.Options.CompressContentStreams = true;
             
@@ -459,8 +492,8 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
             foreach (var page in inputDocument.Pages)
@@ -481,7 +514,7 @@ public class PdfService
     /// </summary>
     public PdfPageDimensions GetPageDimensions(string filePath)
     {
-        using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+        using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
         
         var pages = new List<PageDimensionInfo>();
         for (int i = 0; i < document.PageCount; i++)
@@ -509,7 +542,7 @@ public class PdfService
     /// </summary>
     public List<Models.PagePreviewModel> GetPagePreviews(string filePath, bool renderThumbnails = true, int thumbnailWidth = 100)
     {
-        using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+        using var document = PdfSharpReader.Open(filePath, PdfSharpOpenMode.ReadOnly);
         var totalPages = document.PageCount;
         var previews = new List<Models.PagePreviewModel>();
 
@@ -596,14 +629,14 @@ public class PdfService
         return await Task.Run(() =>
         {
             var results = new List<byte[]>();
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
 
             var processed = 0;
             foreach (var pageNum in pageNumbers)
             {
                 if (pageNum > 0 && pageNum <= inputDocument.PageCount)
                 {
-                    using var outputDocument = new PdfDocument();
+                    using var outputDocument = new PdfSharpDocument();
                     outputDocument.AddPage(inputDocument.Pages[pageNum - 1]);
 
                     using var stream = new MemoryStream();
@@ -626,18 +659,26 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
-            document.Info.Title = string.Empty;
-            document.Info.Author = string.Empty;
-            document.Info.Subject = string.Empty;
-            document.Info.Keywords = string.Empty;
-            document.Info.Creator = string.Empty;
+            // Set metadata to empty strings
+            outputDocument.Info.Title = string.Empty;
+            outputDocument.Info.Author = string.Empty;
+            outputDocument.Info.Subject = string.Empty;
+            outputDocument.Info.Keywords = string.Empty;
+            outputDocument.Info.Creator = string.Empty;
+            
+            // Copy all pages
+            foreach (var page in inputDocument.Pages)
+            {
+                outputDocument.AddPage(page);
+            }
             
             progress?.Report(70);
             using var stream = new MemoryStream();
-            document.Save(stream);
+            outputDocument.Save(stream);
             progress?.Report(100);
             return stream.ToArray();
         });
@@ -651,7 +692,14 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var document = new PdfSharpDocument();
+            
+            // Copy pages to new document
+            foreach (var p in inputDocument.Pages)
+            {
+                document.AddPage(p);
+            }
             
             for (int i = 0; i < document.PageCount; i++)
             {
@@ -687,7 +735,15 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var document = new PdfSharpDocument();
+            
+            // Copy pages to new document
+            foreach (var p in inputDocument.Pages)
+            {
+                document.AddPage(p);
+            }
+            
             var totalPages = document.PageCount;
             
             for (int i = 0; i < document.PageCount; i++)
@@ -756,8 +812,8 @@ public class PdfService
         {
             progress?.Report(10);
             // Placeholder: Color inversion requires direct manipulation of content streams
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             progress?.Report(30);
             foreach (var page in inputDocument.Pages)
@@ -788,7 +844,14 @@ public class PdfService
                 throw new ArgumentException("Invalid hex color format. Expected format: #RRGGBB", nameof(colorHex));
             }
             
-            using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.Modify);
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var document = new PdfSharpDocument();
+            
+            // Copy pages to new document
+            foreach (var p in inputDocument.Pages)
+            {
+                document.AddPage(p);
+            }
             
             var color = PdfSharpCore.Drawing.XColor.FromArgb(
                 Convert.ToInt32(colorHex.Substring(1, 2), 16),
@@ -824,8 +887,8 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             // Placeholder: Copy all pages. Proper blank page detection requires analyzing content streams.
             for (int i = 0; i < inputDocument.PageCount; i++)
@@ -851,8 +914,8 @@ public class PdfService
         return await Task.Run(() =>
         {
             progress?.Report(10);
-            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
-            using var outputDocument = new PdfDocument();
+            using var inputDocument = PdfSharpReader.Open(filePath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
             
             // Placeholder: Copy pages. Proper annotation removal requires modifying page dictionaries.
             for (int i = 0; i < inputDocument.PageCount; i++)
@@ -881,7 +944,7 @@ public class PdfService
             // Read lines one at a time for memory efficiency with large files
             var lines = File.ReadLines(filePath).ToList();
             
-            using var document = new PdfDocument();
+            using var document = new PdfSharpDocument();
             var font = new PdfSharpCore.Drawing.XFont("Courier New", 10, PdfSharpCore.Drawing.XFontStyle.Regular);
             
             var linesPerPage = 50;
