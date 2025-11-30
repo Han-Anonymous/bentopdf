@@ -1,4 +1,7 @@
 using System.IO;
+using System.Windows.Media.Imaging;
+using Docnet.Core;
+using Docnet.Core.Models;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Pdf.IO;
 using SixLabors.ImageSharp;
@@ -501,14 +504,31 @@ public class PdfService
     }
 
     /// <summary>
-    /// Get page preview information for a PDF
-    /// Returns basic page information that can be used for preview display
+    /// Get page preview information for a PDF with thumbnail rendering
+    /// Returns page information with rendered thumbnails for preview display
     /// </summary>
-    public List<Models.PagePreviewModel> GetPagePreviews(string filePath)
+    public List<Models.PagePreviewModel> GetPagePreviews(string filePath, bool renderThumbnails = true, int thumbnailWidth = 100)
     {
         using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
         var totalPages = document.PageCount;
         var previews = new List<Models.PagePreviewModel>();
+
+        // Read PDF bytes for thumbnail rendering
+        List<BitmapSource>? thumbnails = null;
+
+        if (renderThumbnails)
+        {
+            try
+            {
+                var pdfBytes = File.ReadAllBytes(filePath);
+                thumbnails = RenderPdfPageThumbnails(pdfBytes, totalPages, thumbnailWidth);
+            }
+            catch
+            {
+                // If rendering fails, continue without thumbnails
+                thumbnails = null;
+            }
+        }
 
         for (int i = 0; i < totalPages; i++)
         {
@@ -519,11 +539,53 @@ public class PdfService
                 TotalPages = totalPages,
                 Width = page.Width.Point,
                 Height = page.Height.Point,
-                IsSelected = false
+                IsSelected = false,
+                Thumbnail = thumbnails != null && i < thumbnails.Count ? thumbnails[i] : null
             });
         }
 
         return previews;
+    }
+
+    /// <summary>
+    /// Render PDF page thumbnails using Docnet
+    /// </summary>
+    private static List<BitmapSource> RenderPdfPageThumbnails(byte[] pdfBytes, int pageCount, int thumbnailWidth = 100)
+    {
+        var thumbnails = new List<BitmapSource>();
+
+        using var library = DocLib.Instance;
+        using var docReader = library.GetDocReader(pdfBytes, new PageDimensions(thumbnailWidth, thumbnailWidth * 2));
+
+        for (int i = 0; i < pageCount; i++)
+        {
+            try
+            {
+                using var pageReader = docReader.GetPageReader(i);
+                var rawBytes = pageReader.GetImage();
+                var width = pageReader.GetPageWidth();
+                var height = pageReader.GetPageHeight();
+
+                // Convert BGRA to BitmapSource
+                var bitmap = BitmapSource.Create(
+                    width, height,
+                    96, 96, // DPI
+                    System.Windows.Media.PixelFormats.Bgra32,
+                    null,
+                    rawBytes,
+                    width * 4);
+
+                bitmap.Freeze(); // Make it thread-safe
+                thumbnails.Add(bitmap);
+            }
+            catch
+            {
+                // If a specific page fails to render, add null
+                thumbnails.Add(null!);
+            }
+        }
+
+        return thumbnails;
     }
 
     /// <summary>
