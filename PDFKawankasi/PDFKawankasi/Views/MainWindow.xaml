@@ -1,0 +1,307 @@
+<Window x:Class="PDFKawankasi.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
+        xmlns:local="clr-namespace:PDFKawankasi.Views"
+        mc:Ignorable="d"
+        Title="PDF Kawankasi - Privacy-First PDF Toolkit"
+        Height="800" Width="1200"
+        MinHeight="600" MinWidth="900"
+        Background="{StaticResource BackgroundBrush}"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" 
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Logo and Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="📄" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="PDF Kawankasi" 
+                                   Foreground="{StaticResource TextPrimaryBrush}" 
+                                   FontSize="22" FontWeight="Bold"/>
+                        <TextBlock Text="Privacy-First PDF Toolkit" 
+                                   Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Search Bar -->
+                <Border Grid.Column="1" Margin="48,0" MaxWidth="500" HorizontalAlignment="Center">
+                    <Grid>
+                        <TextBox x:Name="SearchBox"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 VerticalContentAlignment="Center"
+                                 Padding="40,10,16,10">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Escape" Command="{Binding BackToGridCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock Text="🔍" FontSize="16" 
+                                   VerticalAlignment="Center" 
+                                   Margin="12,0,0,0"
+                                   IsHitTestVisible="False"/>
+                        <TextBlock Text="Search tools..." 
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="40,0,0,0"
+                                   IsHitTestVisible="False"
+                                   Visibility="{Binding SearchQuery, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Version Info -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="v1.0.0" 
+                               Foreground="{StaticResource TextMutedBrush}" 
+                               FontSize="12"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <!-- Tools Grid View -->
+            <ScrollViewer x:Name="ToolsScrollViewer"
+                          Visibility="{Binding IsToolViewVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="24">
+                <ItemsControl ItemsSource="{Binding FilteredCategories}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,24">
+                                <!-- Category Header -->
+                                <TextBlock Text="{Binding Name}" 
+                                           Style="{StaticResource CategoryHeaderStyle}"/>
+                                
+                                <!-- Tools in this category -->
+                                <ItemsControl ItemsSource="{Binding Tools}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource ToolCardStyle}"
+                                                    Command="{Binding DataContext.SelectToolCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="180" Height="140"
+                                                    Margin="0,0,12,12">
+                                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Icon}" 
+                                                               FontSize="32" 
+                                                               HorizontalAlignment="Center"
+                                                               Margin="0,0,0,8"/>
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               Style="{StaticResource ToolNameStyle}"/>
+                                                    <TextBlock Text="{Binding Subtitle}" 
+                                                               Style="{StaticResource ToolSubtitleStyle}"
+                                                               MaxWidth="160"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Tool Interface View -->
+            <Border Visibility="{Binding IsToolViewVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="12"
+                    Margin="24"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Tool Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,24">
+                        <Button Content="← Back to Tools"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding BackToGridCommand}"
+                                Margin="0,0,0,16"/>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding SelectedTool.Icon}" 
+                                       FontSize="40" 
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,16,0"/>
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedTool.Name}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="28"
+                                           FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SelectedTool.Subtitle}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- File Drop Zone -->
+                    <Border Grid.Row="1" 
+                            Background="{StaticResource CardBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="2"
+                            CornerRadius="12"
+                            AllowDrop="True"
+                            Drop="OnFileDrop"
+                            DragOver="OnDragOver"
+                            MinHeight="200">
+                        <Grid>
+                            <!-- Empty State -->
+                            <StackPanel VerticalAlignment="Center" 
+                                        HorizontalAlignment="Center"
+                                        Visibility="{Binding SelectedFiles.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                                <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                                <TextBlock Text="Drag and drop files here"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="18"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="or"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="14"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,8"/>
+                                <Button Content="Browse Files"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Click="OnBrowseFilesClick"
+                                        HorizontalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Files List -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"
+                                          Padding="16">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding SelectedFiles}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{StaticResource SurfaceBrush}"
+                                                        CornerRadius="8"
+                                                        Padding="12"
+                                                        Margin="0,0,0,8">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="📄" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                        <TextBlock Grid.Column="1" 
+                                                                   Text="{Binding}" 
+                                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <Button Grid.Column="2" 
+                                                                Content="✕"
+                                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                                Padding="8,4"
+                                                                Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    
+                                    <Button Content="+ Add More Files"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Click="OnBrowseFilesClick"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                        <Button Content="Clear All"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ClearFilesCommand}"
+                                Margin="0,0,12,0"
+                                IsEnabled="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToBoolConverter}}"/>
+                        <Button Content="Process Files"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding ProcessFilesCommand}"
+                                IsEnabled="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToBoolConverter}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Processing Overlay -->
+            <Border Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Background="#CC000000">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ProgressBar Width="300" Height="8"
+                                 Value="{Binding ProgressValue}"
+                                 Maximum="100"
+                                 Foreground="{StaticResource PrimaryBrush}"
+                                 Background="{StaticResource CardBrush}"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" 
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
+                Padding="24,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="🔒 All processing happens on your device"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
