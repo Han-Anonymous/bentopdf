@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
+using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
 
 namespace PDFKawankasi.Views;
@@ -46,9 +47,12 @@ public partial class MainWindow : Window
 
     private void OnBrowseFilesClick(object sender, RoutedEventArgs e)
     {
+        // For Split PDF, only allow single file selection
+        var isSplitTool = ViewModel.SelectedTool?.ToolType == ToolType.Split;
+        
         var dialog = new OpenFileDialog
         {
-            Multiselect = true,
+            Multiselect = !isSplitTool,
             Filter = GetFileFilter()
         };
 
@@ -83,6 +87,14 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnPagePreviewClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is PagePreviewModel pagePreview)
+        {
+            ViewModel.TogglePageSelectionCommand.Execute(pagePreview);
+        }
+    }
+
     private string GetFileFilter()
     {
         if (ViewModel.SelectedTool == null)
@@ -90,10 +102,10 @@ public partial class MainWindow : Window
 
         return ViewModel.SelectedTool.ToolType switch
         {
-            Models.ToolType.JpgToPdf => "JPEG Images (*.jpg;*.jpeg)|*.jpg;*.jpeg",
-            Models.ToolType.PngToPdf => "PNG Images (*.png)|*.png",
-            Models.ToolType.ImageToPdf => "Image Files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff",
-            Models.ToolType.TextToPdf => "Text Files (*.txt)|*.txt",
+            ToolType.JpgToPdf => "JPEG Images (*.jpg;*.jpeg)|*.jpg;*.jpeg",
+            ToolType.PngToPdf => "PNG Images (*.png)|*.png",
+            ToolType.ImageToPdf => "Image Files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff",
+            ToolType.TextToPdf => "Text Files (*.txt)|*.txt",
             _ => "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*"
         };
     }

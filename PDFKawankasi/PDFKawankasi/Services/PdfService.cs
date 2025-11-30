@@ -501,6 +501,62 @@ public class PdfService
     }
 
     /// <summary>
+    /// Get page preview information for a PDF
+    /// Returns basic page information that can be used for preview display
+    /// </summary>
+    public List<Models.PagePreviewModel> GetPagePreviews(string filePath)
+    {
+        using var document = PdfReader.Open(filePath, PdfDocumentOpenMode.ReadOnly);
+        var totalPages = document.PageCount;
+        var previews = new List<Models.PagePreviewModel>();
+
+        for (int i = 0; i < totalPages; i++)
+        {
+            var page = document.Pages[i];
+            previews.Add(new Models.PagePreviewModel
+            {
+                PageNumber = i + 1,
+                TotalPages = totalPages,
+                Width = page.Width.Point,
+                Height = page.Height.Point,
+                IsSelected = false
+            });
+        }
+
+        return previews;
+    }
+
+    /// <summary>
+    /// Split selected pages into separate PDF files (one per page)
+    /// </summary>
+    public async Task<List<byte[]>> SplitPdfToSeparateFilesAsync(string filePath, int[] pageNumbers, IProgress<int>? progress = null)
+    {
+        return await Task.Run(() =>
+        {
+            var results = new List<byte[]>();
+            using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
+
+            var processed = 0;
+            foreach (var pageNum in pageNumbers)
+            {
+                if (pageNum > 0 && pageNum <= inputDocument.PageCount)
+                {
+                    using var outputDocument = new PdfDocument();
+                    outputDocument.AddPage(inputDocument.Pages[pageNum - 1]);
+
+                    using var stream = new MemoryStream();
+                    outputDocument.Save(stream);
+                    results.Add(stream.ToArray());
+                }
+                processed++;
+                progress?.Report((int)((double)processed / pageNumbers.Length * 100));
+            }
+
+            return results;
+        });
+    }
+
+    /// <summary>
     /// Remove metadata from PDF
     /// </summary>
     public async Task<byte[]> RemoveMetadataAsync(string filePath, IProgress<int>? progress = null)

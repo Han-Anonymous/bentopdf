@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using PDFKawankasi.Models;
 
 namespace PDFKawankasi.Converters;
 
@@ -103,5 +104,81 @@ public class NonZeroToBoolConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Checks if ToolType is Split for visibility
+/// </summary>
+public class ToolTypeToSplitVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is PdfTool tool)
+            return tool.ToolType == ToolType.Split ? Visibility.Visible : Visibility.Collapsed;
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Checks if ToolType is NOT Split for visibility
+/// </summary>
+public class ToolTypeToNotSplitVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is PdfTool tool)
+            return tool.ToolType == ToolType.Split ? Visibility.Collapsed : Visibility.Visible;
+        return Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts SplitMode enum to bool for RadioButton binding
+/// </summary>
+public class SplitModeToSingleFileConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is SplitMode mode)
+            return mode == SplitMode.SingleFile;
+        return false;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isChecked && isChecked)
+            return SplitMode.SingleFile;
+        return SplitMode.SeparateFiles;
+    }
+}
+
+/// <summary>
+/// Converts SplitMode enum to bool for RadioButton binding (Separate Files)
+/// </summary>
+public class SplitModeToSeparateFilesConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is SplitMode mode)
+            return mode == SplitMode.SeparateFiles;
+        return false;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isChecked && isChecked)
+            return SplitMode.SeparateFiles;
+        return SplitMode.SingleFile;
     }
 }

@@ -171,7 +171,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- File Drop Zone -->
+                    <!-- File Drop Zone (for non-Split tools or when no file loaded for Split) -->
                     <Border Grid.Row="1" 
                             Background="{StaticResource CardBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
@@ -180,7 +180,8 @@
                             AllowDrop="True"
                             Drop="OnFileDrop"
                             DragOver="OnDragOver"
-                            MinHeight="200">
+                            MinHeight="200"
+                            Visibility="{Binding IsSplitPreviewVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <Grid>
                             <!-- Empty State -->
                             <StackPanel VerticalAlignment="Center" 
@@ -202,7 +203,7 @@
                                         HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Files List -->
+                            <!-- Files List (for non-Split tools) -->
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           Visibility="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToVisibilityConverter}}"
                                           Padding="16">
@@ -242,11 +243,211 @@
                                             Style="{StaticResource SecondaryButtonStyle}"
                                             Click="OnBrowseFilesClick"
                                             HorizontalAlignment="Left"
-                                            Margin="0,8,0,0"/>
+                                            Margin="0,8,0,0"
+                                            Visibility="{Binding SelectedTool, Converter={StaticResource ToolTypeToNotSplitVisibilityConverter}}"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
                     </Border>
+
+                    <!-- Split PDF Preview View -->
+                    <Grid Grid.Row="1" 
+                          Visibility="{Binding IsSplitPreviewVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- File Info and Options -->
+                        <Border Grid.Row="0" 
+                                Background="{StaticResource CardBrush}" 
+                                CornerRadius="8" 
+                                Padding="16" 
+                                Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- File Info -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="📄" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding SelectedFiles[0]}" 
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="400"/>
+                                        <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="12">
+                                            <Run Text="{Binding PagePreviews.Count, Mode=OneWay}"/>
+                                            <Run Text="pages"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Change File Button -->
+                                <Button Grid.Column="1" 
+                                        Content="Change File"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="OnBrowseFilesClick"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Page Previews Grid -->
+                        <Border Grid.Row="1" 
+                                Background="{StaticResource CardBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="2"
+                                CornerRadius="12"
+                                Padding="16">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Selection Controls -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="Select pages to split:" 
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               FontWeight="SemiBold"
+                                               FontSize="16"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,24,0"/>
+                                    <Button Content="Select All"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding SelectAllPagesCommand}"
+                                            Padding="12,6"
+                                            Margin="0,0,8,0"/>
+                                    <Button Content="Deselect All"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding DeselectAllPagesCommand}"
+                                            Padding="12,6"/>
+                                </StackPanel>
+
+                                <!-- Pages Grid -->
+                                <ScrollViewer Grid.Row="1" 
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding PagePreviews}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="PageCard"
+                                                        Background="{StaticResource SurfaceBrush}"
+                                                        BorderThickness="2"
+                                                        CornerRadius="8"
+                                                        Width="120"
+                                                        Height="160"
+                                                        Margin="0,0,12,12"
+                                                        Cursor="Hand"
+                                                        MouseLeftButtonUp="OnPagePreviewClick">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                                                    <Setter Property="Background" Value="#2D3748"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+
+                                                        <!-- Page Icon/Preview -->
+                                                        <Border Grid.Row="0" 
+                                                                Background="{StaticResource CardBrush}"
+                                                                CornerRadius="4"
+                                                                Margin="8,8,8,4">
+                                                            <Grid>
+                                                                <TextBlock Text="📄" 
+                                                                           FontSize="40" 
+                                                                           HorizontalAlignment="Center" 
+                                                                           VerticalAlignment="Center"
+                                                                           Opacity="0.7"/>
+                                                                <!-- Selection Checkbox Indicator -->
+                                                                <Border HorizontalAlignment="Right" 
+                                                                        VerticalAlignment="Top"
+                                                                        Margin="0,-4,-4,0"
+                                                                        Width="24"
+                                                                        Height="24"
+                                                                        CornerRadius="12"
+                                                                        Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                                    <Border.Background>
+                                                                        <SolidColorBrush Color="{StaticResource PrimaryColor}"/>
+                                                                    </Border.Background>
+                                                                    <TextBlock Text="✓" 
+                                                                               Foreground="White" 
+                                                                               FontWeight="Bold"
+                                                                               HorizontalAlignment="Center" 
+                                                                               VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </Grid>
+                                                        </Border>
+
+                                                        <!-- Page Number -->
+                                                        <TextBlock Grid.Row="1" 
+                                                                   Text="{Binding DisplayName}"
+                                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                                   FontSize="11"
+                                                                   TextAlignment="Center"
+                                                                   Margin="4,4,4,8"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+                        <!-- Split Options -->
+                        <Border Grid.Row="2" 
+                                Background="{StaticResource CardBrush}" 
+                                CornerRadius="8" 
+                                Padding="16" 
+                                Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Split Options:" 
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontWeight="SemiBold"
+                                           FontSize="14"
+                                           Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="SingleFileRadio"
+                                                 GroupName="SplitMode"
+                                                 IsChecked="{Binding SplitMode, Converter={StaticResource SplitModeToSingleFileConverter}}"
+                                                 Margin="0,0,24,0"
+                                                 Foreground="{StaticResource TextPrimaryBrush}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="📄" FontSize="16" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Single PDF file" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                    <RadioButton x:Name="SeparateFilesRadio"
+                                                 GroupName="SplitMode"
+                                                 IsChecked="{Binding SplitMode, Converter={StaticResource SplitModeToSeparateFilesConverter}}"
+                                                 Foreground="{StaticResource TextPrimaryBrush}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="📁" FontSize="16" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Separate files (one per page)" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- Action Buttons -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
@@ -255,10 +456,18 @@
                                 Command="{Binding ClearFilesCommand}"
                                 Margin="0,0,12,0"
                                 IsEnabled="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToBoolConverter}}"/>
+                        <!-- Process button for non-Split tools -->
                         <Button Content="Process Files"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding ProcessFilesCommand}"
-                                IsEnabled="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToBoolConverter}}"/>
+                                IsEnabled="{Binding SelectedFiles.Count, Converter={StaticResource NonZeroToBoolConverter}}"
+                                Visibility="{Binding IsSplitPreviewVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <!-- Split button for Split tool -->
+                        <Button Content="Split Selected Pages"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding ProcessFilesCommand}"
+                                IsEnabled="{Binding HasSelectedPages}"
+                                Visibility="{Binding IsSplitPreviewVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </StackPanel>
                 </Grid>
             </Border>
