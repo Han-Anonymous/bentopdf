@@ -514,7 +514,7 @@ public class PdfService
         var previews = new List<Models.PagePreviewModel>();
 
         // Read PDF bytes for thumbnail rendering
-        List<BitmapSource>? thumbnails = null;
+        List<BitmapSource?>? thumbnails = null;
 
         if (renderThumbnails)
         {
@@ -523,9 +523,9 @@ public class PdfService
                 var pdfBytes = File.ReadAllBytes(filePath);
                 thumbnails = RenderPdfPageThumbnails(pdfBytes, totalPages, thumbnailWidth);
             }
-            catch
+            catch (Exception)
             {
-                // If rendering fails, continue without thumbnails
+                // If rendering fails (e.g., file access issues, corrupted PDF), continue without thumbnails
                 thumbnails = null;
             }
         }
@@ -550,9 +550,9 @@ public class PdfService
     /// <summary>
     /// Render PDF page thumbnails using Docnet
     /// </summary>
-    private static List<BitmapSource> RenderPdfPageThumbnails(byte[] pdfBytes, int pageCount, int thumbnailWidth = 100)
+    private static List<BitmapSource?> RenderPdfPageThumbnails(byte[] pdfBytes, int pageCount, int thumbnailWidth = 100)
     {
-        var thumbnails = new List<BitmapSource>();
+        var thumbnails = new List<BitmapSource?>();
 
         using var library = DocLib.Instance;
         using var docReader = library.GetDocReader(pdfBytes, new PageDimensions(thumbnailWidth, thumbnailWidth * 2));
@@ -578,10 +578,10 @@ public class PdfService
                 bitmap.Freeze(); // Make it thread-safe
                 thumbnails.Add(bitmap);
             }
-            catch
+            catch (Exception)
             {
-                // If a specific page fails to render, add null
-                thumbnails.Add(null!);
+                // If a specific page fails to render (e.g., malformed page data), add null placeholder
+                thumbnails.Add(null);
             }
         }
 
