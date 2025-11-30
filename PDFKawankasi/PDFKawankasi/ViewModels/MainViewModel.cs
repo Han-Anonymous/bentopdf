@@ -186,6 +186,7 @@ public partial class MainViewModel : ObservableObject
         {
             page.IsSelected = true;
         }
+        UpdateSelectedPageCount();
         StatusMessage = $"All {PagePreviews.Count} pages selected";
     }
 
@@ -196,6 +197,7 @@ public partial class MainViewModel : ObservableObject
         {
             page.IsSelected = false;
         }
+        UpdateSelectedPageCount();
         StatusMessage = "All pages deselected";
     }
 
@@ -203,13 +205,20 @@ public partial class MainViewModel : ObservableObject
     private void TogglePageSelection(PagePreviewModel page)
     {
         page.IsSelected = !page.IsSelected;
-        var selectedCount = PagePreviews.Count(p => p.IsSelected);
-        StatusMessage = $"{selectedCount} page(s) selected";
+        UpdateSelectedPageCount();
+        StatusMessage = $"{SelectedPageCount} page(s) selected";
     }
 
-    public int SelectedPageCount => PagePreviews.Count(p => p.IsSelected);
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedPages))]
+    private int _selectedPageCount;
 
-    public bool HasSelectedPages => PagePreviews.Any(p => p.IsSelected);
+    public bool HasSelectedPages => SelectedPageCount > 0;
+
+    private void UpdateSelectedPageCount()
+    {
+        SelectedPageCount = PagePreviews.Count(p => p.IsSelected);
+    }
 
     // Additional properties for tool-specific inputs
     [ObservableProperty]
@@ -288,31 +297,25 @@ public partial class MainViewModel : ObservableObject
                             // Split into separate files
                             var separateResults = await _pdfService.SplitPdfToSeparateFilesAsync(SelectedFiles[0], selectedPageNumbers, progress);
                             
-                            // Save each file separately - use OpenFolderDialog from WPF
+                            // Save each file separately using CommonOpenFileDialog for folder selection
                             var baseName = Path.GetFileNameWithoutExtension(SelectedFiles[0]);
                             
-                            // Use a SaveFileDialog to get the destination directory
-                            var dialog = new Microsoft.Win32.SaveFileDialog
+                            using var folderDialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
                             {
                                 Title = "Select folder to save split PDFs",
-                                FileName = "Select_Folder",
-                                Filter = "Folder|no_files",
-                                CheckFileExists = false,
-                                CheckPathExists = true
+                                IsFolderPicker = true,
+                                InitialDirectory = Path.GetDirectoryName(SelectedFiles[0])
                             };
 
-                            if (dialog.ShowDialog() == true)
+                            if (folderDialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
                             {
-                                var folderPath = Path.GetDirectoryName(dialog.FileName);
-                                if (!string.IsNullOrEmpty(folderPath))
+                                var folderPath = folderDialog.FileName;
+                                for (int i = 0; i < separateResults.Count; i++)
                                 {
-                                    for (int i = 0; i < separateResults.Count; i++)
-                                    {
-                                        var fileName = Path.Combine(folderPath, $"{baseName}_page_{selectedPageNumbers[i]}.pdf");
-                                        await File.WriteAllBytesAsync(fileName, separateResults[i]);
-                                    }
-                                    StatusMessage = $"Saved {separateResults.Count} PDF files to {folderPath}";
+                                    var fileName = Path.Combine(folderPath, $"{baseName}_page_{selectedPageNumbers[i]}.pdf");
+                                    await File.WriteAllBytesAsync(fileName, separateResults[i]);
                                 }
+                                StatusMessage = $"Saved {separateResults.Count} PDF files to {folderPath}";
                             }
                             else
                             {

@@ -466,7 +466,7 @@
                         <Button Content="Split Selected Pages"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding ProcessFilesCommand}"
-                                IsEnabled="{Binding PagePreviews.Count, Converter={StaticResource NonZeroToBoolConverter}}"
+                                IsEnabled="{Binding HasSelectedPages}"
                                 Visibility="{Binding IsSplitPreviewVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </StackPanel>
                 </Grid>
