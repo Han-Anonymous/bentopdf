@@ -430,7 +430,8 @@ public partial class MainViewModel : ObservableObject
                 var range = trimmed.Split('-');
                 if (range.Length == 2 && 
                     int.TryParse(range[0].Trim(), out int start) && 
-                    int.TryParse(range[1].Trim(), out int end))
+                    int.TryParse(range[1].Trim(), out int end) &&
+                    start <= end && start > 0)
                 {
                     for (int i = start; i <= end; i++)
                     {
@@ -438,7 +439,7 @@ public partial class MainViewModel : ObservableObject
                     }
                 }
             }
-            else if (int.TryParse(trimmed, out int page))
+            else if (int.TryParse(trimmed, out int page) && page > 0)
             {
                 pages.Add(page);
             }
