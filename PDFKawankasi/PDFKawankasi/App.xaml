@@ -21,6 +21,8 @@
             <converters:ToolTypeToNotSplitVisibilityConverter x:Key="ToolTypeToNotSplitVisibilityConverter"/>
             <converters:SplitModeToSingleFileConverter x:Key="SplitModeToSingleFileConverter"/>
             <converters:SplitModeToSeparateFilesConverter x:Key="SplitModeToSeparateFilesConverter"/>
+            <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
+            <converters:NullToVisibleConverter x:Key="NullToVisibleConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

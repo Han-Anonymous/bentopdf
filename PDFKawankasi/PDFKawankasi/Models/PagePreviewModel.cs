@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Media.Imaging;
 
 namespace PDFKawankasi.Models;
 
@@ -32,6 +33,12 @@ public partial class PagePreviewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private bool _isSelected;
+
+    /// <summary>
+    /// Thumbnail image of the page content
+    /// </summary>
+    [ObservableProperty]
+    private BitmapSource? _thumbnail;
 
     /// <summary>
     /// Display name for the page (e.g., "Page 1 of 10")
