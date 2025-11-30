@@ -97,5 +97,6 @@ public enum ToolType
     PdfToTiff,
     PdfToJson,
     HeaderFooter,
-    TextColor
+    TextColor,
+    PdfEditor
 }

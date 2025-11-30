@@ -23,6 +23,7 @@ public static class ToolsService
                 {
                     // Popular tools are quick-access shortcuts to commonly used tools
                     new() { Id = "popular-merge", Name = "Merge PDF", Icon = "📄+", Subtitle = "Combine multiple PDFs into one file.", Category = "Popular", ToolType = ToolType.Merge },
+                    new() { Id = "popular-pdf-editor", Name = "PDF Editor", Icon = "✏️", Subtitle = "Annotate, draw, highlight, redact, add comments and shapes, take screenshots, and view PDFs.", Category = "Popular", ToolType = ToolType.PdfEditor },
                     new() { Id = "popular-split", Name = "Split PDF", Icon = "✂️", Subtitle = "Extract a range of pages into a new PDF.", Category = "Popular", ToolType = ToolType.Split },
                     new() { Id = "popular-compress", Name = "Compress PDF", Icon = "⚡", Subtitle = "Reduce the file size of your PDF.", Category = "Popular", ToolType = ToolType.Compress },
                     new() { Id = "popular-jpg-to-pdf", Name = "JPG to PDF", Icon = "🖼️", Subtitle = "Create a PDF from one or more JPG images.", Category = "Popular", ToolType = ToolType.JpgToPdf },
@@ -36,6 +37,7 @@ public static class ToolsService
                 Name = "Edit & Annotate",
                 Tools = new List<PdfTool>
                 {
+                    new() { Id = "pdf-editor", Name = "PDF Editor", Icon = "✏️", Subtitle = "All-in-one PDF workspace: annotate, draw, highlight, redact, add comments/shapes, take screenshots, and view PDFs.", Category = "Edit", ToolType = ToolType.PdfEditor },
                     new() { Id = "add-page-numbers", Name = "Page Numbers", Icon = "🔢", Subtitle = "Insert page numbers into your document.", Category = "Edit", ToolType = ToolType.AddPageNumbers },
                     new() { Id = "add-watermark", Name = "Add Watermark", Icon = "💧", Subtitle = "Stamp text or an image over your PDF pages.", Category = "Edit", ToolType = ToolType.AddWatermark },
                     new() { Id = "invert-colors", Name = "Invert Colors", Icon = "🌓", Subtitle = "Create a 'dark mode' version of your PDF.", Category = "Edit", ToolType = ToolType.InvertColors },
