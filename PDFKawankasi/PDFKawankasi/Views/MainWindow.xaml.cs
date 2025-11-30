@@ -23,15 +23,8 @@ public partial class MainWindow : Window
 
     private void MainWindow_KeyDown(object sender, KeyEventArgs e)
     {
-        // Ctrl+K to focus search
-        if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
-        {
-            SearchBox.Focus();
-            SearchBox.SelectAll();
-            e.Handled = true;
-        }
         // Escape to go back
-        else if (e.Key == Key.Escape)
+        if (e.Key == Key.Escape)
         {
             if (ViewModel.IsToolViewVisible)
             {
