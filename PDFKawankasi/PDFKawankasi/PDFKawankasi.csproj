@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- ApplicationIcon removed: Assets\app-icon.ico file not found -->
+    
+    <!-- Application Information -->
+    <AssemblyName>PDFKawankasi</AssemblyName>
+    <RootNamespace>PDFKawankasi</RootNamespace>
+    <Product>PDF Kawankasi</Product>
+    <Company>PDF Kawankasi</Company>
+    <Description>A powerful, privacy-first PDF toolkit for Windows. Manipulate, edit, merge, and process PDF files directly on your device.</Description>
+    <Copyright>Copyright © 2025 PDF Kawankasi</Copyright>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    
+    <!-- Microsoft Store / MSIX Packaging -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+    <Platforms>x64;x86;arm64;AnyCPU</Platforms>
+    <WindowsPackageType>MSIX</WindowsPackageType>
+    <PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+    
+    <!-- App Identity for Store -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- PDF Processing Libraries -->
+    <PackageReference Include="PdfSharpCore" Version="1.3.65" />
+    <PackageReference Include="itext7" Version="8.0.5" />
+    <PackageReference Include="itext7.bouncy-castle-adapter" Version="8.0.5" />
+    
+    <!-- Image Processing -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    
+    <!-- MVVM and UI -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    
+    <!-- File Dialogs and Windows Integration -->
+    <!-- Pin to the latest available version on nuget.org (1.1.0). Version 1.1.5 is not available on public nuget.org feed. -->
+    <PackageReference Include="Microsoft.WindowsAPICodePack-Shell" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\PublishProfiles\*.pubxml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
