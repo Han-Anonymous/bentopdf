@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
+             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              mc:Ignorable="d"
              Background="{StaticResource BackgroundBrush}"
              d:DesignHeight="600" d:DesignWidth="900"
@@ -44,7 +45,7 @@
                             Padding="8,4"
                             Margin="0,0,4,0">
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="/Assets/PDF Editor/files.svg" Width="16" Height="16" Margin="0,0,4,0"/>
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/files.svg" Width="16" Height="16" Margin="0,0,4,0"/>
                             <TextBlock Text="Open"/>
                         </StackPanel>
                     </Button>
@@ -55,7 +56,7 @@
                             Margin="0,0,4,0"
                             IsEnabled="{Binding IsPdfLoaded}">
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="/Assets/PDF Editor/diskette.svg" Width="16" Height="16" Margin="0,0,4,0"/>
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/diskette.svg" Width="16" Height="16" Margin="0,0,4,0"/>
                             <TextBlock Text="Save"/>
                         </StackPanel>
                     </Button>
@@ -125,7 +126,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0">
-                        <Image Source="/Assets/PDF Editor/Highlighter.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Highlighter.svg" Width="18" Height="18"/>
                     </ToggleButton>
                     
                     <!-- Draw Tool with SVG -->
@@ -136,7 +137,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0">
-                        <Image Source="/Assets/PDF Editor/Pen.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Pen.svg" Width="18" Height="18"/>
                     </ToggleButton>
                     
                     <!-- Erase Tool with SVG -->
@@ -147,7 +148,7 @@
                                   Padding="6,4"
                                   Margin="0,0,2,0"
                                   Click="OnEraseToolClick">
-                        <Image Source="/Assets/PDF Editor/Eraser.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Eraser.svg" Width="18" Height="18"/>
                     </ToggleButton>
                     
                     <!-- Text Tool -->
@@ -168,7 +169,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0">
-                        <Image Source="/Assets/PDF Editor/Add Shape.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Add Shape.svg" Width="18" Height="18"/>
                     </ToggleButton>
                     
                     <!-- Comment Tool with SVG -->
@@ -179,7 +180,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0">
-                        <Image Source="/Assets/PDF Editor/Add Comment.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Add Comment.svg" Width="18" Height="18"/>
                     </ToggleButton>
                     
                     <!-- Image Tool with SVG - Opens file picker immediately -->
@@ -190,7 +191,7 @@
                             Padding="6,4"
                             Margin="0,0,2,0"
                             Click="OnAddImageClick">
-                        <Image Source="/Assets/PDF Editor/Add Image.svg" Width="18" Height="18"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Add Image.svg" Width="18" Height="18"/>
                     </Button>
                     
                     <!-- Redact Tool -->
@@ -254,7 +255,7 @@
                             Padding="6,4"
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}">
-                        <Image Source="/Assets/PDF Editor/Zoom Out.svg" Width="16" Height="16"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Zoom Out.svg" Width="16" Height="16"/>
                     </Button>
                     <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:P0}}"
                                Foreground="{StaticResource TextPrimaryBrush}"
@@ -268,7 +269,7 @@
                             Padding="6,4"
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}">
-                        <Image Source="/Assets/PDF Editor/Zoom In.svg" Width="16" Height="16"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Zoom In.svg" Width="16" Height="16"/>
                     </Button>
                     
                     <!-- Fit buttons with SVG icons -->
@@ -278,7 +279,7 @@
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"
                             Click="OnFitToWidthClick">
-                        <Image Source="/Assets/PDF Editor/Fit Screen Width.svg" Width="16" Height="16"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Fit Screen Width.svg" Width="16" Height="16"/>
                     </Button>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
                             ToolTip="Fit entire page to screen"
@@ -286,7 +287,7 @@
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"
                             Click="OnFitToPageClick">
-                        <Image Source="/Assets/PDF Editor/Fit Whole Page Content to screen.svg" Width="16" Height="16"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/Fit Whole Page Content to screen.svg" Width="16" Height="16"/>
                     </Button>
                     
                     <!-- Continuous scroll toggle -->
