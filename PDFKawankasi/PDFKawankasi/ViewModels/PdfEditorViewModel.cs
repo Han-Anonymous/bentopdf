@@ -123,12 +123,52 @@ public partial class PdfEditorViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasPendingChanges;
 
+    // Fullscreen mode toggle
+    [ObservableProperty]
+    private bool _isFullscreen;
+
+    // Panel visibility toggles
+    [ObservableProperty]
+    private bool _isLeftPanelVisible = true;
+
+    [ObservableProperty]
+    private bool _isRightPanelVisible = true;
+
+    // View mode settings
+    [ObservableProperty]
+    private bool _isDualPageMode;
+
+    // Font settings for text annotations
+    [ObservableProperty]
+    private string _selectedFontFamily = "Arial";
+
+    [ObservableProperty]
+    private double _selectedFontSize = 14.0;
+
+    // Available fonts
+    public ObservableCollection<string> AvailableFonts { get; } = new ObservableCollection<string>
+    {
+        "Arial", "Times New Roman", "Courier New", "Verdana", "Georgia", "Tahoma", "Trebuchet MS", "Impact", "Comic Sans MS"
+    };
+
+    // Available font sizes
+    public ObservableCollection<double> AvailableFontSizes { get; } = new ObservableCollection<double>
+    {
+        8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 48, 72
+    };
+
     #endregion
 
     #region Computed Properties
 
     public bool CanGoPrevious => CurrentPage > 1;
     public bool CanGoNext => CurrentPage < TotalPages;
+
+    // Computed property for left panel column width
+    public double LeftPanelWidth => IsLeftPanelVisible ? 200 : 0;
+    
+    // Computed property for right panel column width  
+    public double RightPanelWidth => IsRightPanelVisible ? 250 : 0;
 
     #endregion
 
@@ -154,6 +194,16 @@ public partial class PdfEditorViewModel : ObservableObject
         InkDrawingAttributes.AddPropertyData(
             DrawingAttributeIds.StylusTipTransform,
             Matrix.Identity);
+    }
+
+    partial void OnIsLeftPanelVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(LeftPanelWidth));
+    }
+
+    partial void OnIsRightPanelVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(RightPanelWidth));
     }
 
     #region Commands
@@ -221,6 +271,13 @@ public partial class PdfEditorViewModel : ObservableObject
         StatusMessage = "Ready - Opening new PDF...";
     }
 
+    // Property for the last saved file path (for hyperlink functionality)
+    [ObservableProperty]
+    private string? _lastSavedFilePath;
+
+    [ObservableProperty]
+    private bool _hasLastSavedFile;
+
     [RelayCommand]
     private async Task SavePdf()
     {
@@ -249,6 +306,10 @@ public partial class PdfEditorViewModel : ObservableObject
                 // Flatten all annotations (ink and images) to PDF
                 await FlattenInkToPdf(dialog.FileName);
                 
+                // Store the saved file path for hyperlink functionality
+                LastSavedFilePath = dialog.FileName;
+                HasLastSavedFile = true;
+                
                 // Build status message
                 var statusParts = new List<string>();
                 if (totalInkStrokes > 0) statusParts.Add($"{totalInkStrokes} ink stroke(s)");
@@ -256,11 +317,11 @@ public partial class PdfEditorViewModel : ObservableObject
                 
                 if (statusParts.Count > 0)
                 {
-                    StatusMessage = $"Saved: {dialog.FileName} with {string.Join(" and ", statusParts)} embedded";
+                    StatusMessage = $"Saved with {string.Join(" and ", statusParts)} embedded";
                 }
                 else
                 {
-                    StatusMessage = $"Saved: {dialog.FileName}";
+                    StatusMessage = $"Saved successfully";
                 }
                 
                 if (AllAnnotations.Count > 0)
@@ -272,47 +333,44 @@ public partial class PdfEditorViewModel : ObservableObject
             }
             catch (Exception ex)
             {
+                // Display the error in a message box so the user can copy it
+                var errorMessage = $"Error saving PDF:\n\n{ex.Message}\n\nDetails:\n{ex.ToString()}";
+                System.Windows.MessageBox.Show(
+                    errorMessage,
+                    "Error Saving PDF",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
                 StatusMessage = $"Error saving: {ex.Message}";
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void OpenSavedFile()
+    {
+        if (!string.IsNullOrEmpty(LastSavedFilePath) && File.Exists(LastSavedFilePath))
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = LastSavedFilePath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error opening file:\n\n{ex.Message}",
+                    "Error Opening File",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
             }
         }
     }
 
     // Event to request saving current page strokes from the view before saving PDF
     public event Action? OnSaveCurrentPageStrokes;
-
-    [RelayCommand]
-    private void TakeScreenshot()
-    {
-        if (!IsPdfLoaded || CurrentPageImage == null) return;
-
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = "PNG Image (*.png)|*.png|JPEG Image (*.jpg)|*.jpg",
-            DefaultExt = ".png",
-            FileName = $"page_{CurrentPage}_screenshot"
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            try
-            {
-                BitmapEncoder encoder = dialog.FilterIndex == 2
-                    ? new JpegBitmapEncoder { QualityLevel = 95 }
-                    : new PngBitmapEncoder();
-
-                encoder.Frames.Add(BitmapFrame.Create(CurrentPageImage));
-
-                using var stream = new FileStream(dialog.FileName, FileMode.Create);
-                encoder.Save(stream);
-
-                StatusMessage = $"Screenshot saved: {dialog.FileName}";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error saving screenshot: {ex.Message}";
-            }
-        }
-    }
 
     [RelayCommand]
     private void ZoomIn()
@@ -331,6 +389,79 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             ZoomLevel -= 0.25;
             UpdateCanvasSize();
+        }
+    }
+
+    /// <summary>
+    /// Apply a specific zoom delta (for mouse wheel zooming)
+    /// </summary>
+    public void ApplyZoomDelta(double delta)
+    {
+        var newZoom = ZoomLevel + delta;
+        if (newZoom >= 0.1 && newZoom <= 5.0)
+        {
+            ZoomLevel = newZoom;
+            UpdateCanvasSize();
+        }
+    }
+
+    [RelayCommand]
+    private void FitToWidth()
+    {
+        if (!IsPdfLoaded) return;
+        
+        // This will be called from the view with the actual container width
+        StatusMessage = "Fit to Width - Adjust zoom to fit page width";
+        // The actual implementation will be in the View code-behind
+    }
+
+    [RelayCommand]
+    private void FitToPage()
+    {
+        if (!IsPdfLoaded) return;
+        
+        // This will be called from the view with the actual container size
+        StatusMessage = "Fit to Page - Adjust zoom to fit entire page";
+        // The actual implementation will be in the View code-behind
+    }
+
+    [RelayCommand]
+    private void ToggleFullscreen()
+    {
+        IsFullscreen = !IsFullscreen;
+        StatusMessage = IsFullscreen ? "Fullscreen mode enabled" : "Fullscreen mode disabled";
+    }
+
+    // Event to notify view about fullscreen toggle
+    public event Action<bool>? OnFullscreenToggled;
+
+    partial void OnIsFullscreenChanged(bool value)
+    {
+        OnFullscreenToggled?.Invoke(value);
+    }
+
+    [RelayCommand]
+    private void ToggleLeftPanel()
+    {
+        IsLeftPanelVisible = !IsLeftPanelVisible;
+        StatusMessage = IsLeftPanelVisible ? "Pages panel shown" : "Pages panel hidden";
+    }
+
+    [RelayCommand]
+    private void ToggleRightPanel()
+    {
+        IsRightPanelVisible = !IsRightPanelVisible;
+        StatusMessage = IsRightPanelVisible ? "Annotations panel shown" : "Annotations panel hidden";
+    }
+
+    [RelayCommand]
+    private void ToggleDualPageMode()
+    {
+        IsDualPageMode = !IsDualPageMode;
+        StatusMessage = IsDualPageMode ? "Dual page view enabled" : "Single page view";
+        if (IsDualPageMode)
+        {
+            RenderCurrentPage();
         }
     }
 
@@ -811,6 +942,12 @@ public partial class PdfEditorViewModel : ObservableObject
                 _currentAnnotation = null;
             }
         }
+        else if (IsShapeToolActive)
+        {
+            // Show dummy class path for shape tool
+            StatusMessage = "Shape Tool: PDFKawankasi.Models.ShapeAnnotation";
+            _currentAnnotation.Description = "Shape annotation - implementation class: PDFKawankasi.Models.ShapeAnnotation";
+        }
     }
 
     public void UpdateAnnotation(Point point)
@@ -1042,20 +1179,75 @@ public partial class PdfEditorViewModel : ObservableObject
 
     private string ShowTextInputDialog(string title)
     {
-        // Simple input dialog - in a full implementation, use a proper dialog
+        // Enhanced input dialog with font and size options for text annotations
         var dialog = new Window
         {
             Title = title,
-            Width = 400,
-            Height = 200,
+            Width = 450,
+            Height = 280,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
             Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
         };
 
         var panel = new StackPanel { Margin = new Thickness(20) };
+        
+        // Font settings row
+        var fontSettingsPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        
+        var fontLabel = new TextBlock
+        {
+            Text = "Font: ",
+            Foreground = Brushes.White,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        
+        var fontComboBox = new ComboBox
+        {
+            Width = 140,
+            SelectedItem = SelectedFontFamily,
+            Background = new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+            Foreground = Brushes.White,
+            Margin = new Thickness(0, 0, 16, 0)
+        };
+        foreach (var font in AvailableFonts)
+        {
+            fontComboBox.Items.Add(font);
+        }
+        fontComboBox.SelectedItem = SelectedFontFamily;
+        
+        var sizeLabel = new TextBlock
+        {
+            Text = "Size: ",
+            Foreground = Brushes.White,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        
+        var sizeComboBox = new ComboBox
+        {
+            Width = 70,
+            Background = new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+            Foreground = Brushes.White
+        };
+        foreach (var size in AvailableFontSizes)
+        {
+            sizeComboBox.Items.Add(size);
+        }
+        sizeComboBox.SelectedItem = SelectedFontSize;
+        
+        fontSettingsPanel.Children.Add(fontLabel);
+        fontSettingsPanel.Children.Add(fontComboBox);
+        fontSettingsPanel.Children.Add(sizeLabel);
+        fontSettingsPanel.Children.Add(sizeComboBox);
+        
         var textBox = new TextBox
         {
-            Height = 80,
+            Height = 100,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             Background = new SolidColorBrush(Color.FromRgb(45, 45, 45)),
@@ -1093,11 +1285,22 @@ public partial class PdfEditorViewModel : ObservableObject
         };
 
         string result = string.Empty;
-        okButton.Click += (s, e) => { result = textBox.Text; dialog.Close(); };
+        okButton.Click += (s, e) => 
+        { 
+            result = textBox.Text;
+            // Update selected font and size
+            if (fontComboBox.SelectedItem != null)
+                SelectedFontFamily = fontComboBox.SelectedItem.ToString() ?? "Arial";
+            if (sizeComboBox.SelectedItem != null)
+                SelectedFontSize = (double)sizeComboBox.SelectedItem;
+            dialog.Close(); 
+        };
         cancelButton.Click += (s, e) => dialog.Close();
 
         buttonPanel.Children.Add(cancelButton);
         buttonPanel.Children.Add(okButton);
+        
+        panel.Children.Add(fontSettingsPanel);
         panel.Children.Add(textBox);
         panel.Children.Add(buttonPanel);
         dialog.Content = panel;
