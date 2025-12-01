@@ -261,6 +261,11 @@ public partial class PdfEditorViewModel : ObservableObject
         
         // Clear images
         _pageImages.Clear();
+        CurrentPageImages.Clear();
+        
+        // Clear text boxes
+        _pageTextBoxes.Clear();
+        CurrentPageTextBoxes.Clear();
         
         // Reset tool state
         IsSelectToolActive = true;
@@ -302,8 +307,9 @@ public partial class PdfEditorViewModel : ObservableObject
                 // Count total annotations
                 int totalInkStrokes = _pageStrokes.Values.Sum(s => s.Count);
                 int totalImages = _pageImages.Values.Sum(i => i.Count);
+                int totalTextBoxes = _pageTextBoxes.Values.Sum(t => t.Count);
                 
-                // Flatten all annotations (ink and images) to PDF
+                // Flatten all annotations (ink, images, and text boxes) to PDF
                 await FlattenInkToPdf(dialog.FileName);
                 
                 // Store the saved file path for hyperlink functionality
@@ -314,6 +320,7 @@ public partial class PdfEditorViewModel : ObservableObject
                 var statusParts = new List<string>();
                 if (totalInkStrokes > 0) statusParts.Add($"{totalInkStrokes} ink stroke(s)");
                 if (totalImages > 0) statusParts.Add($"{totalImages} image(s)");
+                if (totalTextBoxes > 0) statusParts.Add($"{totalTextBoxes} text box(es)");
                 
                 if (statusParts.Count > 0)
                 {
@@ -1015,10 +1022,14 @@ public partial class PdfEditorViewModel : ObservableObject
         
         // Load images for this page
         LoadCurrentPageImages();
+        
+        // Load text boxes for this page
+        LoadCurrentPageTextBoxes();
     }
 
     private Dictionary<int, StrokeCollection> _pageStrokes = new();
     private Dictionary<int, List<ImageAnnotation>> _pageImages = new();
+    private Dictionary<int, List<TextBoxAnnotation>> _pageTextBoxes = new();
 
     // Image annotation model
     public class ImageAnnotation
@@ -1033,8 +1044,26 @@ public partial class PdfEditorViewModel : ObservableObject
         public bool IsSelected { get; set; }
     }
 
+    // Text box annotation model - movable text on canvas that gets rasterized on save
+    public class TextBoxAnnotation
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Text { get; set; } = string.Empty;
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; } = 200;
+        public double Height { get; set; } = 50;
+        public string FontFamily { get; set; } = "Arial";
+        public double FontSize { get; set; } = 14;
+        public Color TextColor { get; set; } = Colors.Black;
+        public bool IsSelected { get; set; }
+    }
+
     [ObservableProperty]
     private ObservableCollection<ImageAnnotation> _currentPageImages = new();
+
+    [ObservableProperty]
+    private ObservableCollection<TextBoxAnnotation> _currentPageTextBoxes = new();
 
     private void LoadCurrentPageStrokes()
     {
@@ -1089,8 +1118,102 @@ public partial class PdfEditorViewModel : ObservableObject
         _pageImages[CurrentPage] = new List<ImageAnnotation>(CurrentPageImages);
     }
 
+    private void LoadCurrentPageTextBoxes()
+    {
+        CurrentPageTextBoxes.Clear();
+        if (_pageTextBoxes.TryGetValue(CurrentPage, out var textBoxes))
+        {
+            foreach (var textBox in textBoxes)
+            {
+                CurrentPageTextBoxes.Add(textBox);
+            }
+        }
+        OnPropertyChanged(nameof(CurrentPageTextBoxes));
+    }
+
+    public void SaveCurrentPageTextBoxes()
+    {
+        _pageTextBoxes[CurrentPage] = new List<TextBoxAnnotation>(CurrentPageTextBoxes);
+    }
+
+    /// <summary>
+    /// Add a new text box annotation to the current page at the specified position
+    /// </summary>
+    public void AddTextBox(double x, double y)
+    {
+        // Switch to Select tool so the user can interact with the new text box
+        IsSelectToolActive = true;
+
+        var textBox = new TextBoxAnnotation
+        {
+            X = x,
+            Y = y,
+            Width = 200,
+            Height = 50,
+            FontFamily = SelectedFontFamily,
+            FontSize = SelectedFontSize,
+            TextColor = SelectedColor,
+            Text = "Type text here..."
+        };
+
+        CurrentPageTextBoxes.Add(textBox);
+        SaveCurrentPageTextBoxes();
+        HasPendingChanges = true;
+        StatusMessage = $"Added text box to page {CurrentPage}. Click to edit, drag to move.";
+    }
+
+    public void UpdateTextBoxPosition(string textBoxId, double x, double y)
+    {
+        var textBox = CurrentPageTextBoxes.FirstOrDefault(t => t.Id == textBoxId);
+        if (textBox != null)
+        {
+            textBox.X = x;
+            textBox.Y = y;
+            SaveCurrentPageTextBoxes();
+            HasPendingChanges = true;
+        }
+    }
+
+    public void UpdateTextBoxSize(string textBoxId, double width, double height)
+    {
+        var textBox = CurrentPageTextBoxes.FirstOrDefault(t => t.Id == textBoxId);
+        if (textBox != null)
+        {
+            textBox.Width = width;
+            textBox.Height = height;
+            SaveCurrentPageTextBoxes();
+            HasPendingChanges = true;
+        }
+    }
+
+    public void UpdateTextBoxContent(string textBoxId, string text)
+    {
+        var textBox = CurrentPageTextBoxes.FirstOrDefault(t => t.Id == textBoxId);
+        if (textBox != null)
+        {
+            textBox.Text = text;
+            SaveCurrentPageTextBoxes();
+            HasPendingChanges = true;
+        }
+    }
+
+    public void DeleteTextBox(string textBoxId)
+    {
+        var textBox = CurrentPageTextBoxes.FirstOrDefault(t => t.Id == textBoxId);
+        if (textBox != null)
+        {
+            CurrentPageTextBoxes.Remove(textBox);
+            SaveCurrentPageTextBoxes();
+            HasPendingChanges = true;
+            StatusMessage = "Text box deleted";
+        }
+    }
+
     public void AddImage()
     {
+        // Switch to Select tool so the user can move/resize the newly added image
+        IsSelectToolActive = true;
+        
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All Files (*.*)|*.*",
@@ -1126,7 +1249,7 @@ public partial class PdfEditorViewModel : ObservableObject
                 CurrentPageImages.Add(imageAnnotation);
                 SaveCurrentPageImages();
                 HasPendingChanges = true;
-                StatusMessage = $"Added image to page {CurrentPage}";
+                StatusMessage = $"Added image to page {CurrentPage}. Use Select tool to move/resize.";
             }
             catch (Exception ex)
             {
@@ -1317,12 +1440,13 @@ public partial class PdfEditorViewModel : ObservableObject
         // Signal that we need rendered pages
         OnInkRenderRequested?.Invoke(renderedPages);
         
-        // Check for images as well
+        // Check for images and text boxes as well
         bool hasImages = _pageImages.Values.Any(images => images.Count > 0);
+        bool hasTextBoxes = _pageTextBoxes.Values.Any(textBoxes => textBoxes.Count > 0);
         
-        if (renderedPages.Count == 0 && !hasImages)
+        if (renderedPages.Count == 0 && !hasImages && !hasTextBoxes)
         {
-            // No rendered pages or images, just save original
+            // No rendered pages, images, or text boxes, just save original
             File.WriteAllBytes(outputPath, _pdfBytes!);
             HasPendingChanges = false;
             return;
@@ -1378,6 +1502,56 @@ public partial class PdfEditorViewModel : ObservableObject
                             // Log and skip this image if there's an error loading/drawing it
                             System.Diagnostics.Debug.WriteLine($"Failed to embed image on page {pageNumber}: {ex.Message}");
                         }
+                    }
+                }
+            }
+            
+            // If this page has text boxes, rasterize and draw them
+            if (_pageTextBoxes.TryGetValue(pageNumber, out var textBoxes) && textBoxes.Count > 0)
+            {
+                foreach (var textBox in textBoxes)
+                {
+                    try
+                    {
+                        // Convert pixel coordinates to PDF points
+                        double scaleX = page.Width / CanvasWidth;
+                        double scaleY = page.Height / CanvasHeight;
+                        
+                        double pdfX = textBox.X * scaleX;
+                        double pdfY = textBox.Y * scaleY;
+                        
+                        // Create font for the text
+                        var fontFamily = textBox.FontFamily;
+                        var fontSize = textBox.FontSize * scaleY; // Scale font size proportionally
+                        
+                        var xFont = new XFont(fontFamily, fontSize, XFontStyle.Regular);
+                        var xBrush = new XSolidBrush(XColor.FromArgb(
+                            textBox.TextColor.A, 
+                            textBox.TextColor.R, 
+                            textBox.TextColor.G, 
+                            textBox.TextColor.B));
+                        
+                        // Draw the text
+                        if (!string.IsNullOrEmpty(textBox.Text))
+                        {
+                            // Draw text with word wrapping within the bounding box
+                            var pdfWidth = textBox.Width * scaleX;
+                            var pdfHeight = textBox.Height * scaleY;
+                            var rect = new XRect(pdfX, pdfY, pdfWidth, pdfHeight);
+                            
+                            var format = new XStringFormat
+                            {
+                                Alignment = XStringAlignment.Near,
+                                LineAlignment = XLineAlignment.Near
+                            };
+                            
+                            gfx.DrawString(textBox.Text, xFont, xBrush, rect, format);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log and skip this text box if there's an error
+                        System.Diagnostics.Debug.WriteLine($"Failed to embed text box on page {pageNumber}: {ex.Message}");
                     }
                 }
             }

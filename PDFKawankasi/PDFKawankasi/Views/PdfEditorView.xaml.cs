@@ -128,21 +128,75 @@ public partial class PdfEditorView : UserControl
         }
     }
 
+    // Store original window properties for restoring after fullscreen
+    private WindowState _originalWindowState;
+    private WindowStyle _originalWindowStyle;
+    private ResizeMode _originalResizeMode;
+    private double _originalLeft;
+    private double _originalTop;
+    private double _originalWidth;
+    private double _originalHeight;
+    private bool _originalTopmost;
+
     private void OnFullscreenToggled(bool isFullscreen)
     {
-        // Find parent window and toggle fullscreen
+        // Find parent window and toggle true OS-level fullscreen
         var window = Window.GetWindow(this);
         if (window != null)
         {
             if (isFullscreen)
             {
+                // Store original window properties
+                _originalWindowState = window.WindowState;
+                _originalWindowStyle = window.WindowStyle;
+                _originalResizeMode = window.ResizeMode;
+                _originalTopmost = window.Topmost;
+                
+                // Only store bounds if window is in normal state
+                if (window.WindowState == WindowState.Normal)
+                {
+                    _originalLeft = window.Left;
+                    _originalTop = window.Top;
+                    _originalWidth = window.Width;
+                    _originalHeight = window.Height;
+                }
+
+                // Get the working area of the primary screen (full screen bounds including taskbar area)
+                var workArea = SystemParameters.WorkArea;
+                var screenWidth = SystemParameters.PrimaryScreenWidth;
+                var screenHeight = SystemParameters.PrimaryScreenHeight;
+
+                // Enter true fullscreen mode
                 window.WindowStyle = WindowStyle.None;
-                window.WindowState = WindowState.Maximized;
+                window.ResizeMode = ResizeMode.NoResize;
+                window.Topmost = true;
+                
+                // Must set to Normal first, then manually set bounds to cover entire screen including taskbar
+                window.WindowState = WindowState.Normal;
+                window.Left = 0;
+                window.Top = 0;
+                window.Width = screenWidth;
+                window.Height = screenHeight;
             }
             else
             {
-                window.WindowStyle = WindowStyle.SingleBorderWindow;
-                window.WindowState = WindowState.Normal;
+                // Exit fullscreen - restore original properties
+                window.Topmost = _originalTopmost;
+                window.ResizeMode = _originalResizeMode;
+                window.WindowStyle = _originalWindowStyle;
+                
+                // Restore window bounds if we stored them
+                if (_originalWidth > 0 && _originalHeight > 0)
+                {
+                    window.WindowState = WindowState.Normal;
+                    window.Left = _originalLeft;
+                    window.Top = _originalTop;
+                    window.Width = _originalWidth;
+                    window.Height = _originalHeight;
+                }
+                
+                // Restore original window state
+                window.WindowState = _originalWindowState;
             }
         }
     }
@@ -208,6 +262,11 @@ public partial class PdfEditorView : UserControl
         {
             // Refresh images display
             RefreshImagesDisplay();
+        }
+        else if (e.PropertyName == nameof(PdfEditorViewModel.CurrentPageTextBoxes))
+        {
+            // Refresh text boxes display
+            RefreshTextBoxesDisplay();
         }
     }
 
@@ -293,11 +352,12 @@ public partial class PdfEditorView : UserControl
     {
         if (sender is Border border && border.DataContext is PageThumbnailModel thumbnail)
         {
-            // Save current page strokes and images before switching
+            // Save current page strokes, images, and text boxes before switching
             if (PdfInkCanvas != null)
             {
                 ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
                 ViewModel.SaveCurrentPageImages();
+                ViewModel.SaveCurrentPageTextBoxes();
             }
 
             ViewModel.GoToPage(thumbnail.PageNumber);
@@ -308,8 +368,9 @@ public partial class PdfEditorView : UserControl
                 PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
             }
             
-            // Refresh images display
+            // Refresh images and text boxes display
             RefreshImagesDisplay();
+            RefreshTextBoxesDisplay();
         }
     }
 
@@ -371,8 +432,17 @@ public partial class PdfEditorView : UserControl
             return;
         }
 
-        // Handle non-ink tools (text, comment, shape)
-        if (ViewModel.IsTextToolActive || ViewModel.IsCommentToolActive || ViewModel.IsShapeToolActive)
+        // Handle Text tool - add a movable text box at click location
+        if (ViewModel.IsTextToolActive)
+        {
+            var clickPoint = e.GetPosition(PdfInkCanvas);
+            ViewModel.AddTextBox(clickPoint.X, clickPoint.Y);
+            RefreshTextBoxesDisplay();
+            return;
+        }
+
+        // Handle non-ink tools (comment, shape)
+        if (ViewModel.IsCommentToolActive || ViewModel.IsShapeToolActive)
         {
             _startPoint = e.GetPosition(PdfInkCanvas);
             _isDrawing = true;
@@ -712,6 +782,287 @@ public partial class PdfEditorView : UserControl
 
                 ViewModel.UpdateImageSize(_resizingImageId, newWidth, newHeight);
             }
+
+            _dragStartPoint = currentPoint;
+            e.Handled = true;
+        }
+    }
+
+    #endregion
+
+    #region Text Box Handling
+
+    private readonly Dictionary<string, Border> _textBoxElements = new();
+    private string? _draggingTextBoxId;
+    private bool _isResizingTextBox;
+    private string? _resizingTextBoxId;
+
+    private void RefreshTextBoxesDisplay()
+    {
+        // Clear existing text box elements from InkCanvas
+        var elementsToRemove = PdfInkCanvas.Children.OfType<Border>()
+            .Where(b => b.Tag is string tag && tag.StartsWith("TEXTBOX:"))
+            .ToList();
+        
+        foreach (var element in elementsToRemove)
+        {
+            PdfInkCanvas.Children.Remove(element);
+        }
+        _textBoxElements.Clear();
+
+        // Add text boxes for current page
+        foreach (var textBoxAnnotation in ViewModel.CurrentPageTextBoxes)
+        {
+            AddTextBoxToCanvas(textBoxAnnotation);
+        }
+    }
+
+    private void AddTextBoxToCanvas(PdfEditorViewModel.TextBoxAnnotation textBoxAnnotation)
+    {
+        // Create editable TextBox
+        var textBox = new TextBox
+        {
+            Text = textBoxAnnotation.Text,
+            Width = textBoxAnnotation.Width - 4,
+            Height = textBoxAnnotation.Height - 24, // Leave room for controls
+            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
+            FontSize = textBoxAnnotation.FontSize,
+            Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
+            Background = new SolidColorBrush(Color.FromArgb(240, 255, 255, 255)),
+            BorderThickness = new Thickness(0),
+            TextWrapping = TextWrapping.Wrap,
+            AcceptsReturn = true,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(4),
+            Tag = textBoxAnnotation.Id
+        };
+
+        textBox.TextChanged += OnTextBoxTextChanged;
+        textBox.LostFocus += OnTextBoxLostFocus;
+
+        // Create resize handle
+        var resizeHandle = new Border
+        {
+            Width = 12,
+            Height = 12,
+            Background = new SolidColorBrush(Colors.White),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(2),
+            Cursor = Cursors.SizeNWSE,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, -6, -6),
+            Tag = $"RESIZE_TB:{textBoxAnnotation.Id}"
+        };
+
+        resizeHandle.MouseLeftButtonDown += OnTextBoxResizeHandleMouseDown;
+        resizeHandle.MouseLeftButtonUp += OnTextBoxResizeHandleMouseUp;
+        resizeHandle.MouseMove += OnTextBoxResizeHandleMouseMove;
+
+        // Create delete button
+        var deleteButton = new Button
+        {
+            Content = "✕",
+            Width = 20,
+            Height = 20,
+            FontSize = 10,
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, -10, -10, 0),
+            Background = new SolidColorBrush(Colors.Red),
+            Foreground = new SolidColorBrush(Colors.White),
+            BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand,
+            Tag = textBoxAnnotation.Id
+        };
+        deleteButton.Click += OnDeleteTextBoxClick;
+
+        // Create drag handle at the top
+        var dragHandle = new Border
+        {
+            Height = 20,
+            Background = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            Cursor = Cursors.SizeAll,
+            CornerRadius = new CornerRadius(4, 4, 0, 0),
+            Tag = $"DRAG_TB:{textBoxAnnotation.Id}"
+        };
+
+        var dragLabel = new TextBlock
+        {
+            Text = "⋮⋮ Drag to move",
+            Foreground = Brushes.White,
+            FontSize = 10,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        dragHandle.Child = dragLabel;
+
+        dragHandle.MouseLeftButtonDown += OnTextBoxDragHandleMouseDown;
+        dragHandle.MouseLeftButtonUp += OnTextBoxDragHandleMouseUp;
+        dragHandle.MouseMove += OnTextBoxDragHandleMouseMove;
+
+        // Create grid to hold text box and controls
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        Grid.SetRow(dragHandle, 0);
+        Grid.SetRow(textBox, 1);
+
+        grid.Children.Add(dragHandle);
+        grid.Children.Add(textBox);
+        grid.Children.Add(resizeHandle);
+        grid.Children.Add(deleteButton);
+
+        // Create container border
+        var container = new Border
+        {
+            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            BorderThickness = new Thickness(2),
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(4),
+            Child = grid,
+            Width = textBoxAnnotation.Width,
+            Height = textBoxAnnotation.Height,
+            Tag = $"TEXTBOX:{textBoxAnnotation.Id}"
+        };
+
+        // Position the text box
+        InkCanvas.SetLeft(container, textBoxAnnotation.X);
+        InkCanvas.SetTop(container, textBoxAnnotation.Y);
+
+        PdfInkCanvas.Children.Add(container);
+        _textBoxElements[textBoxAnnotation.Id] = container;
+    }
+
+    private void OnTextBoxTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.Tag is string textBoxId)
+        {
+            ViewModel.UpdateTextBoxContent(textBoxId, textBox.Text);
+        }
+    }
+
+    private void OnTextBoxLostFocus(object sender, RoutedEventArgs e)
+    {
+        // Text is automatically saved via TextChanged
+    }
+
+    private void OnDeleteTextBoxClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string textBoxId)
+        {
+            ViewModel.DeleteTextBox(textBoxId);
+            RefreshTextBoxesDisplay();
+        }
+    }
+
+    private void OnTextBoxDragHandleMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && handle.Tag is string tag && tag.StartsWith("DRAG_TB:"))
+        {
+            _draggingTextBoxId = tag.Substring(8);
+            _dragStartPoint = e.GetPosition(PdfInkCanvas);
+            handle.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void OnTextBoxDragHandleMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && _draggingTextBoxId != null)
+        {
+            handle.ReleaseMouseCapture();
+            _draggingTextBoxId = null;
+            e.Handled = true;
+        }
+    }
+
+    private void OnTextBoxDragHandleMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_draggingTextBoxId == null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        if (_textBoxElements.TryGetValue(_draggingTextBoxId, out var element))
+        {
+            var currentPoint = e.GetPosition(PdfInkCanvas);
+            var deltaX = currentPoint.X - _dragStartPoint.X;
+            var deltaY = currentPoint.Y - _dragStartPoint.Y;
+
+            var newX = InkCanvas.GetLeft(element) + deltaX;
+            var newY = InkCanvas.GetTop(element) + deltaY;
+
+            // Get text box dimensions
+            var textBoxAnnotation = ViewModel.CurrentPageTextBoxes.FirstOrDefault(t => t.Id == _draggingTextBoxId);
+            var elementWidth = textBoxAnnotation?.Width ?? 200;
+            var elementHeight = textBoxAnnotation?.Height ?? 50;
+
+            // Clamp to canvas bounds
+            newX = Math.Max(0, Math.Min(newX, ViewModel.CanvasWidth - elementWidth));
+            newY = Math.Max(0, Math.Min(newY, ViewModel.CanvasHeight - elementHeight));
+
+            InkCanvas.SetLeft(element, newX);
+            InkCanvas.SetTop(element, newY);
+
+            ViewModel.UpdateTextBoxPosition(_draggingTextBoxId, newX, newY);
+
+            _dragStartPoint = currentPoint;
+            e.Handled = true;
+        }
+    }
+
+    private void OnTextBoxResizeHandleMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && handle.Tag is string tag && tag.StartsWith("RESIZE_TB:"))
+        {
+            _resizingTextBoxId = tag.Substring(10);
+            _isResizingTextBox = true;
+            _dragStartPoint = e.GetPosition(PdfInkCanvas);
+            handle.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void OnTextBoxResizeHandleMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && _isResizingTextBox)
+        {
+            handle.ReleaseMouseCapture();
+            _isResizingTextBox = false;
+            _resizingTextBoxId = null;
+            e.Handled = true;
+        }
+    }
+
+    private void OnTextBoxResizeHandleMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isResizingTextBox || _resizingTextBoxId == null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        if (_textBoxElements.TryGetValue(_resizingTextBoxId, out var element))
+        {
+            var currentPoint = e.GetPosition(PdfInkCanvas);
+            var deltaX = currentPoint.X - _dragStartPoint.X;
+            var deltaY = currentPoint.Y - _dragStartPoint.Y;
+
+            var newWidth = Math.Max(100, element.Width + deltaX);
+            var newHeight = Math.Max(50, element.Height + deltaY);
+
+            element.Width = newWidth;
+            element.Height = newHeight;
+
+            // Update the inner TextBox size
+            if (element.Child is Grid grid)
+            {
+                var textBox = grid.Children.OfType<TextBox>().FirstOrDefault();
+                if (textBox != null)
+                {
+                    textBox.Width = newWidth - 4;
+                    textBox.Height = newHeight - 24;
+                }
+            }
+
+            ViewModel.UpdateTextBoxSize(_resizingTextBoxId, newWidth, newHeight);
 
             _dragStartPoint = currentPoint;
             e.Handled = true;
