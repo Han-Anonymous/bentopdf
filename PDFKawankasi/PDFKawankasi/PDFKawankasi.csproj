@@ -58,7 +58,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\**\*" />
+    <!-- Explicitly mark all Assets as Resource for proper embedding -->
+    <Resource Include="Assets\**\*.svg" />
+    <Resource Include="Assets\**\*.png" />
+    <Resource Include="Assets\**\*.jpg" />
+    <Resource Include="Assets\**\*.ico" />
+    <Resource Include="Assets\**\*" Exclude="Assets\**\*.svg;Assets\**\*.png;Assets\**\*.jpg;Assets\**\*.ico" />
   </ItemGroup>
 
   <ItemGroup>

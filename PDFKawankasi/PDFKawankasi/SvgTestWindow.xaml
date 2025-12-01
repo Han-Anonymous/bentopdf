@@ -1,0 +1,118 @@
+<Window x:Class="PDFKawankasi.SvgTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+        Title="SVG Test Window" Height="600" Width="800"
+        Background="White">
+    <ScrollViewer>
+        <StackPanel Margin="20">
+            <TextBlock Text="SVG Rendering Test" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+            
+            <!-- Test 1: Direct SvgViewbox with absolute pack URI -->
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Test 1: SvgViewbox with absolute pack URI" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <svgc:SvgViewbox Source="pack://application:,,,/Assets/PDF Editor/Highlighter.svg" 
+                                     Width="48" Height="48"/>
+                    <TextBlock Text="pack://application:,,,/Assets/PDF Editor/Highlighter.svg" 
+                               FontSize="10" Foreground="Gray"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Test 2: SvgViewbox with relative path -->
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Test 2: SvgViewbox with relative path" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <svgc:SvgViewbox Source="/Assets/PDF Editor/Pen.svg" 
+                                     Width="48" Height="48"/>
+                    <TextBlock Text="/Assets/PDF Editor/Pen.svg" 
+                               FontSize="10" Foreground="Gray"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Test 3: Different SVG files -->
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Test 3: Multiple SVG Icons" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <WrapPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/files.svg" Width="32" Height="32"/>
+                            <TextBlock Text="files.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/diskette.svg" Width="32" Height="32"/>
+                            <TextBlock Text="diskette.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/Zoom In.svg" Width="32" Height="32"/>
+                            <TextBlock Text="Zoom In.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/Zoom Out.svg" Width="32" Height="32"/>
+                            <TextBlock Text="Zoom Out.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/Eraser.svg" Width="32" Height="32"/>
+                            <TextBlock Text="Eraser.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Margin="5">
+                            <svgc:SvgViewbox Source="/Assets/PDF Editor/Add Shape.svg" Width="32" Height="32"/>
+                            <TextBlock Text="Add Shape.svg" FontSize="9" TextAlignment="Center"/>
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+            
+            <!-- Test 4: Using Image control with SvgImageExtension -->
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Test 4: Using SvgImage extension" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{svgc:SvgImage /Assets/PDF Editor/Add Comment.svg}" 
+                               Width="48" Height="48" Margin="0,0,10,0"/>
+                        <Image Source="{svgc:SvgImage /Assets/PDF Editor/Add Image.svg}" 
+                               Width="48" Height="48"/>
+                    </StackPanel>
+                    <TextBlock Text="Using {svgc:SvgImage ...} markup extension" 
+                               FontSize="10" Foreground="Gray"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Test 5: Different sizes -->
+            <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Test 5: Different sizes (16, 24, 32, 48, 64)" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal">
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/fountain-pen.svg" 
+                                         Width="16" Height="16" Margin="5"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/fountain-pen.svg" 
+                                         Width="24" Height="24" Margin="5"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/fountain-pen.svg" 
+                                         Width="32" Height="32" Margin="5"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/fountain-pen.svg" 
+                                         Width="48" Height="48" Margin="5"/>
+                        <svgc:SvgViewbox Source="/Assets/PDF Editor/fountain-pen.svg" 
+                                         Width="64" Height="64" Margin="5"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <TextBlock Text="Instructions:" FontWeight="Bold" Margin="0,20,0,5"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                If you see SVG icons above, the issue is fixed! If not:
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="10,0,0,2">
+                • Check the Output window for any errors
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="10,0,0,2">
+                • Verify SVG files exist in Assets/PDF Editor/ folder
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="10,0,0,2">
+                • Rebuild the project (Clean + Build)
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap" Margin="10,0,0,2">
+                • Check if SharpVectors.Wpf package is properly installed
+            </TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
