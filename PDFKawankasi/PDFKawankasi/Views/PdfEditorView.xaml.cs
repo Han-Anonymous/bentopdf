@@ -87,6 +87,12 @@ public partial class PdfEditorView : UserControl
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Track Shift key for snap assist
+        if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
+        {
+            ViewModel.IsShiftKeyPressed = true;
+        }
+
         // F11 for fullscreen toggle
         if (e.Key == Key.F11)
         {
@@ -95,7 +101,7 @@ public partial class PdfEditorView : UserControl
             return;
         }
 
-        // Handle Ctrl+Plus and Ctrl+Minus for zooming
+        // Handle Ctrl+Plus and Ctrl+Minus for zooming, Ctrl+Z for undo, Ctrl+Y for redo
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             if (e.Key == Key.Add || e.Key == Key.OemPlus)
@@ -117,6 +123,33 @@ public partial class PdfEditorView : UserControl
                 }
                 e.Handled = true;
             }
+            else if (e.Key == Key.Z)
+            {
+                // Ctrl+Z for undo
+                if (ViewModel.CanUndo)
+                {
+                    ViewModel.UndoCommand.Execute(null);
+                }
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Y)
+            {
+                // Ctrl+Y for redo
+                if (ViewModel.CanRedo)
+                {
+                    ViewModel.RedoCommand.Execute(null);
+                }
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OnPreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        // Track Shift key release for snap assist
+        if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
+        {
+            ViewModel.IsShiftKeyPressed = false;
         }
     }
 
@@ -357,6 +390,13 @@ public partial class PdfEditorView : UserControl
     {
         if (sender is Border border && border.DataContext is PageThumbnailModel thumbnail)
         {
+            // Check for Ctrl+Click for multi-select
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                ViewModel.TogglePageSelection(thumbnail.PageNumber, true);
+                return;
+            }
+
             // Save current page strokes, images, and text boxes before switching
             if (PdfInkCanvas != null)
             {
@@ -376,6 +416,46 @@ public partial class PdfEditorView : UserControl
             // Refresh images and text boxes display
             RefreshImagesDisplay();
             RefreshTextBoxesDisplay();
+        }
+    }
+
+    private void OnThumbnailRightClick(object sender, MouseButtonEventArgs e)
+    {
+        // Right-click shows context menu - handled by XAML context menu
+        if (sender is Border border && border.DataContext is PageThumbnailModel thumbnail)
+        {
+            // Store the page number for context menu commands
+            border.Tag = thumbnail.PageNumber;
+        }
+    }
+
+    private void OnAddPageAboveClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
+            && contextMenu.PlacementTarget is Border border 
+            && border.DataContext is PageThumbnailModel thumbnail)
+        {
+            ViewModel.AddPageAboveCommand.Execute(thumbnail.PageNumber);
+        }
+    }
+
+    private void OnAddPageBelowClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
+            && contextMenu.PlacementTarget is Border border 
+            && border.DataContext is PageThumbnailModel thumbnail)
+        {
+            ViewModel.AddPageBelowCommand.Execute(thumbnail.PageNumber);
+        }
+    }
+
+    private void OnDeletePageClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
+            && contextMenu.PlacementTarget is Border border 
+            && border.DataContext is PageThumbnailModel thumbnail)
+        {
+            ViewModel.DeletePageCommand.Execute(thumbnail.PageNumber);
         }
     }
 
@@ -411,17 +491,55 @@ public partial class PdfEditorView : UserControl
         // Stroke has been added to InkCanvas
         var stroke = e.Stroke;
         
+        // Apply snap assist if Shift is held (straight line)
+        if (ViewModel.IsShiftKeyPressed && stroke.StylusPoints.Count >= 2)
+        {
+            var startPoint = stroke.StylusPoints[0];
+            var endPoint = stroke.StylusPoints[stroke.StylusPoints.Count - 1];
+            
+            // Calculate angle to determine horizontal, vertical, or 45° snap
+            double dx = endPoint.X - startPoint.X;
+            double dy = endPoint.Y - startPoint.Y;
+            double angle = Math.Atan2(Math.Abs(dy), Math.Abs(dx)) * 180 / Math.PI;
+            
+            StylusPoint newEndPoint;
+            if (angle < 22.5)
+            {
+                // Snap to horizontal
+                newEndPoint = new StylusPoint(endPoint.X, startPoint.Y);
+            }
+            else if (angle > 67.5)
+            {
+                // Snap to vertical
+                newEndPoint = new StylusPoint(startPoint.X, endPoint.Y);
+            }
+            else
+            {
+                // Snap to 45° diagonal
+                double length = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                newEndPoint = new StylusPoint(
+                    startPoint.X + (dx >= 0 ? length : -length),
+                    startPoint.Y + (dy >= 0 ? length : -length));
+            }
+            
+            // Replace stroke with a straight line
+            var newPoints = new StylusPointCollection { startPoint, newEndPoint };
+            stroke.StylusPoints = newPoints;
+        }
+        
         // Store metadata for the stroke (page number, timestamp, etc.)
         stroke.AddPropertyData(Guid.NewGuid(), ViewModel.CurrentPage);
         
-        // Notify ViewModel that a stroke was added (marks pending changes)
-        ViewModel.NotifyStrokeAdded();
+        // Notify ViewModel that a stroke was added (marks pending changes + undo)
+        ViewModel.NotifyStrokeAddedWithUndo(stroke);
         
         ViewModel.StatusMessage = $"Ink stroke added on page {ViewModel.CurrentPage}";
     }
 
     private void OnInkStrokeErasing(object sender, InkCanvasStrokeErasingEventArgs e)
     {
+        // Record the erased stroke for undo
+        ViewModel.NotifyStrokeErasedWithUndo(e.Stroke);
         ViewModel.StatusMessage = "Erasing stroke...";
     }
 

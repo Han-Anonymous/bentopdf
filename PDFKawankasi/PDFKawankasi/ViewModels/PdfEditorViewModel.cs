@@ -40,6 +40,245 @@ public partial class PdfEditorViewModel : ObservableObject
     private string? _currentFilePath;
     private byte[]? _pdfBytes;
 
+    // Undo/Redo stacks
+    private readonly Stack<UndoableAction> _undoStack = new();
+    private readonly Stack<UndoableAction> _redoStack = new();
+
+    // Action types for undo/redo
+    public abstract class UndoableAction
+    {
+        public abstract void Undo(PdfEditorViewModel vm);
+        public abstract void Redo(PdfEditorViewModel vm);
+        public abstract string Description { get; }
+    }
+
+    public class StrokeAddedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public Stroke Stroke { get; init; } = null!;
+        public override string Description => "Add stroke";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (vm._pageStrokes.TryGetValue(PageNumber, out var strokes))
+            {
+                strokes.Remove(Stroke);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageStrokes.Remove(Stroke);
+                }
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageStrokes.ContainsKey(PageNumber))
+            {
+                vm._pageStrokes[PageNumber] = new StrokeCollection();
+            }
+            vm._pageStrokes[PageNumber].Add(Stroke);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageStrokes.Add(Stroke);
+            }
+        }
+    }
+
+    public class StrokeErasedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public Stroke Stroke { get; init; } = null!;
+        public override string Description => "Erase stroke";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageStrokes.ContainsKey(PageNumber))
+            {
+                vm._pageStrokes[PageNumber] = new StrokeCollection();
+            }
+            vm._pageStrokes[PageNumber].Add(Stroke);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageStrokes.Add(Stroke);
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (vm._pageStrokes.TryGetValue(PageNumber, out var strokes))
+            {
+                strokes.Remove(Stroke);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageStrokes.Remove(Stroke);
+                }
+            }
+        }
+    }
+
+    public class ImageAddedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public ImageAnnotation Image { get; init; } = null!;
+        public override string Description => "Add image";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (vm._pageImages.TryGetValue(PageNumber, out var images))
+            {
+                images.Remove(Image);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageImages.Remove(Image);
+                    vm.OnPropertyChanged(nameof(CurrentPageImages));
+                }
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageImages.ContainsKey(PageNumber))
+            {
+                vm._pageImages[PageNumber] = new List<ImageAnnotation>();
+            }
+            vm._pageImages[PageNumber].Add(Image);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageImages.Add(Image);
+                vm.OnPropertyChanged(nameof(CurrentPageImages));
+            }
+        }
+    }
+
+    public class ImageDeletedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public ImageAnnotation Image { get; init; } = null!;
+        public override string Description => "Delete image";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageImages.ContainsKey(PageNumber))
+            {
+                vm._pageImages[PageNumber] = new List<ImageAnnotation>();
+            }
+            vm._pageImages[PageNumber].Add(Image);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageImages.Add(Image);
+                vm.OnPropertyChanged(nameof(CurrentPageImages));
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (vm._pageImages.TryGetValue(PageNumber, out var images))
+            {
+                images.Remove(Image);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageImages.Remove(Image);
+                    vm.OnPropertyChanged(nameof(CurrentPageImages));
+                }
+            }
+        }
+    }
+
+    public class TextBoxAddedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public TextBoxAnnotation TextBox { get; init; } = null!;
+        public override string Description => "Add text box";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (vm._pageTextBoxes.TryGetValue(PageNumber, out var textBoxes))
+            {
+                textBoxes.Remove(TextBox);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageTextBoxes.Remove(TextBox);
+                    vm.OnPropertyChanged(nameof(CurrentPageTextBoxes));
+                }
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageTextBoxes.ContainsKey(PageNumber))
+            {
+                vm._pageTextBoxes[PageNumber] = new List<TextBoxAnnotation>();
+            }
+            vm._pageTextBoxes[PageNumber].Add(TextBox);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageTextBoxes.Add(TextBox);
+                vm.OnPropertyChanged(nameof(CurrentPageTextBoxes));
+            }
+        }
+    }
+
+    public class TextBoxDeletedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public TextBoxAnnotation TextBox { get; init; } = null!;
+        public override string Description => "Delete text box";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            if (!vm._pageTextBoxes.ContainsKey(PageNumber))
+            {
+                vm._pageTextBoxes[PageNumber] = new List<TextBoxAnnotation>();
+            }
+            vm._pageTextBoxes[PageNumber].Add(TextBox);
+            if (vm.CurrentPage == PageNumber)
+            {
+                vm.CurrentPageTextBoxes.Add(TextBox);
+                vm.OnPropertyChanged(nameof(CurrentPageTextBoxes));
+            }
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            if (vm._pageTextBoxes.TryGetValue(PageNumber, out var textBoxes))
+            {
+                textBoxes.Remove(TextBox);
+                if (vm.CurrentPage == PageNumber)
+                {
+                    vm.CurrentPageTextBoxes.Remove(TextBox);
+                    vm.OnPropertyChanged(nameof(CurrentPageTextBoxes));
+                }
+            }
+        }
+    }
+
+    public class PageDeletedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public PageThumbnailModel Thumbnail { get; init; } = null!;
+        public StrokeCollection? Strokes { get; init; }
+        public List<ImageAnnotation>? Images { get; init; }
+        public List<TextBoxAnnotation>? TextBoxes { get; init; }
+        public override string Description => $"Delete page {PageNumber}";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            // Restore the page - insert at original position
+            vm.PageThumbnails.Insert(PageNumber - 1, Thumbnail);
+            if (Strokes != null) vm._pageStrokes[PageNumber] = Strokes;
+            if (Images != null) vm._pageImages[PageNumber] = Images;
+            if (TextBoxes != null) vm._pageTextBoxes[PageNumber] = TextBoxes;
+            vm.TotalPages++;
+            vm.UpdateAllThumbnailPageNumbers();
+            vm.UpdatePageNavigation();
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            vm.DeletePageInternal(PageNumber, recordUndo: false);
+        }
+    }
+
+    public class PageAddedAction : UndoableAction
+    {
+        public int PageNumber { get; init; }
+        public override string Description => $"Add page at {PageNumber}";
+        public override void Undo(PdfEditorViewModel vm)
+        {
+            vm.DeletePageInternal(PageNumber, recordUndo: false);
+        }
+        public override void Redo(PdfEditorViewModel vm)
+        {
+            vm.AddBlankPageInternal(PageNumber, recordUndo: false);
+        }
+    }
+
     #region Observable Properties
 
     [ObservableProperty]
@@ -142,6 +381,21 @@ public partial class PdfEditorViewModel : ObservableObject
     // View mode settings
     [ObservableProperty]
     private bool _isDualPageMode;
+
+    // Continuous scrolling mode
+    [ObservableProperty]
+    private bool _isContinuousScrollMode;
+
+    // Shift key snap assist for straight lines
+    [ObservableProperty]
+    private bool _isShiftKeyPressed;
+
+    // Undo/Redo support
+    [ObservableProperty]
+    private bool _canUndo;
+
+    [ObservableProperty]
+    private bool _canRedo;
 
     // Font settings for text annotations
     [ObservableProperty]
@@ -278,8 +532,276 @@ public partial class PdfEditorViewModel : ObservableObject
         // Reset pending changes flag
         HasPendingChanges = false;
         
+        // Clear undo/redo stacks
+        _undoStack.Clear();
+        _redoStack.Clear();
+        UpdateUndoRedoState();
+        
         StatusMessage = "Ready - Opening new PDF...";
     }
+
+    private void UpdateUndoRedoState()
+    {
+        CanUndo = _undoStack.Count > 0;
+        CanRedo = _redoStack.Count > 0;
+    }
+
+    private void PushUndoAction(UndoableAction action)
+    {
+        _undoStack.Push(action);
+        _redoStack.Clear();
+        UpdateUndoRedoState();
+        HasPendingChanges = true;
+    }
+
+    [RelayCommand]
+    private void Undo()
+    {
+        if (_undoStack.Count == 0) return;
+        
+        var action = _undoStack.Pop();
+        action.Undo(this);
+        _redoStack.Push(action);
+        UpdateUndoRedoState();
+        StatusMessage = $"Undo: {action.Description}";
+    }
+
+    [RelayCommand]
+    private void Redo()
+    {
+        if (_redoStack.Count == 0) return;
+        
+        var action = _redoStack.Pop();
+        action.Redo(this);
+        _undoStack.Push(action);
+        UpdateUndoRedoState();
+        StatusMessage = $"Redo: {action.Description}";
+    }
+
+    [RelayCommand]
+    private void ToggleContinuousScroll()
+    {
+        IsContinuousScrollMode = !IsContinuousScrollMode;
+        StatusMessage = IsContinuousScrollMode ? "Continuous scrolling enabled" : "Continuous scrolling disabled";
+    }
+
+    #region Page Management Commands
+
+    [RelayCommand]
+    private void DeleteSelectedPages()
+    {
+        var selectedPages = PageThumbnails.Where(p => p.IsSelected).OrderByDescending(p => p.PageNumber).ToList();
+        if (selectedPages.Count == 0)
+        {
+            StatusMessage = "No pages selected for deletion";
+            return;
+        }
+
+        if (selectedPages.Count >= TotalPages)
+        {
+            System.Windows.MessageBox.Show("Cannot delete all pages. At least one page must remain.", "Delete Pages", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        foreach (var page in selectedPages)
+        {
+            DeletePageInternal(page.PageNumber, recordUndo: true);
+        }
+        
+        ClearPageSelection();
+        StatusMessage = $"Deleted {selectedPages.Count} page(s)";
+    }
+
+    [RelayCommand]
+    private void DeletePage(int pageNumber)
+    {
+        if (TotalPages <= 1)
+        {
+            System.Windows.MessageBox.Show("Cannot delete the only page.", "Delete Page", 
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        DeletePageInternal(pageNumber, recordUndo: true);
+        StatusMessage = $"Deleted page {pageNumber}";
+    }
+
+    private void DeletePageInternal(int pageNumber, bool recordUndo)
+    {
+        if (pageNumber < 1 || pageNumber > TotalPages) return;
+        
+        var thumbnail = PageThumbnails.FirstOrDefault(p => p.PageNumber == pageNumber);
+        if (thumbnail == null) return;
+
+        if (recordUndo)
+        {
+            var action = new PageDeletedAction
+            {
+                PageNumber = pageNumber,
+                Thumbnail = thumbnail,
+                Strokes = _pageStrokes.ContainsKey(pageNumber) ? new StrokeCollection(_pageStrokes[pageNumber]) : null,
+                Images = _pageImages.ContainsKey(pageNumber) ? new List<ImageAnnotation>(_pageImages[pageNumber]) : null,
+                TextBoxes = _pageTextBoxes.ContainsKey(pageNumber) ? new List<TextBoxAnnotation>(_pageTextBoxes[pageNumber]) : null
+            };
+            PushUndoAction(action);
+        }
+
+        // Remove page data
+        PageThumbnails.Remove(thumbnail);
+        _pageStrokes.Remove(pageNumber);
+        _pageImages.Remove(pageNumber);
+        _pageTextBoxes.Remove(pageNumber);
+        
+        // Shift all subsequent page data down
+        for (int i = pageNumber + 1; i <= TotalPages; i++)
+        {
+            if (_pageStrokes.ContainsKey(i))
+            {
+                _pageStrokes[i - 1] = _pageStrokes[i];
+                _pageStrokes.Remove(i);
+            }
+            if (_pageImages.ContainsKey(i))
+            {
+                _pageImages[i - 1] = _pageImages[i];
+                _pageImages.Remove(i);
+            }
+            if (_pageTextBoxes.ContainsKey(i))
+            {
+                _pageTextBoxes[i - 1] = _pageTextBoxes[i];
+                _pageTextBoxes.Remove(i);
+            }
+        }
+
+        TotalPages--;
+        UpdateAllThumbnailPageNumbers();
+        
+        // Adjust current page if needed
+        if (CurrentPage > TotalPages)
+        {
+            CurrentPage = TotalPages;
+        }
+        
+        RenderCurrentPage();
+        UpdatePageNavigation();
+    }
+
+    [RelayCommand]
+    private void AddPageAbove(int pageNumber)
+    {
+        AddBlankPageInternal(pageNumber, recordUndo: true);
+        StatusMessage = $"Added blank page above page {pageNumber}";
+    }
+
+    [RelayCommand]
+    private void AddPageBelow(int pageNumber)
+    {
+        AddBlankPageInternal(pageNumber + 1, recordUndo: true);
+        StatusMessage = $"Added blank page below page {pageNumber}";
+    }
+
+    private void AddBlankPageInternal(int insertPosition, bool recordUndo)
+    {
+        if (insertPosition < 1) insertPosition = 1;
+        if (insertPosition > TotalPages + 1) insertPosition = TotalPages + 1;
+
+        if (recordUndo)
+        {
+            PushUndoAction(new PageAddedAction { PageNumber = insertPosition });
+        }
+
+        // Shift all subsequent page data up
+        for (int i = TotalPages; i >= insertPosition; i--)
+        {
+            if (_pageStrokes.ContainsKey(i))
+            {
+                _pageStrokes[i + 1] = _pageStrokes[i];
+                _pageStrokes.Remove(i);
+            }
+            if (_pageImages.ContainsKey(i))
+            {
+                _pageImages[i + 1] = _pageImages[i];
+                _pageImages.Remove(i);
+            }
+            if (_pageTextBoxes.ContainsKey(i))
+            {
+                _pageTextBoxes[i + 1] = _pageTextBoxes[i];
+                _pageTextBoxes.Remove(i);
+            }
+        }
+
+        // Create blank page thumbnail
+        var blankThumbnail = CreateBlankPageThumbnail(insertPosition);
+        PageThumbnails.Insert(insertPosition - 1, blankThumbnail);
+        
+        TotalPages++;
+        UpdateAllThumbnailPageNumbers();
+        UpdatePageNavigation();
+    }
+
+    private PageThumbnailModel CreateBlankPageThumbnail(int pageNumber)
+    {
+        // Create a blank white thumbnail
+        var bitmap = new WriteableBitmap(ThumbnailWidth, ThumbnailHeight, 96, 96, PixelFormats.Bgra32, null);
+        var pixels = new byte[ThumbnailWidth * ThumbnailHeight * 4];
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            pixels[i] = 255;     // B
+            pixels[i + 1] = 255; // G
+            pixels[i + 2] = 255; // R
+            pixels[i + 3] = 255; // A
+        }
+        bitmap.WritePixels(new Int32Rect(0, 0, ThumbnailWidth, ThumbnailHeight), pixels, ThumbnailWidth * 4, 0);
+        bitmap.Freeze();
+
+        return new PageThumbnailModel
+        {
+            PageNumber = pageNumber,
+            Thumbnail = bitmap,
+            IsCurrentPage = false
+        };
+    }
+
+    private void UpdateAllThumbnailPageNumbers()
+    {
+        for (int i = 0; i < PageThumbnails.Count; i++)
+        {
+            PageThumbnails[i].PageNumber = i + 1;
+        }
+    }
+
+    public void TogglePageSelection(int pageNumber, bool isCtrlPressed)
+    {
+        var thumbnail = PageThumbnails.FirstOrDefault(p => p.PageNumber == pageNumber);
+        if (thumbnail == null) return;
+
+        if (isCtrlPressed)
+        {
+            // Toggle selection for this page
+            thumbnail.IsSelected = !thumbnail.IsSelected;
+        }
+        else
+        {
+            // Clear other selections and select this one
+            ClearPageSelection();
+            thumbnail.IsSelected = true;
+        }
+    }
+
+    public void ClearPageSelection()
+    {
+        foreach (var thumbnail in PageThumbnails)
+        {
+            thumbnail.IsSelected = false;
+        }
+    }
+
+    public List<int> GetSelectedPageNumbers()
+    {
+        return PageThumbnails.Where(p => p.IsSelected).Select(p => p.PageNumber).ToList();
+    }
+
+    #endregion
 
     // Property for the last saved file path (for hyperlink functionality)
     [ObservableProperty]
@@ -1094,6 +1616,27 @@ public partial class PdfEditorViewModel : ObservableObject
     public void NotifyStrokeAdded()
     {
         HasPendingChanges = true;
+        // Note: Individual stroke undo is handled via NotifyStrokeAddedWithUndo
+    }
+
+    public void NotifyStrokeAddedWithUndo(Stroke stroke)
+    {
+        var action = new StrokeAddedAction
+        {
+            PageNumber = CurrentPage,
+            Stroke = stroke
+        };
+        PushUndoAction(action);
+    }
+
+    public void NotifyStrokeErasedWithUndo(Stroke stroke)
+    {
+        var action = new StrokeErasedAction
+        {
+            PageNumber = CurrentPage,
+            Stroke = stroke
+        };
+        PushUndoAction(action);
     }
 
     public void ClearCurrentPageStrokes()
@@ -1163,7 +1706,14 @@ public partial class PdfEditorViewModel : ObservableObject
 
         CurrentPageTextBoxes.Add(textBox);
         SaveCurrentPageTextBoxes();
-        HasPendingChanges = true;
+        
+        var action = new TextBoxAddedAction
+        {
+            PageNumber = CurrentPage,
+            TextBox = textBox
+        };
+        PushUndoAction(action);
+        
         StatusMessage = $"Added text box to page {CurrentPage}. Click to edit, drag to move.";
     }
 
@@ -1207,9 +1757,15 @@ public partial class PdfEditorViewModel : ObservableObject
         var textBox = CurrentPageTextBoxes.FirstOrDefault(t => t.Id == textBoxId);
         if (textBox != null)
         {
+            var action = new TextBoxDeletedAction
+            {
+                PageNumber = CurrentPage,
+                TextBox = textBox
+            };
+            PushUndoAction(action);
+            
             CurrentPageTextBoxes.Remove(textBox);
             SaveCurrentPageTextBoxes();
-            HasPendingChanges = true;
             StatusMessage = "Text box deleted";
         }
     }
@@ -1253,7 +1809,14 @@ public partial class PdfEditorViewModel : ObservableObject
 
                 CurrentPageImages.Add(imageAnnotation);
                 SaveCurrentPageImages();
-                HasPendingChanges = true;
+                
+                var action = new ImageAddedAction
+                {
+                    PageNumber = CurrentPage,
+                    Image = imageAnnotation
+                };
+                PushUndoAction(action);
+                
                 StatusMessage = $"Added image to page {CurrentPage}. Use Select tool to move/resize.";
             }
             catch (Exception ex)
@@ -1292,9 +1855,15 @@ public partial class PdfEditorViewModel : ObservableObject
         var image = CurrentPageImages.FirstOrDefault(i => i.Id == imageId);
         if (image != null)
         {
+            var action = new ImageDeletedAction
+            {
+                PageNumber = CurrentPage,
+                Image = image
+            };
+            PushUndoAction(action);
+            
             CurrentPageImages.Remove(image);
             SaveCurrentPageImages();
-            HasPendingChanges = true;
             StatusMessage = "Image deleted";
         }
     }

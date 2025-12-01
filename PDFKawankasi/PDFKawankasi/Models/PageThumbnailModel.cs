@@ -13,4 +13,7 @@ public partial class PageThumbnailModel : ObservableObject
 
     [ObservableProperty]
     private bool _isCurrentPage;
+
+    [ObservableProperty]
+    private bool _isSelected;
 }
