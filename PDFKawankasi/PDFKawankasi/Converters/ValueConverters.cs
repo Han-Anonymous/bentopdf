@@ -214,3 +214,39 @@ public class NullToVisibleConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Checks if ToolType is PdfEditor for visibility
+/// </summary>
+public class ToolTypeToPdfEditorVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is PdfTool tool)
+            return tool.ToolType == ToolType.PdfEditor ? Visibility.Visible : Visibility.Collapsed;
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Checks if ToolType is NOT PdfEditor for visibility
+/// </summary>
+public class ToolTypeToNotPdfEditorVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is PdfTool tool)
+            return tool.ToolType == ToolType.PdfEditor ? Visibility.Collapsed : Visibility.Visible;
+        return Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

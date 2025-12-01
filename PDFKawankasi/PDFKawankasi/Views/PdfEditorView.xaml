@@ -1,0 +1,503 @@
+<UserControl x:Class="PDFKawankasi.Views.PdfEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
+             mc:Ignorable="d"
+             Background="{StaticResource BackgroundBrush}"
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <UserControl.DataContext>
+        <vm:PdfEditorViewModel/>
+    </UserControl.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" 
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- File Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="📂 Open PDF"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding OpenPdfCommand}"
+                            ToolTip="Open a PDF file"
+                            Padding="12,8"
+                            Margin="0,0,8,0"/>
+                    <Button Content="💾 Save"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SavePdfCommand}"
+                            ToolTip="Save the edited PDF"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    <Button Content="📸 Screenshot"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding TakeScreenshotCommand}"
+                            ToolTip="Take a screenshot of current view"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    
+                    <Separator Margin="16,0"/>
+                </StackPanel>
+
+                <!-- Annotation Tools -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Tools:" 
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"/>
+                    
+                    <!-- Select Tool -->
+                    <ToggleButton x:Name="SelectToolBtn"
+                                  Content="👆"
+                                  ToolTip="Select/Move"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsSelectToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Highlight Tool -->
+                    <ToggleButton x:Name="HighlightToolBtn"
+                                  Content="🖌️"
+                                  ToolTip="Highlight text"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsHighlightToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Draw Tool -->
+                    <ToggleButton x:Name="DrawToolBtn"
+                                  Content="✏️"
+                                  ToolTip="Free-hand draw"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsDrawToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Text Tool -->
+                    <ToggleButton x:Name="TextToolBtn"
+                                  Content="📝"
+                                  ToolTip="Add text annotation"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsTextToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Shape Tool -->
+                    <ToggleButton x:Name="ShapeToolBtn"
+                                  Content="🔷"
+                                  ToolTip="Add shapes (rectangle, circle, arrow)"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsShapeToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Comment Tool -->
+                    <ToggleButton x:Name="CommentToolBtn"
+                                  Content="💬"
+                                  ToolTip="Add comment"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsCommentToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Redact Tool -->
+                    <ToggleButton x:Name="RedactToolBtn"
+                                  Content="█"
+                                  ToolTip="Redact/Black out content"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsRedactToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"
+                                  Foreground="#E53E3E"/>
+                    
+                    <Separator Margin="16,0"/>
+                    
+                    <!-- Color Picker -->
+                    <TextBlock Text="Color:" 
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <Border Width="28" Height="28" 
+                            CornerRadius="4"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="2"
+                            Cursor="Hand"
+                            MouseLeftButtonUp="OnColorPickerClick">
+                        <Border.Background>
+                            <SolidColorBrush Color="{Binding SelectedColor}"/>
+                        </Border.Background>
+                    </Border>
+                </StackPanel>
+
+                <!-- Zoom and Page Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="➖"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ZoomOutCommand}"
+                            ToolTip="Zoom out"
+                            Padding="8,6"
+                            Margin="0,0,4,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:P0}}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               Width="50"
+                               TextAlignment="Center"
+                               Margin="0,0,4,0"/>
+                    <Button Content="➕"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ZoomInCommand}"
+                            ToolTip="Zoom in"
+                            Padding="8,6"
+                            Margin="0,0,16,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+
+                    <Separator Margin="0,0,16,0"/>
+
+                    <Button Content="◀"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding PreviousPageCommand}"
+                            ToolTip="Previous page"
+                            Padding="8,6"
+                            Margin="0,0,4,0"
+                            IsEnabled="{Binding CanGoPrevious}"/>
+                    <TextBlock VerticalAlignment="Center" Margin="0,0,4,0">
+                        <Run Text="Page " Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Run Text="{Binding CurrentPage}" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <Run Text=" of " Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Run Text="{Binding TotalPages}" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </TextBlock>
+                    <Button Content="▶"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding NextPageCommand}"
+                            ToolTip="Next page"
+                            Padding="8,6"
+                            IsEnabled="{Binding CanGoNext}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" MinWidth="150"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="250" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Page Thumbnails Panel -->
+            <Border Grid.Column="0" 
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" 
+                               Text="Pages"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontWeight="SemiBold"
+                               FontSize="14"
+                               Padding="12"/>
+
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="8">
+                        <ItemsControl ItemsSource="{Binding PageThumbnails}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource CardBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Margin="0,0,0,8"
+                                            Cursor="Hand"
+                                            MouseLeftButtonUp="OnThumbnailClick">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCurrentPage}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Image Source="{Binding Thumbnail}" 
+                                                   Stretch="Uniform"
+                                                   MaxHeight="160"
+                                                   Margin="4"/>
+                                            <TextBlock Text="{Binding PageNumber}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       Background="{StaticResource SurfaceBrush}"
+                                                       Padding="4,2"
+                                                       FontSize="11"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Bottom"
+                                                       Margin="4"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Empty State -->
+                    <TextBlock Grid.Row="1"
+                               Text="Open a PDF to view pages"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               VerticalAlignment="Center"
+                               Padding="12"
+                               Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" 
+                          Width="4"
+                          Background="Transparent"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"/>
+
+            <!-- PDF Canvas/Viewer Area -->
+            <Border Grid.Column="2" 
+                    Background="{StaticResource CardBrush}"
+                    ClipToBounds="True">
+                <Grid>
+                    <!-- PDF Display -->
+                    <ScrollViewer x:Name="PdfScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Visibility="{Binding IsPdfLoaded, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Canvas x:Name="PdfCanvas"
+                                Width="{Binding CanvasWidth}"
+                                Height="{Binding CanvasHeight}"
+                                Background="White"
+                                MouseLeftButtonDown="OnCanvasMouseDown"
+                                MouseLeftButtonUp="OnCanvasMouseUp"
+                                MouseMove="OnCanvasMouseMove"
+                                MouseLeave="OnCanvasMouseLeave">
+                            <!-- PDF Page Image -->
+                            <Image x:Name="PdfPageImage"
+                                   Source="{Binding CurrentPageImage}"
+                                   Stretch="None"
+                                   Canvas.Left="0"
+                                   Canvas.Top="0"/>
+                            
+                            <!-- Annotations will be rendered on top -->
+                            <ItemsControl ItemsSource="{Binding CurrentPageAnnotations}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <ContentPresenter Content="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Canvas>
+                    </ScrollViewer>
+
+                    <!-- Empty State -->
+                    <StackPanel VerticalAlignment="Center" 
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <TextBlock Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <TextBlock Text="PDF Editor"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="Open a PDF to start annotating, drawing, and editing"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="14"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,24"/>
+                        <Button Content="📂 Open PDF File"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding OpenPdfCommand}"
+                                Padding="24,12"
+                                FontSize="16"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="3" 
+                          Width="4"
+                          Background="Transparent"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"/>
+
+            <!-- Properties/Comments Panel -->
+            <Border Grid.Column="4" 
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Panel Header -->
+                    <Border Grid.Row="0" 
+                            Background="{StaticResource CardBrush}"
+                            Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Annotations &amp; Comments"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontWeight="SemiBold"
+                                       FontSize="14"/>
+                            <TextBlock Text="{Binding AnnotationCount, StringFormat={}{0} items}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Annotations List -->
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="8">
+                        <ItemsControl ItemsSource="{Binding AllAnnotations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource CardBrush}"
+                                            CornerRadius="6"
+                                            Padding="10"
+                                            Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" 
+                                                       Text="{Binding TypeIcon}"
+                                                       FontSize="20"
+                                                       VerticalAlignment="Top"
+                                                       Margin="0,0,10,0"/>
+
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding TypeName}"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="13"/>
+                                                <TextBlock Text="{Binding Description}"
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           MaxWidth="150"/>
+                                                <TextBlock Text="{Binding PageInfo}"
+                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                           FontSize="10"
+                                                           Margin="0,4,0,0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2"
+                                                    Content="✕"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding DataContext.DeleteAnnotationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Padding="6,4"
+                                                    FontSize="10"
+                                                    VerticalAlignment="Top"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Empty Annotations State -->
+                    <TextBlock Grid.Row="1"
+                               Text="No annotations yet. Use the tools above to add highlights, comments, shapes, and more."
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               VerticalAlignment="Center"
+                               Padding="16"
+                               Visibility="{Binding HasAnnotations, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" 
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding CurrentToolName}"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,24,0"/>
+
+                <TextBlock Grid.Column="2"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontSize="11"
+                           VerticalAlignment="Center">
+                    <Run Text="🔒 All editing happens locally on your device"/>
+                </TextBlock>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

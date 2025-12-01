@@ -74,12 +74,22 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <!-- Tool Interface View -->
+            <!-- Tool Interface View (for standard tools) -->
             <Border Visibility="{Binding IsToolViewVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                     Background="{StaticResource SurfaceBrush}"
                     CornerRadius="12"
                     Margin="24"
                     Padding="24">
+                <!-- Visibility wrapper for non-PDF Editor tools -->
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedTool.ToolType}" Value="PdfEditor">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -422,6 +432,36 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- PDF Editor View (for PDF Editor tool) -->
+            <Grid Visibility="{Binding IsToolViewVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Margin="0">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedTool.ToolType}" Value="PdfEditor">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Back Button for PDF Editor -->
+                <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="24,16">
+                    <Button Content="← Back to Tools"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            HorizontalAlignment="Left"
+                            Command="{Binding BackToGridCommand}"/>
+                </Border>
+
+                <!-- PDF Editor Content -->
+                <local:PdfEditorView Grid.Row="1"/>
+            </Grid>
 
             <!-- Processing Overlay -->
             <Border Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"

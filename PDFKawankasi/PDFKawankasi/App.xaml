@@ -23,6 +23,8 @@
             <converters:SplitModeToSeparateFilesConverter x:Key="SplitModeToSeparateFilesConverter"/>
             <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
             <converters:NullToVisibleConverter x:Key="NullToVisibleConverter"/>
+            <converters:ToolTypeToPdfEditorVisibilityConverter x:Key="ToolTypeToPdfEditorVisibilityConverter"/>
+            <converters:ToolTypeToNotPdfEditorVisibilityConverter x:Key="ToolTypeToNotPdfEditorVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
