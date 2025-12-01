@@ -21,6 +21,12 @@ public partial class PdfEditorView : UserControl
     private const double DefaultPageWidth = 800.0;
     private const double DefaultPageHeight = 1000.0;
     
+    // Constants for text box UI layout
+    private const double TextBoxBorderPadding = 4.0;
+    private const double TextBoxDragHandleHeight = 24.0;
+    private const double MinTextBoxWidth = 100.0;
+    private const double MinTextBoxHeight = 50.0;
+    
     private PdfEditorViewModel ViewModel => (PdfEditorViewModel)DataContext;
     private bool _isDrawing;
     private Point _startPoint;
@@ -161,8 +167,7 @@ public partial class PdfEditorView : UserControl
                     _originalHeight = window.Height;
                 }
 
-                // Get the working area of the primary screen (full screen bounds including taskbar area)
-                var workArea = SystemParameters.WorkArea;
+                // Get the full screen dimensions (including taskbar area) from primary screen
                 var screenWidth = SystemParameters.PrimaryScreenWidth;
                 var screenHeight = SystemParameters.PrimaryScreenHeight;
 
@@ -823,8 +828,8 @@ public partial class PdfEditorView : UserControl
         var textBox = new TextBox
         {
             Text = textBoxAnnotation.Text,
-            Width = textBoxAnnotation.Width - 4,
-            Height = textBoxAnnotation.Height - 24, // Leave room for controls
+            Width = textBoxAnnotation.Width - TextBoxBorderPadding,
+            Height = textBoxAnnotation.Height - TextBoxDragHandleHeight, // Leave room for drag handle
             FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
             FontSize = textBoxAnnotation.FontSize,
             Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
@@ -1045,8 +1050,8 @@ public partial class PdfEditorView : UserControl
             var deltaX = currentPoint.X - _dragStartPoint.X;
             var deltaY = currentPoint.Y - _dragStartPoint.Y;
 
-            var newWidth = Math.Max(100, element.Width + deltaX);
-            var newHeight = Math.Max(50, element.Height + deltaY);
+            var newWidth = Math.Max(MinTextBoxWidth, element.Width + deltaX);
+            var newHeight = Math.Max(MinTextBoxHeight, element.Height + deltaY);
 
             element.Width = newWidth;
             element.Height = newHeight;
@@ -1057,8 +1062,8 @@ public partial class PdfEditorView : UserControl
                 var textBox = grid.Children.OfType<TextBox>().FirstOrDefault();
                 if (textBox != null)
                 {
-                    textBox.Width = newWidth - 4;
-                    textBox.Height = newHeight - 24;
+                    textBox.Width = newWidth - TextBoxBorderPadding;
+                    textBox.Height = newHeight - TextBoxDragHandleHeight;
                 }
             }
 

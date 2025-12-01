@@ -31,6 +31,11 @@ public partial class PdfEditorViewModel : ObservableObject
     private const int ThumbnailWidth = 100;
     private const int ThumbnailHeight = 140;
     
+    // Constants for text box defaults
+    private const double DefaultTextBoxWidth = 200;
+    private const double DefaultTextBoxHeight = 50;
+    private const string DefaultTextBoxPlaceholder = "Type text here...";
+    
     private IDocLib? _docLib;
     private string? _currentFilePath;
     private byte[]? _pdfBytes;
@@ -1148,12 +1153,12 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             X = x,
             Y = y,
-            Width = 200,
-            Height = 50,
+            Width = DefaultTextBoxWidth,
+            Height = DefaultTextBoxHeight,
             FontFamily = SelectedFontFamily,
             FontSize = SelectedFontSize,
             TextColor = SelectedColor,
-            Text = "Type text here..."
+            Text = DefaultTextBoxPlaceholder
         };
 
         CurrentPageTextBoxes.Add(textBox);
