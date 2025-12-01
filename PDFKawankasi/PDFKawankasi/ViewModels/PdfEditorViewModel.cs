@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,6 +11,12 @@ using CommunityToolkit.Mvvm.Input;
 using Docnet.Core;
 using Docnet.Core.Models;
 using PDFKawankasi.Models;
+using PdfSharpCore.Drawing;
+
+// Use aliases to avoid conflicts between PdfSharpCore and iText7
+using PdfSharpDocument = PdfSharpCore.Pdf.PdfDocument;
+using PdfSharpReader = PdfSharpCore.Pdf.IO.PdfReader;
+using PdfSharpOpenMode = PdfSharpCore.Pdf.IO.PdfDocumentOpenMode;
 
 namespace PDFKawankasi.ViewModels;
 
@@ -96,6 +104,19 @@ public partial class PdfEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _currentToolName = "Select";
 
+    // Ink Canvas properties for Windows Inking API
+    [ObservableProperty]
+    private InkCanvasEditingMode _inkEditingMode = InkCanvasEditingMode.None;
+
+    [ObservableProperty]
+    private DrawingAttributes _inkDrawingAttributes = null!;
+
+    [ObservableProperty]
+    private StrokeCollection _currentPageStrokes = new();
+
+    [ObservableProperty]
+    private double _penThickness = 3.0;
+
     #endregion
 
     #region Computed Properties
@@ -108,6 +129,25 @@ public partial class PdfEditorViewModel : ObservableObject
     public PdfEditorViewModel()
     {
         _docLib = DocLib.Instance;
+        InitializeInkDrawingAttributes();
+    }
+
+    private void InitializeInkDrawingAttributes()
+    {
+        InkDrawingAttributes = new DrawingAttributes
+        {
+            Color = SelectedColor,
+            Height = 3,
+            Width = 3,
+            FitToCurve = true,
+            StylusTip = StylusTip.Ellipse,
+            IgnorePressure = false // Enable pressure sensitivity for stylus/pen
+        };
+
+        // Add extended properties for richer ink experience
+        InkDrawingAttributes.AddPropertyData(
+            DrawingAttributeIds.StylusTipTransform,
+            Matrix.Identity);
     }
 
     #region Commands
@@ -128,7 +168,7 @@ public partial class PdfEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SavePdf()
+    private async Task SavePdf()
     {
         if (!IsPdfLoaded || _pdfBytes == null) return;
 
@@ -143,14 +183,24 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             try
             {
-                // Note: Current implementation saves the original PDF
-                // Full annotation embedding will be implemented in a future update
-                File.WriteAllBytes(dialog.FileName, _pdfBytes);
-                StatusMessage = $"Saved: {dialog.FileName}";
+                StatusMessage = "Saving PDF with ink annotations...";
+                
+                // Flatten ink strokes to PDF if any exist
+                int totalInkStrokes = _pageStrokes.Values.Sum(s => s.Count);
+                if (totalInkStrokes > 0)
+                {
+                    await FlattenInkToPdf(dialog.FileName);
+                    StatusMessage = $"Saved: {dialog.FileName} with {totalInkStrokes} ink stroke(s) embedded";
+                }
+                else
+                {
+                    File.WriteAllBytes(dialog.FileName, _pdfBytes);
+                    StatusMessage = $"Saved: {dialog.FileName}";
+                }
                 
                 if (AllAnnotations.Count > 0)
                 {
-                    StatusMessage += $" (Note: {AllAnnotations.Count} annotation(s) are session-only and not embedded in PDF yet)";
+                    StatusMessage += $" (Note: {AllAnnotations.Count} text/shape annotation(s) are session-only)";
                 }
             }
             catch (Exception ex)
@@ -248,49 +298,166 @@ public partial class PdfEditorViewModel : ObservableObject
         StatusMessage = "Annotation deleted";
     }
 
+    [RelayCommand]
+    private void ClearCurrentPageInk()
+    {
+        ClearCurrentPageStrokes();
+        StatusMessage = $"Cleared all ink strokes from page {CurrentPage}";
+    }
+
+    [RelayCommand]
+    private void ClearAllInk()
+    {
+        _pageStrokes.Clear();
+        CurrentPageStrokes.Clear();
+        StatusMessage = "Cleared all ink strokes from all pages";
+    }
+
+    [RelayCommand]
+    private void ExportInkStrokes()
+    {
+        if (_pageStrokes.Count == 0)
+        {
+            StatusMessage = "No ink strokes to export";
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Ink Serialized Format (*.isf)|*.isf|All Files (*.*)|*.*",
+            DefaultExt = ".isf",
+            FileName = Path.GetFileNameWithoutExtension(_currentFilePath) + "_ink"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                // Combine all strokes from all pages
+                var allStrokes = new StrokeCollection();
+                foreach (var pageStroke in _pageStrokes.Values)
+                {
+                    allStrokes.Add(pageStroke);
+                }
+
+                // Save to ISF format (Windows Ink native format)
+                using var stream = new FileStream(dialog.FileName, FileMode.Create);
+                allStrokes.Save(stream);
+
+                StatusMessage = $"Exported {allStrokes.Count} ink strokes to: {dialog.FileName}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error exporting ink: {ex.Message}";
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void ImportInkStrokes()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Ink Serialized Format (*.isf)|*.isf|All Files (*.*)|*.*",
+            Title = "Import Ink Strokes"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                using var stream = new FileStream(dialog.FileName, FileMode.Open);
+                var importedStrokes = new StrokeCollection(stream);
+
+                // Add to current page
+                foreach (var stroke in importedStrokes)
+                {
+                    CurrentPageStrokes.Add(stroke);
+                }
+
+                StatusMessage = $"Imported {importedStrokes.Count} ink strokes to page {CurrentPage}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error importing ink: {ex.Message}";
+            }
+        }
+    }
+
     #endregion
 
     #region Tool Selection
 
     partial void OnIsSelectToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsSelectToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsSelectToolActive));
+            InkEditingMode = InkCanvasEditingMode.None;
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsHighlightToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsHighlightToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsHighlightToolActive));
+            InkEditingMode = InkCanvasEditingMode.Ink;
+            UpdateInkAttributesForHighlight();
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsDrawToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsDrawToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsDrawToolActive));
+            InkEditingMode = InkCanvasEditingMode.Ink;
+            UpdateInkAttributesForDrawing();
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsTextToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsTextToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsTextToolActive));
+            InkEditingMode = InkCanvasEditingMode.None;
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsShapeToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsShapeToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsShapeToolActive));
+            InkEditingMode = InkCanvasEditingMode.None;
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsCommentToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsCommentToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsCommentToolActive));
+            InkEditingMode = InkCanvasEditingMode.None;
+        }
         UpdateCurrentToolName();
     }
 
     partial void OnIsRedactToolActiveChanged(bool value)
     {
-        if (value) ClearOtherTools(nameof(IsRedactToolActive));
+        if (value)
+        {
+            ClearOtherTools(nameof(IsRedactToolActive));
+            InkEditingMode = InkCanvasEditingMode.Ink;
+            UpdateInkAttributesForRedaction();
+        }
         UpdateCurrentToolName();
     }
 
@@ -314,6 +481,58 @@ public partial class PdfEditorViewModel : ObservableObject
                          IsShapeToolActive ? "Shape" :
                          IsCommentToolActive ? "Comment" :
                          IsRedactToolActive ? "Redact" : "None";
+    }
+
+    private void UpdateInkAttributesForHighlight()
+    {
+        InkDrawingAttributes.Color = Color.FromArgb(100, SelectedColor.R, SelectedColor.G, SelectedColor.B); // Semi-transparent
+        InkDrawingAttributes.Width = 20;
+        InkDrawingAttributes.Height = 20;
+        InkDrawingAttributes.StylusTip = StylusTip.Rectangle;
+        InkDrawingAttributes.IsHighlighter = true;
+    }
+
+    private void UpdateInkAttributesForDrawing()
+    {
+        InkDrawingAttributes.Color = SelectedColor;
+        InkDrawingAttributes.Width = PenThickness;
+        InkDrawingAttributes.Height = PenThickness;
+        InkDrawingAttributes.StylusTip = StylusTip.Ellipse;
+        InkDrawingAttributes.IsHighlighter = false;
+        InkDrawingAttributes.FitToCurve = true;
+    }
+
+    private void UpdateInkAttributesForRedaction()
+    {
+        InkDrawingAttributes.Color = Colors.Black;
+        InkDrawingAttributes.Width = 15;
+        InkDrawingAttributes.Height = 15;
+        InkDrawingAttributes.StylusTip = StylusTip.Rectangle;
+        InkDrawingAttributes.IsHighlighter = false;
+    }
+
+    partial void OnSelectedColorChanged(Color value)
+    {
+        if (InkDrawingAttributes != null)
+        {
+            if (IsHighlightToolActive)
+            {
+                UpdateInkAttributesForHighlight();
+            }
+            else if (IsDrawToolActive)
+            {
+                UpdateInkAttributesForDrawing();
+            }
+        }
+    }
+
+    partial void OnPenThicknessChanged(double value)
+    {
+        if (InkDrawingAttributes != null && !IsHighlightToolActive)
+        {
+            InkDrawingAttributes.Width = value;
+            InkDrawingAttributes.Height = value;
+        }
     }
 
     #endregion
@@ -552,6 +771,41 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             CurrentPageAnnotations.Add(annotation);
         }
+
+        // Load ink strokes for this page
+        LoadCurrentPageStrokes();
+    }
+
+    private Dictionary<int, StrokeCollection> _pageStrokes = new();
+
+    private void LoadCurrentPageStrokes()
+    {
+        if (_pageStrokes.TryGetValue(CurrentPage, out var strokes))
+        {
+            CurrentPageStrokes = new StrokeCollection(strokes);
+        }
+        else
+        {
+            CurrentPageStrokes = new StrokeCollection();
+            _pageStrokes[CurrentPage] = CurrentPageStrokes;
+        }
+        
+        OnPropertyChanged(nameof(CurrentPageStrokes));
+    }
+
+    public void SaveCurrentPageStrokes(StrokeCollection strokes)
+    {
+        _pageStrokes[CurrentPage] = new StrokeCollection(strokes);
+        StatusMessage = $"Ink strokes saved for page {CurrentPage}";
+    }
+
+    public void ClearCurrentPageStrokes()
+    {
+        CurrentPageStrokes.Clear();
+        if (_pageStrokes.ContainsKey(CurrentPage))
+        {
+            _pageStrokes[CurrentPage].Clear();
+        }
     }
 
     private void UpdateAnnotationCount()
@@ -625,6 +879,49 @@ public partial class PdfEditorViewModel : ObservableObject
         dialog.ShowDialog();
         return result;
     }
+
+    private async Task FlattenInkToPdf(string outputPath)
+    {
+        // Request the view to render ink strokes for all pages
+        var renderedPages = new Dictionary<int, byte[]>();
+        
+        // Signal that we need rendered pages
+        OnInkRenderRequested?.Invoke(renderedPages);
+        
+        if (renderedPages.Count == 0)
+        {
+            // No rendered pages, just save original
+            File.WriteAllBytes(outputPath, _pdfBytes!);
+            return;
+        }
+
+        // Create a new PDF with ink overlays using PdfSharpCore
+        using var inputStream = new MemoryStream(_pdfBytes!);
+        using var inputDoc = PdfSharpReader.Open(inputStream, PdfSharpOpenMode.Import);
+        using var outputDoc = new PdfSharpDocument();
+
+        // Process each page
+        for (int i = 0; i < inputDoc.PageCount; i++)
+        {
+            var page = outputDoc.AddPage(inputDoc.Pages[i]);
+            
+            // If this page has ink strokes, overlay them
+            if (renderedPages.TryGetValue(i + 1, out var inkImageBytes))
+            {
+                using var gfx = XGraphics.FromPdfPage(page);
+                using var inkImage = XImage.FromStream(() => new MemoryStream(inkImageBytes));
+                
+                // Draw ink overlay on top of existing content
+                gfx.DrawImage(inkImage, 0, 0, page.Width, page.Height);
+            }
+        }
+
+        // Save the modified PDF
+        outputDoc.Save(outputPath);
+    }
+
+    // Event to request ink rendering from the view
+    public event Action<Dictionary<int, byte[]>>? OnInkRenderRequested;
 
     #endregion
 }

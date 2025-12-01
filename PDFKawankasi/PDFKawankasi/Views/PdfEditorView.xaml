@@ -47,10 +47,42 @@
                             Padding="12,8"
                             Margin="0,0,8,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
+                    <Button Content="📤 Export Ink"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ExportInkStrokesCommand}"
+                            ToolTip="Export ink strokes to ISF file"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    <Button Content="📥 Import Ink"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ImportInkStrokesCommand}"
+                            ToolTip="Import ink strokes from ISF file"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
                     <Button Content="📸 Screenshot"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding TakeScreenshotCommand}"
                             ToolTip="Take a screenshot of current view"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    
+                    <Separator Margin="16,0"/>
+                    
+                    <!-- Clear Ink Buttons -->
+                    <Button Content="🧹 Clear Page"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ClearCurrentPageInkCommand}"
+                            ToolTip="Clear all ink from current page"
+                            Padding="12,8"
+                            Margin="0,0,8,0"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
+                    <Button Content="🗑️ Clear All"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ClearAllInkCommand}"
+                            ToolTip="Clear all ink from all pages"
                             Padding="12,8"
                             Margin="0,0,8,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
@@ -94,6 +126,16 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="10,6"
                                   Margin="0,0,4,0"/>
+                    
+                    <!-- Erase Tool -->
+                    <ToggleButton x:Name="EraseToolBtn"
+                                  Content="🧽"
+                                  ToolTip="Erase ink strokes"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"
+                                  Click="OnEraseToolClick"/>
                     
                     <!-- Text Tool -->
                     <ToggleButton x:Name="TextToolBtn"
@@ -153,6 +195,21 @@
                             <SolidColorBrush Color="{Binding SelectedColor}"/>
                         </Border.Background>
                     </Border>
+                    
+                    <Separator Margin="16,0"/>
+                    
+                    <!-- Pen Thickness Slider -->
+                    <TextBlock Text="Pen:" 
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <Slider Width="80"
+                            Minimum="1"
+                            Maximum="20"
+                            Value="{Binding PenThickness}"
+                            ToolTip="{Binding PenThickness, StringFormat=Thickness: {0:F1}px}"
+                            VerticalAlignment="Center"
+                            IsEnabled="{Binding IsPdfLoaded}"/>
                 </StackPanel>
 
                 <!-- Zoom and Page Controls -->
@@ -297,46 +354,54 @@
                     Background="{StaticResource CardBrush}"
                     ClipToBounds="True">
                 <Grid>
-                    <!-- PDF Display -->
+                    <!-- PDF Display with InkCanvas -->
                     <ScrollViewer x:Name="PdfScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
                                   Visibility="{Binding IsPdfLoaded, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Canvas x:Name="PdfCanvas"
-                                Width="{Binding CanvasWidth}"
-                                Height="{Binding CanvasHeight}"
-                                Background="White"
-                                MouseLeftButtonDown="OnCanvasMouseDown"
-                                MouseLeftButtonUp="OnCanvasMouseUp"
-                                MouseMove="OnCanvasMouseMove"
-                                MouseLeave="OnCanvasMouseLeave">
-                            <!-- PDF Page Image -->
+                        <Grid Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}" Background="White">
+                            <!-- PDF Page Image as background -->
                             <Image x:Name="PdfPageImage"
                                    Source="{Binding CurrentPageImage}"
                                    Stretch="None"
-                                   Canvas.Left="0"
-                                   Canvas.Top="0"/>
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Top"/>
                             
-                            <!-- Annotations will be rendered on top -->
-                            <ItemsControl ItemsSource="{Binding CurrentPageAnnotations}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style>
-                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <ContentPresenter Content="{Binding}"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Canvas>
+                            <!-- Windows InkCanvas for native stylus/pen/touch support -->
+                            <InkCanvas x:Name="PdfInkCanvas"
+                                       Background="Transparent"
+                                       Width="{Binding CanvasWidth}"
+                                       Height="{Binding CanvasHeight}"
+                                       EditingMode="{Binding InkEditingMode}"
+                                       DefaultDrawingAttributes="{Binding InkDrawingAttributes}"
+                                       StrokeCollected="OnInkStrokeCollected"
+                                       StrokeErasing="OnInkStrokeErasing"
+                                       MouseLeftButtonDown="OnInkCanvasMouseDown"
+                                       MouseLeftButtonUp="OnInkCanvasMouseUp"
+                                       MouseMove="OnInkCanvasMouseMove">
+                                <!-- Existing non-ink annotations overlay -->
+                                <InkCanvas.Children>
+                                    <ItemsControl ItemsSource="{Binding CurrentPageAnnotations}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style>
+                                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ContentPresenter Content="{Binding}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </InkCanvas.Children>
+                            </InkCanvas>
+                        </Grid>
                     </ScrollViewer>
 
                     <!-- Empty State -->
