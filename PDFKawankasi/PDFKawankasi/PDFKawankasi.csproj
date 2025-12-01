@@ -42,8 +42,8 @@
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="8.0.5" />
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
     
-    <!-- Image Processing -->
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
+    <!-- Image Processing - Version 1.0.4 is required for PdfSharpCore compatibility -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     
     <!-- MVVM and UI -->
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
