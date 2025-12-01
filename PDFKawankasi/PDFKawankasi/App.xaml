@@ -25,6 +25,7 @@
             <converters:NullToVisibleConverter x:Key="NullToVisibleConverter"/>
             <converters:ToolTypeToPdfEditorVisibilityConverter x:Key="ToolTypeToPdfEditorVisibilityConverter"/>
             <converters:ToolTypeToNotPdfEditorVisibilityConverter x:Key="ToolTypeToNotPdfEditorVisibilityConverter"/>
+            <converters:AnnotationTypeToCommentVisibilityConverter x:Key="AnnotationTypeToCommentVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

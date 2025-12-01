@@ -485,7 +485,8 @@
                           Width="4"
                           Background="Transparent"
                           HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"/>
+                          VerticalAlignment="Stretch"
+                          Visibility="{Binding IsLeftPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <!-- PDF Canvas/Viewer Area -->
             <Border Grid.Column="2" 
@@ -533,7 +534,46 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <ContentPresenter Content="{Binding}"/>
+                                                <Grid>
+                                                    <!-- Comment callout icon (Adobe-style) - clickable to expand -->
+                                                    <Border Cursor="Hand"
+                                                            MouseLeftButtonUp="OnCommentCalloutClick"
+                                                            Background="#FFF3C0"
+                                                            BorderBrush="#FFB800"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            Padding="4"
+                                                            Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}}">
+                                                        <StackPanel>
+                                                            <!-- Comment icon/indicator -->
+                                                            <TextBlock Text="💬" FontSize="16" HorizontalAlignment="Center"/>
+                                                            <!-- Expanded content callout box -->
+                                                            <Border Background="White"
+                                                                    BorderBrush="#FFB800"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4"
+                                                                    Margin="0,4,0,0"
+                                                                    Padding="8"
+                                                                    MinWidth="150"
+                                                                    MaxWidth="250"
+                                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Text}"
+                                                                               TextWrapping="Wrap"
+                                                                               FontSize="12"
+                                                                               Foreground="#333333"/>
+                                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='Added: {0:g}'}"
+                                                                               FontSize="9"
+                                                                               Foreground="#888888"
+                                                                               Margin="0,4,0,0"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <!-- Other annotation types (non-comment) -->
+                                                    <ContentPresenter Content="{Binding}" 
+                                                                      Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}, ConverterParameter=Invert}"/>
+                                                </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

@@ -459,6 +459,16 @@ public partial class PdfEditorView : UserControl
         }
     }
 
+    private void OnCommentCalloutClick(object sender, MouseButtonEventArgs e)
+    {
+        // Toggle the expanded/collapsed state of the comment callout (Adobe-style)
+        if (sender is Border border && border.DataContext is AnnotationModel annotation)
+        {
+            annotation.ToggleExpanded();
+            e.Handled = true;
+        }
+    }
+
     #region InkCanvas Event Handlers
 
     private void OnEraseToolClick(object sender, RoutedEventArgs e)

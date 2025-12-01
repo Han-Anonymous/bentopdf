@@ -250,3 +250,29 @@ public class ToolTypeToNotPdfEditorVisibilityConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Checks if AnnotationType is Comment for visibility of callout box
+/// </summary>
+public class AnnotationTypeToCommentVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is AnnotationType type)
+        {
+            bool isComment = type == AnnotationType.Comment;
+            // If parameter is "Invert", return opposite
+            if (parameter is string paramStr && paramStr == "Invert")
+            {
+                return isComment ? Visibility.Collapsed : Visibility.Visible;
+            }
+            return isComment ? Visibility.Visible : Visibility.Collapsed;
+        }
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
