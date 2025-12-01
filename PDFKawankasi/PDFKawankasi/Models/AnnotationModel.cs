@@ -30,6 +30,10 @@ public partial class AnnotationModel : ObservableObject
     public List<Point>? Points { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    // Comment callout expanded/collapsed state (Adobe-style)
+    [ObservableProperty]
+    private bool _isExpanded;
+
     // Display properties
     public string TypeIcon { get; private set; } = "📝";
     public string TypeName { get; private set; } = "Annotation";
@@ -62,6 +66,12 @@ public partial class AnnotationModel : ObservableObject
                 _ => "Annotation"
             };
         }
+    }
+
+    // Toggle the expanded state for comment callouts
+    public void ToggleExpanded()
+    {
+        IsExpanded = !IsExpanded;
     }
 }
 

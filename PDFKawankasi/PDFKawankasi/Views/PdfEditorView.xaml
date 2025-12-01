@@ -9,6 +9,7 @@
              d:DesignHeight="600" d:DesignWidth="900"
              Focusable="True"
              PreviewKeyDown="OnPreviewKeyDown"
+             PreviewKeyUp="OnPreviewKeyUp"
              PreviewMouseWheel="OnPreviewMouseWheel">
 
     <UserControl.DataContext>
@@ -35,21 +36,29 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left side: File Actions and Clear -->
+                <!-- Left side: File Actions, Undo/Redo, and Clear -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="📂 Open"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding OpenPdfCommand}"
-                            ToolTip="Open a PDF file"
+                            ToolTip="Open a PDF file (Ctrl+O)"
                             Padding="8,4"
-                            Margin="0,0,4,0"/>
-                    <Button Content="💾 Save"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,4,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Assets/PDF Editor/files.svg" Width="16" Height="16" Margin="0,0,4,0"/>
+                            <TextBlock Text="Open"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding SavePdfCommand}"
-                            ToolTip="Save the edited PDF"
+                            ToolTip="Save the edited PDF (Ctrl+S)"
                             Padding="8,4"
                             Margin="0,0,4,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
+                            IsEnabled="{Binding IsPdfLoaded}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="/Assets/PDF Editor/diskette.svg" Width="16" Height="16" Margin="0,0,4,0"/>
+                            <TextBlock Text="Save"/>
+                        </StackPanel>
+                    </Button>
                     <!-- Open saved file hyperlink -->
                     <Button Content="📁 Open Saved"
                             Style="{StaticResource SecondaryButtonStyle}"
@@ -58,6 +67,24 @@
                             Padding="8,4"
                             Margin="0,0,4,0"
                             Visibility="{Binding HasLastSavedFile, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    
+                    <Separator Margin="8,0"/>
+                    
+                    <!-- Undo/Redo Buttons -->
+                    <Button Content="↩"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding UndoCommand}"
+                            ToolTip="Undo (Ctrl+Z)"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
+                            IsEnabled="{Binding CanUndo}"/>
+                    <Button Content="↪"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding RedoCommand}"
+                            ToolTip="Redo (Ctrl+Y)"
+                            Padding="6,4"
+                            Margin="0,0,4,0"
+                            IsEnabled="{Binding CanRedo}"/>
                     
                     <Separator Margin="8,0"/>
                     
@@ -90,35 +117,38 @@
                                   Padding="6,4"
                                   Margin="0,0,2,0"/>
                     
-                    <!-- Highlight Tool -->
+                    <!-- Highlight Tool with SVG -->
                     <ToggleButton x:Name="HighlightToolBtn"
-                                  Content="🖌️"
-                                  ToolTip="Highlight text"
+                                  ToolTip="Highlight text (Hold Shift for straight line)"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsHighlightToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
-                                  Margin="0,0,2,0"/>
+                                  Margin="0,0,2,0">
+                        <Image Source="/Assets/PDF Editor/Highlighter.svg" Width="18" Height="18"/>
+                    </ToggleButton>
                     
-                    <!-- Draw Tool -->
+                    <!-- Draw Tool with SVG -->
                     <ToggleButton x:Name="DrawToolBtn"
-                                  Content="✏️"
-                                  ToolTip="Free-hand draw"
+                                  ToolTip="Free-hand draw (Hold Shift for straight line)"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsDrawToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
-                                  Margin="0,0,2,0"/>
+                                  Margin="0,0,2,0">
+                        <Image Source="/Assets/PDF Editor/Pen.svg" Width="18" Height="18"/>
+                    </ToggleButton>
                     
-                    <!-- Erase Tool -->
+                    <!-- Erase Tool with SVG -->
                     <ToggleButton x:Name="EraseToolBtn"
-                                  Content="🧽"
                                   ToolTip="Erase ink strokes"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0"
-                                  Click="OnEraseToolClick"/>
+                                  Click="OnEraseToolClick">
+                        <Image Source="/Assets/PDF Editor/Eraser.svg" Width="18" Height="18"/>
+                    </ToggleButton>
                     
                     <!-- Text Tool -->
                     <ToggleButton x:Name="TextToolBtn"
@@ -130,35 +160,38 @@
                                   Padding="6,4"
                                   Margin="0,0,2,0"/>
                     
-                    <!-- Shape Tool -->
+                    <!-- Shape Tool with SVG -->
                     <ToggleButton x:Name="ShapeToolBtn"
-                                  Content="🔷"
-                                  ToolTip="Add shapes - PDFKawankasi.Models.ShapeAnnotation"
+                                  ToolTip="Add shapes"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsShapeToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
-                                  Margin="0,0,2,0"/>
+                                  Margin="0,0,2,0">
+                        <Image Source="/Assets/PDF Editor/Add Shape.svg" Width="18" Height="18"/>
+                    </ToggleButton>
                     
-                    <!-- Comment Tool -->
+                    <!-- Comment Tool with SVG -->
                     <ToggleButton x:Name="CommentToolBtn"
-                                  Content="💬"
-                                  ToolTip="Add comment - PDFKawankasi.Models.CommentAnnotation"
+                                  ToolTip="Add comment (click to expand/collapse)"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsCommentToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
-                                  Margin="0,0,2,0"/>
+                                  Margin="0,0,2,0">
+                        <Image Source="/Assets/PDF Editor/Add Comment.svg" Width="18" Height="18"/>
+                    </ToggleButton>
                     
-                    <!-- Image Tool - Opens file picker immediately -->
+                    <!-- Image Tool with SVG - Opens file picker immediately -->
                     <Button x:Name="ImageToolBtn"
-                            Content="🖼️"
                             ToolTip="Add image (opens file picker)"
                             Style="{StaticResource SecondaryButtonStyle}"
                             IsEnabled="{Binding IsPdfLoaded}"
                             Padding="6,4"
                             Margin="0,0,2,0"
-                            Click="OnAddImageClick"/>
+                            Click="OnAddImageClick">
+                        <Image Source="/Assets/PDF Editor/Add Image.svg" Width="18" Height="18"/>
+                    </Button>
                     
                     <!-- Redact Tool -->
                     <ToggleButton x:Name="RedactToolBtn"
@@ -169,7 +202,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0"
-                                  Foreground="#E53E3E"/>
+                                  Foreground="{StaticResource DangerBrush}"/>
                     
                     <Separator Margin="8,0"/>
                     
@@ -214,43 +247,56 @@
                     
                     <Separator Margin="4,0"/>
                     
-                    <!-- Zoom controls -->
-                    <Button Content="➖"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                    <!-- Zoom controls with SVG icons -->
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ZoomOutCommand}"
                             ToolTip="Zoom out (Ctrl+-)"
                             Padding="6,4"
                             Margin="0,0,2,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
+                            IsEnabled="{Binding IsPdfLoaded}">
+                        <Image Source="/Assets/PDF Editor/Zoom Out.svg" Width="16" Height="16"/>
+                    </Button>
                     <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:P0}}"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                Width="40"
                                TextAlignment="Center"
                                FontSize="11"/>
-                    <Button Content="➕"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ZoomInCommand}"
                             ToolTip="Zoom in (Ctrl++)"
                             Padding="6,4"
                             Margin="0,0,2,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
+                            IsEnabled="{Binding IsPdfLoaded}">
+                        <Image Source="/Assets/PDF Editor/Zoom In.svg" Width="16" Height="16"/>
+                    </Button>
                     
-                    <!-- Fit buttons -->
-                    <Button Content="↔"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                    <!-- Fit buttons with SVG icons -->
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             ToolTip="Fit page width to screen"
                             Padding="6,4"
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"
-                            Click="OnFitToWidthClick"/>
-                    <Button Content="⬜"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                            Click="OnFitToWidthClick">
+                        <Image Source="/Assets/PDF Editor/Fit Screen Width.svg" Width="16" Height="16"/>
+                    </Button>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             ToolTip="Fit entire page to screen"
                             Padding="6,4"
                             Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"
-                            Click="OnFitToPageClick"/>
+                            Click="OnFitToPageClick">
+                        <Image Source="/Assets/PDF Editor/Fit Whole Page Content to screen.svg" Width="16" Height="16"/>
+                    </Button>
+                    
+                    <!-- Continuous scroll toggle -->
+                    <ToggleButton Content="📜"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsContinuousScrollMode}"
+                                  ToolTip="Continuous scrolling mode"
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"
+                                  IsEnabled="{Binding IsPdfLoaded}"/>
                     
                     <!-- Dual page toggle -->
                     <ToggleButton Content="📖"
@@ -336,6 +382,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -345,8 +392,18 @@
                                FontWeight="SemiBold"
                                FontSize="12"
                                Padding="8"/>
+                    
+                    <!-- Batch delete button for selected pages -->
+                    <Button Grid.Row="1"
+                            Content="🗑️ Delete Selected"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding DeleteSelectedPagesCommand}"
+                            ToolTip="Delete all selected pages (Ctrl+Click to multi-select)"
+                            Padding="8,4"
+                            Margin="4,0,4,4"
+                            FontSize="10"/>
 
-                    <ScrollViewer Grid.Row="1" 
+                    <ScrollViewer Grid.Row="2" 
                                   VerticalScrollBarVisibility="Auto"
                                   Padding="4">
                         <ItemsControl ItemsSource="{Binding PageThumbnails}">
@@ -357,7 +414,8 @@
                                             CornerRadius="4"
                                             Margin="0,0,0,6"
                                             Cursor="Hand"
-                                            MouseLeftButtonUp="OnThumbnailClick">
+                                            MouseLeftButtonUp="OnThumbnailClick"
+                                            MouseRightButtonUp="OnThumbnailRightClick">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="BorderBrush" Value="Transparent"/>
@@ -365,10 +423,31 @@
                                                     <DataTrigger Binding="{Binding IsCurrentPage}" Value="True">
                                                         <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Add Page Above" Click="OnAddPageAboveClick"/>
+                                                <MenuItem Header="Add Page Below" Click="OnAddPageBelowClick"/>
+                                                <Separator/>
+                                                <MenuItem Header="Delete Page" Click="OnDeletePageClick" Foreground="{StaticResource DangerBrush}"/>
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
                                         <Grid>
+                                            <!-- Selection checkbox overlay -->
+                                            <Border Background="#80000000"
+                                                    CornerRadius="2"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top"
+                                                    Padding="2"
+                                                    Margin="4"
+                                                    Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <TextBlock Text="✓" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                            </Border>
                                             <Image Source="{Binding Thumbnail}" 
                                                    Stretch="Uniform"
                                                    MaxHeight="120"
@@ -390,7 +469,7 @@
                     </ScrollViewer>
 
                     <!-- Empty State -->
-                    <TextBlock Grid.Row="1"
+                    <TextBlock Grid.Row="2"
                                Text="Open a PDF to view pages"
                                Foreground="{StaticResource TextMutedBrush}"
                                FontSize="11"
@@ -406,7 +485,8 @@
                           Width="4"
                           Background="Transparent"
                           HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"/>
+                          VerticalAlignment="Stretch"
+                          Visibility="{Binding IsLeftPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <!-- PDF Canvas/Viewer Area -->
             <Border Grid.Column="2" 
@@ -454,7 +534,46 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <ContentPresenter Content="{Binding}"/>
+                                                <Grid>
+                                                    <!-- Comment callout icon (Adobe-style) - clickable to expand -->
+                                                    <Border Cursor="Hand"
+                                                            MouseLeftButtonUp="OnCommentCalloutClick"
+                                                            Background="#FFF3C0"
+                                                            BorderBrush="#FFB800"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            Padding="4"
+                                                            Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}}">
+                                                        <StackPanel>
+                                                            <!-- Comment icon/indicator -->
+                                                            <TextBlock Text="💬" FontSize="16" HorizontalAlignment="Center"/>
+                                                            <!-- Expanded content callout box -->
+                                                            <Border Background="White"
+                                                                    BorderBrush="#FFB800"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4"
+                                                                    Margin="0,4,0,0"
+                                                                    Padding="8"
+                                                                    MinWidth="150"
+                                                                    MaxWidth="250"
+                                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Text}"
+                                                                               TextWrapping="Wrap"
+                                                                               FontSize="12"
+                                                                               Foreground="#333333"/>
+                                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='Added: {0:g}'}"
+                                                                               FontSize="9"
+                                                                               Foreground="#888888"
+                                                                               Margin="0,4,0,0"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <!-- Other annotation types (non-comment) -->
+                                                    <ContentPresenter Content="{Binding}" 
+                                                                      Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}, ConverterParameter=Invert}"/>
+                                                </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
