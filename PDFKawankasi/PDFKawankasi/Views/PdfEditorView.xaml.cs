@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -42,6 +43,9 @@ public partial class PdfEditorView : UserControl
             
             // Subscribe to ink render requests for PDF saving
             ViewModel.OnInkRenderRequested += OnInkRenderRequested;
+            
+            // Subscribe to save current page strokes request
+            ViewModel.OnSaveCurrentPageStrokes += OnSaveCurrentPageStrokes;
         }
     }
 
@@ -56,6 +60,15 @@ public partial class PdfEditorView : UserControl
         {
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.OnInkRenderRequested -= OnInkRenderRequested;
+            ViewModel.OnSaveCurrentPageStrokes -= OnSaveCurrentPageStrokes;
+        }
+    }
+
+    private void OnSaveCurrentPageStrokes()
+    {
+        if (PdfInkCanvas != null)
+        {
+            ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
         }
     }
 
@@ -65,6 +78,11 @@ public partial class PdfEditorView : UserControl
         {
             // Sync InkCanvas strokes with ViewModel
             PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+        }
+        else if (e.PropertyName == nameof(PdfEditorViewModel.CurrentPageImages))
+        {
+            // Refresh images display
+            RefreshImagesDisplay();
         }
     }
 
@@ -150,10 +168,11 @@ public partial class PdfEditorView : UserControl
     {
         if (sender is Border border && border.DataContext is PageThumbnailModel thumbnail)
         {
-            // Save current page strokes before switching
+            // Save current page strokes and images before switching
             if (PdfInkCanvas != null)
             {
                 ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+                ViewModel.SaveCurrentPageImages();
             }
 
             ViewModel.GoToPage(thumbnail.PageNumber);
@@ -163,6 +182,9 @@ public partial class PdfEditorView : UserControl
             {
                 PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
             }
+            
+            // Refresh images display
+            RefreshImagesDisplay();
         }
     }
 
@@ -201,6 +223,9 @@ public partial class PdfEditorView : UserControl
         // Store metadata for the stroke (page number, timestamp, etc.)
         stroke.AddPropertyData(Guid.NewGuid(), ViewModel.CurrentPage);
         
+        // Notify ViewModel that a stroke was added (marks pending changes)
+        ViewModel.NotifyStrokeAdded();
+        
         ViewModel.StatusMessage = $"Ink stroke added on page {ViewModel.CurrentPage}";
     }
 
@@ -212,6 +237,14 @@ public partial class PdfEditorView : UserControl
     private void OnInkCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (!ViewModel.IsPdfLoaded) return;
+
+        // Handle Image tool - open file dialog to add image
+        if (ViewModel.IsImageToolActive)
+        {
+            ViewModel.AddImage();
+            RefreshImagesDisplay();
+            return;
+        }
 
         // Handle non-ink tools (text, comment, shape)
         if (ViewModel.IsTextToolActive || ViewModel.IsCommentToolActive || ViewModel.IsShapeToolActive)
@@ -334,6 +367,224 @@ public partial class PdfEditorView : UserControl
         catch
         {
             return null;
+        }
+    }
+
+    #endregion
+
+    #region Image Handling
+
+    private readonly Dictionary<string, Border> _imageElements = new();
+    private string? _draggingImageId;
+    private Point _dragStartPoint;
+    private bool _isResizing;
+    private string? _resizingImageId;
+
+    private void RefreshImagesDisplay()
+    {
+        // Clear existing image elements from InkCanvas
+        var elementsToRemove = PdfInkCanvas.Children.OfType<Border>()
+            .Where(b => b.Tag is string tag && tag.StartsWith("IMAGE:"))
+            .ToList();
+        
+        foreach (var element in elementsToRemove)
+        {
+            PdfInkCanvas.Children.Remove(element);
+        }
+        _imageElements.Clear();
+
+        // Add images for current page
+        foreach (var imgAnnotation in ViewModel.CurrentPageImages)
+        {
+            AddImageToCanvas(imgAnnotation);
+        }
+    }
+
+    private void AddImageToCanvas(PdfEditorViewModel.ImageAnnotation imgAnnotation)
+    {
+        if (imgAnnotation.Image == null) return;
+
+        var image = new System.Windows.Controls.Image
+        {
+            Source = imgAnnotation.Image,
+            Stretch = Stretch.Fill,
+            Width = imgAnnotation.Width,
+            Height = imgAnnotation.Height
+        };
+
+        // Create resize handle
+        var resizeHandle = new Border
+        {
+            Width = 12,
+            Height = 12,
+            Background = new SolidColorBrush(Colors.White),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(2),
+            Cursor = Cursors.SizeNWSE,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, -6, -6),
+            Tag = $"RESIZE:{imgAnnotation.Id}"
+        };
+
+        resizeHandle.MouseLeftButtonDown += OnResizeHandleMouseDown;
+        resizeHandle.MouseLeftButtonUp += OnResizeHandleMouseUp;
+        resizeHandle.MouseMove += OnResizeHandleMouseMove;
+
+        // Create delete button
+        var deleteButton = new Button
+        {
+            Content = "✕",
+            Width = 20,
+            Height = 20,
+            FontSize = 10,
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, -10, -10, 0),
+            Background = new SolidColorBrush(Colors.Red),
+            Foreground = new SolidColorBrush(Colors.White),
+            BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand,
+            Tag = imgAnnotation.Id
+        };
+        deleteButton.Click += OnDeleteImageClick;
+
+        // Create grid to hold image and controls
+        var grid = new Grid();
+        grid.Children.Add(image);
+        grid.Children.Add(resizeHandle);
+        grid.Children.Add(deleteButton);
+
+        // Create container border
+        var container = new Border
+        {
+            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
+            BorderThickness = new Thickness(2),
+            Background = Brushes.Transparent,
+            Cursor = Cursors.SizeAll,
+            Child = grid,
+            Tag = $"IMAGE:{imgAnnotation.Id}"
+        };
+
+        container.MouseLeftButtonDown += OnImageMouseDown;
+        container.MouseLeftButtonUp += OnImageMouseUp;
+        container.MouseMove += OnImageMouseMove;
+
+        // Position the image
+        InkCanvas.SetLeft(container, imgAnnotation.X);
+        InkCanvas.SetTop(container, imgAnnotation.Y);
+
+        PdfInkCanvas.Children.Add(container);
+        _imageElements[imgAnnotation.Id] = container;
+    }
+
+    private void OnDeleteImageClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string imageId)
+        {
+            ViewModel.DeleteImage(imageId);
+            RefreshImagesDisplay();
+        }
+    }
+
+    private void OnImageMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border border && border.Tag is string tag && tag.StartsWith("IMAGE:"))
+        {
+            _draggingImageId = tag.Substring(6);
+            _dragStartPoint = e.GetPosition(PdfInkCanvas);
+            border.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void OnImageMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border border && _draggingImageId != null)
+        {
+            border.ReleaseMouseCapture();
+            _draggingImageId = null;
+            e.Handled = true;
+        }
+    }
+
+    private void OnImageMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_draggingImageId == null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        if (sender is Border border && _imageElements.TryGetValue(_draggingImageId, out var element))
+        {
+            var currentPoint = e.GetPosition(PdfInkCanvas);
+            var deltaX = currentPoint.X - _dragStartPoint.X;
+            var deltaY = currentPoint.Y - _dragStartPoint.Y;
+
+            var newX = InkCanvas.GetLeft(element) + deltaX;
+            var newY = InkCanvas.GetTop(element) + deltaY;
+
+            // Clamp to canvas bounds
+            newX = Math.Max(0, Math.Min(newX, ViewModel.CanvasWidth - element.ActualWidth));
+            newY = Math.Max(0, Math.Min(newY, ViewModel.CanvasHeight - element.ActualHeight));
+
+            InkCanvas.SetLeft(element, newX);
+            InkCanvas.SetTop(element, newY);
+
+            ViewModel.UpdateImagePosition(_draggingImageId, newX, newY);
+
+            _dragStartPoint = currentPoint;
+            e.Handled = true;
+        }
+    }
+
+    private void OnResizeHandleMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && handle.Tag is string tag && tag.StartsWith("RESIZE:"))
+        {
+            _resizingImageId = tag.Substring(7);
+            _isResizing = true;
+            _dragStartPoint = e.GetPosition(PdfInkCanvas);
+            handle.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void OnResizeHandleMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border handle && _isResizing)
+        {
+            handle.ReleaseMouseCapture();
+            _isResizing = false;
+            _resizingImageId = null;
+            e.Handled = true;
+        }
+    }
+
+    private void OnResizeHandleMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isResizing || _resizingImageId == null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        if (_imageElements.TryGetValue(_resizingImageId, out var element) && element.Child is Grid grid)
+        {
+            var currentPoint = e.GetPosition(PdfInkCanvas);
+            var deltaX = currentPoint.X - _dragStartPoint.X;
+            var deltaY = currentPoint.Y - _dragStartPoint.Y;
+
+            // Find the image inside the grid
+            var image = grid.Children.OfType<System.Windows.Controls.Image>().FirstOrDefault();
+            if (image != null)
+            {
+                var newWidth = Math.Max(50, image.Width + deltaX);
+                var newHeight = Math.Max(50, image.Height + deltaY);
+
+                image.Width = newWidth;
+                image.Height = newHeight;
+
+                ViewModel.UpdateImageSize(_resizingImageId, newWidth, newHeight);
+            }
+
+            _dragStartPoint = currentPoint;
+            e.Handled = true;
         }
     }
 

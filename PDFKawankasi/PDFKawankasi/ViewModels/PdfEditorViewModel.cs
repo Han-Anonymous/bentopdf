@@ -99,6 +99,9 @@ public partial class PdfEditorViewModel : ObservableObject
     private bool _isRedactToolActive;
 
     [ObservableProperty]
+    private bool _isImageToolActive;
+
+    [ObservableProperty]
     private Color _selectedColor = Colors.Yellow;
 
     [ObservableProperty]
@@ -116,6 +119,9 @@ public partial class PdfEditorViewModel : ObservableObject
 
     [ObservableProperty]
     private double _penThickness = 3.0;
+
+    [ObservableProperty]
+    private bool _hasPendingChanges;
 
     #endregion
 
@@ -155,6 +161,27 @@ public partial class PdfEditorViewModel : ObservableObject
     [RelayCommand]
     private void OpenPdf()
     {
+        // Check for pending changes before opening a new file
+        if (IsPdfLoaded && HasPendingChanges)
+        {
+            var result = System.Windows.MessageBox.Show(
+                "You have unsaved changes. Do you want to save before opening a new file?",
+                "Unsaved Changes",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result == System.Windows.MessageBoxResult.Cancel)
+            {
+                return;
+            }
+            else if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                // Save current file first
+                SavePdfCommand.Execute(null);
+            }
+            // If No, discard changes and continue opening new file
+        }
+
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "PDF Files (*.pdf)|*.pdf",
@@ -163,8 +190,35 @@ public partial class PdfEditorViewModel : ObservableObject
 
         if (dialog.ShowDialog() == true)
         {
+            // Reset all state before loading new PDF
+            ResetEditorState();
             LoadPdf(dialog.FileName);
         }
+    }
+
+    private void ResetEditorState()
+    {
+        // Clear all ink strokes
+        _pageStrokes.Clear();
+        CurrentPageStrokes.Clear();
+        
+        // Clear all annotations
+        AllAnnotations.Clear();
+        CurrentPageAnnotations.Clear();
+        
+        // Clear page thumbnails
+        PageThumbnails.Clear();
+        
+        // Clear images
+        _pageImages.Clear();
+        
+        // Reset tool state
+        IsSelectToolActive = true;
+        
+        // Reset pending changes flag
+        HasPendingChanges = false;
+        
+        StatusMessage = "Ready - Opening new PDF...";
     }
 
     [RelayCommand]
@@ -183,18 +237,29 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             try
             {
-                StatusMessage = "Saving PDF with ink annotations...";
+                StatusMessage = "Saving PDF with annotations...";
                 
-                // Flatten ink strokes to PDF if any exist
+                // Save current page strokes before saving
+                OnSaveCurrentPageStrokes?.Invoke();
+                
+                // Count total annotations
                 int totalInkStrokes = _pageStrokes.Values.Sum(s => s.Count);
-                if (totalInkStrokes > 0)
+                int totalImages = _pageImages.Values.Sum(i => i.Count);
+                
+                // Flatten all annotations (ink and images) to PDF
+                await FlattenInkToPdf(dialog.FileName);
+                
+                // Build status message
+                var statusParts = new List<string>();
+                if (totalInkStrokes > 0) statusParts.Add($"{totalInkStrokes} ink stroke(s)");
+                if (totalImages > 0) statusParts.Add($"{totalImages} image(s)");
+                
+                if (statusParts.Count > 0)
                 {
-                    await FlattenInkToPdf(dialog.FileName);
-                    StatusMessage = $"Saved: {dialog.FileName} with {totalInkStrokes} ink stroke(s) embedded";
+                    StatusMessage = $"Saved: {dialog.FileName} with {string.Join(" and ", statusParts)} embedded";
                 }
                 else
                 {
-                    File.WriteAllBytes(dialog.FileName, _pdfBytes);
                     StatusMessage = $"Saved: {dialog.FileName}";
                 }
                 
@@ -202,6 +267,8 @@ public partial class PdfEditorViewModel : ObservableObject
                 {
                     StatusMessage += $" (Note: {AllAnnotations.Count} text/shape annotation(s) are session-only)";
                 }
+                
+                HasPendingChanges = false;
             }
             catch (Exception ex)
             {
@@ -209,6 +276,9 @@ public partial class PdfEditorViewModel : ObservableObject
             }
         }
     }
+
+    // Event to request saving current page strokes from the view before saving PDF
+    public event Action? OnSaveCurrentPageStrokes;
 
     [RelayCommand]
     private void TakeScreenshot()
@@ -269,6 +339,9 @@ public partial class PdfEditorViewModel : ObservableObject
     {
         if (CanGoPrevious)
         {
+            // Save current page strokes before changing page
+            OnSaveCurrentPageStrokes?.Invoke();
+            
             CurrentPage--;
             RenderCurrentPage();
             UpdatePageNavigation();
@@ -280,6 +353,9 @@ public partial class PdfEditorViewModel : ObservableObject
     {
         if (CanGoNext)
         {
+            // Save current page strokes before changing page
+            OnSaveCurrentPageStrokes?.Invoke();
+            
             CurrentPage++;
             RenderCurrentPage();
             UpdatePageNavigation();
@@ -450,6 +526,16 @@ public partial class PdfEditorViewModel : ObservableObject
         UpdateCurrentToolName();
     }
 
+    partial void OnIsImageToolActiveChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherTools(nameof(IsImageToolActive));
+            InkEditingMode = InkCanvasEditingMode.None;
+        }
+        UpdateCurrentToolName();
+    }
+
     partial void OnIsRedactToolActiveChanged(bool value)
     {
         if (value)
@@ -469,6 +555,7 @@ public partial class PdfEditorViewModel : ObservableObject
         if (exceptTool != nameof(IsTextToolActive)) IsTextToolActive = false;
         if (exceptTool != nameof(IsShapeToolActive)) IsShapeToolActive = false;
         if (exceptTool != nameof(IsCommentToolActive)) IsCommentToolActive = false;
+        if (exceptTool != nameof(IsImageToolActive)) IsImageToolActive = false;
         if (exceptTool != nameof(IsRedactToolActive)) IsRedactToolActive = false;
     }
 
@@ -480,58 +567,69 @@ public partial class PdfEditorViewModel : ObservableObject
                          IsTextToolActive ? "Text" :
                          IsShapeToolActive ? "Shape" :
                          IsCommentToolActive ? "Comment" :
+                         IsImageToolActive ? "Image" :
                          IsRedactToolActive ? "Redact" : "None";
     }
 
     private void UpdateInkAttributesForHighlight()
     {
-        InkDrawingAttributes.Color = Color.FromArgb(100, SelectedColor.R, SelectedColor.G, SelectedColor.B); // Semi-transparent
-        InkDrawingAttributes.Width = 20;
-        InkDrawingAttributes.Height = 20;
-        InkDrawingAttributes.StylusTip = StylusTip.Rectangle;
-        InkDrawingAttributes.IsHighlighter = true;
+        InkDrawingAttributes = new DrawingAttributes
+        {
+            Color = Color.FromArgb(100, SelectedColor.R, SelectedColor.G, SelectedColor.B), // Semi-transparent
+            Width = 20,
+            Height = 20,
+            StylusTip = StylusTip.Rectangle,
+            IsHighlighter = true,
+            FitToCurve = true,
+            IgnorePressure = false
+        };
     }
 
     private void UpdateInkAttributesForDrawing()
     {
-        InkDrawingAttributes.Color = SelectedColor;
-        InkDrawingAttributes.Width = PenThickness;
-        InkDrawingAttributes.Height = PenThickness;
-        InkDrawingAttributes.StylusTip = StylusTip.Ellipse;
-        InkDrawingAttributes.IsHighlighter = false;
-        InkDrawingAttributes.FitToCurve = true;
+        InkDrawingAttributes = new DrawingAttributes
+        {
+            Color = SelectedColor,
+            Width = PenThickness,
+            Height = PenThickness,
+            StylusTip = StylusTip.Ellipse,
+            IsHighlighter = false,
+            FitToCurve = true,
+            IgnorePressure = false
+        };
     }
 
     private void UpdateInkAttributesForRedaction()
     {
-        InkDrawingAttributes.Color = Colors.Black;
-        InkDrawingAttributes.Width = 15;
-        InkDrawingAttributes.Height = 15;
-        InkDrawingAttributes.StylusTip = StylusTip.Rectangle;
-        InkDrawingAttributes.IsHighlighter = false;
+        InkDrawingAttributes = new DrawingAttributes
+        {
+            Color = Colors.Black,
+            Width = 15,
+            Height = 15,
+            StylusTip = StylusTip.Rectangle,
+            IsHighlighter = false,
+            FitToCurve = false,
+            IgnorePressure = true
+        };
     }
 
     partial void OnSelectedColorChanged(Color value)
     {
-        if (InkDrawingAttributes != null)
+        if (IsHighlightToolActive)
         {
-            if (IsHighlightToolActive)
-            {
-                UpdateInkAttributesForHighlight();
-            }
-            else if (IsDrawToolActive)
-            {
-                UpdateInkAttributesForDrawing();
-            }
+            UpdateInkAttributesForHighlight();
+        }
+        else if (IsDrawToolActive)
+        {
+            UpdateInkAttributesForDrawing();
         }
     }
 
     partial void OnPenThicknessChanged(double value)
     {
-        if (InkDrawingAttributes != null && !IsHighlightToolActive)
+        if (IsDrawToolActive)
         {
-            InkDrawingAttributes.Width = value;
-            InkDrawingAttributes.Height = value;
+            UpdateInkAttributesForDrawing();
         }
     }
 
@@ -663,8 +761,11 @@ public partial class PdfEditorViewModel : ObservableObject
 
     public void GoToPage(int pageNumber)
     {
-        if (pageNumber >= 1 && pageNumber <= TotalPages)
+        if (pageNumber >= 1 && pageNumber <= TotalPages && pageNumber != CurrentPage)
         {
+            // Save current page strokes before changing page
+            OnSaveCurrentPageStrokes?.Invoke();
+            
             CurrentPage = pageNumber;
             RenderCurrentPage();
             UpdatePageNavigation();
@@ -774,9 +875,29 @@ public partial class PdfEditorViewModel : ObservableObject
 
         // Load ink strokes for this page
         LoadCurrentPageStrokes();
+        
+        // Load images for this page
+        LoadCurrentPageImages();
     }
 
     private Dictionary<int, StrokeCollection> _pageStrokes = new();
+    private Dictionary<int, List<ImageAnnotation>> _pageImages = new();
+
+    // Image annotation model
+    public class ImageAnnotation
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public BitmapSource? Image { get; set; }
+        public byte[]? ImageBytes { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public bool IsSelected { get; set; }
+    }
+
+    [ObservableProperty]
+    private ObservableCollection<ImageAnnotation> _currentPageImages = new();
 
     private void LoadCurrentPageStrokes()
     {
@@ -796,7 +917,12 @@ public partial class PdfEditorViewModel : ObservableObject
     public void SaveCurrentPageStrokes(StrokeCollection strokes)
     {
         _pageStrokes[CurrentPage] = new StrokeCollection(strokes);
-        StatusMessage = $"Ink strokes saved for page {CurrentPage}";
+        HasPendingChanges = true;
+    }
+
+    public void NotifyStrokeAdded()
+    {
+        HasPendingChanges = true;
     }
 
     public void ClearCurrentPageStrokes()
@@ -805,6 +931,102 @@ public partial class PdfEditorViewModel : ObservableObject
         if (_pageStrokes.ContainsKey(CurrentPage))
         {
             _pageStrokes[CurrentPage].Clear();
+        }
+    }
+
+    private void LoadCurrentPageImages()
+    {
+        CurrentPageImages.Clear();
+        if (_pageImages.TryGetValue(CurrentPage, out var images))
+        {
+            foreach (var image in images)
+            {
+                CurrentPageImages.Add(image);
+            }
+        }
+        OnPropertyChanged(nameof(CurrentPageImages));
+    }
+
+    public void SaveCurrentPageImages()
+    {
+        _pageImages[CurrentPage] = new List<ImageAnnotation>(CurrentPageImages);
+    }
+
+    public void AddImage()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All Files (*.*)|*.*",
+            Title = "Select Image to Add"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                var imageBytes = File.ReadAllBytes(dialog.FileName);
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = new MemoryStream(imageBytes);
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                var imageAnnotation = new ImageAnnotation
+                {
+                    Image = bitmap,
+                    ImageBytes = imageBytes,
+                    X = 100,
+                    Y = 100,
+                    Width = Math.Min(bitmap.PixelWidth, CanvasWidth / 2),
+                    Height = Math.Min(bitmap.PixelHeight, CanvasHeight / 2)
+                };
+
+                CurrentPageImages.Add(imageAnnotation);
+                SaveCurrentPageImages();
+                HasPendingChanges = true;
+                StatusMessage = $"Added image to page {CurrentPage}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error adding image: {ex.Message}";
+            }
+        }
+    }
+
+    public void UpdateImagePosition(string imageId, double x, double y)
+    {
+        var image = CurrentPageImages.FirstOrDefault(i => i.Id == imageId);
+        if (image != null)
+        {
+            image.X = x;
+            image.Y = y;
+            SaveCurrentPageImages();
+            HasPendingChanges = true;
+        }
+    }
+
+    public void UpdateImageSize(string imageId, double width, double height)
+    {
+        var image = CurrentPageImages.FirstOrDefault(i => i.Id == imageId);
+        if (image != null)
+        {
+            image.Width = width;
+            image.Height = height;
+            SaveCurrentPageImages();
+            HasPendingChanges = true;
+        }
+    }
+
+    public void DeleteImage(string imageId)
+    {
+        var image = CurrentPageImages.FirstOrDefault(i => i.Id == imageId);
+        if (image != null)
+        {
+            CurrentPageImages.Remove(image);
+            SaveCurrentPageImages();
+            HasPendingChanges = true;
+            StatusMessage = "Image deleted";
         }
     }
 
@@ -882,16 +1104,20 @@ public partial class PdfEditorViewModel : ObservableObject
 
     private async Task FlattenInkToPdf(string outputPath)
     {
-        // Request the view to render ink strokes for all pages
+        // Request the view to render ink strokes and images for all pages
         var renderedPages = new Dictionary<int, byte[]>();
         
         // Signal that we need rendered pages
         OnInkRenderRequested?.Invoke(renderedPages);
         
-        if (renderedPages.Count == 0)
+        // Check for images as well
+        bool hasImages = _pageImages.Values.Any(images => images.Count > 0);
+        
+        if (renderedPages.Count == 0 && !hasImages)
         {
-            // No rendered pages, just save original
+            // No rendered pages or images, just save original
             File.WriteAllBytes(outputPath, _pdfBytes!);
+            HasPendingChanges = false;
             return;
         }
 
@@ -904,20 +1130,54 @@ public partial class PdfEditorViewModel : ObservableObject
         for (int i = 0; i < inputDoc.PageCount; i++)
         {
             var page = outputDoc.AddPage(inputDoc.Pages[i]);
+            int pageNumber = i + 1;
+            
+            using var gfx = XGraphics.FromPdfPage(page);
             
             // If this page has ink strokes, overlay them
-            if (renderedPages.TryGetValue(i + 1, out var inkImageBytes))
+            if (renderedPages.TryGetValue(pageNumber, out var inkImageBytes))
             {
-                using var gfx = XGraphics.FromPdfPage(page);
                 using var inkImage = XImage.FromStream(() => new MemoryStream(inkImageBytes));
                 
                 // Draw ink overlay on top of existing content
                 gfx.DrawImage(inkImage, 0, 0, page.Width, page.Height);
             }
+            
+            // If this page has images, rasterize and draw them
+            if (_pageImages.TryGetValue(pageNumber, out var images) && images.Count > 0)
+            {
+                foreach (var imgAnnotation in images)
+                {
+                    if (imgAnnotation.ImageBytes != null)
+                    {
+                        try
+                        {
+                            using var imgStream = new MemoryStream(imgAnnotation.ImageBytes);
+                            using var xImage = XImage.FromStream(() => new MemoryStream(imgAnnotation.ImageBytes));
+                            
+                            // Convert pixel coordinates to PDF points (assuming 96 DPI)
+                            double scaleX = page.Width / CanvasWidth;
+                            double scaleY = page.Height / CanvasHeight;
+                            
+                            double pdfX = imgAnnotation.X * scaleX;
+                            double pdfY = imgAnnotation.Y * scaleY;
+                            double pdfWidth = imgAnnotation.Width * scaleX;
+                            double pdfHeight = imgAnnotation.Height * scaleY;
+                            
+                            gfx.DrawImage(xImage, pdfX, pdfY, pdfWidth, pdfHeight);
+                        }
+                        catch
+                        {
+                            // Skip this image if there's an error
+                        }
+                    }
+                }
+            }
         }
 
         // Save the modified PDF
         outputDoc.Save(outputPath);
+        HasPendingChanges = false;
     }
 
     // Event to request ink rendering from the view
