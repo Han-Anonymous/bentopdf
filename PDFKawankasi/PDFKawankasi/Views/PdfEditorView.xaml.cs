@@ -17,6 +17,10 @@ namespace PDFKawankasi.Views;
 /// </summary>
 public partial class PdfEditorView : UserControl
 {
+    // Constants for default page dimensions
+    private const double DefaultPageWidth = 800.0;
+    private const double DefaultPageHeight = 1000.0;
+    
     private PdfEditorViewModel ViewModel => (PdfEditorViewModel)DataContext;
     private bool _isDrawing;
     private Point _startPoint;
@@ -49,10 +53,12 @@ public partial class PdfEditorView : UserControl
             
             // Subscribe to fullscreen toggle
             ViewModel.OnFullscreenToggled += OnFullscreenToggled;
+            
+            // Focus the control to enable keyboard shortcuts
+            // Done after event subscriptions to ensure proper initialization
+            Dispatcher.BeginInvoke(new Action(() => this.Focus()), 
+                System.Windows.Threading.DispatcherPriority.Input);
         }
-        
-        // Focus the control to enable keyboard shortcuts
-        this.Focus();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -149,7 +155,7 @@ public partial class PdfEditorView : UserControl
         var availableWidth = PdfScrollViewer.ActualWidth - 20; // Subtract scrollbar width
         if (availableWidth > 0 && ViewModel.CanvasWidth > 0)
         {
-            var desiredZoom = availableWidth / (800.0); // 800 is the default page width
+            var desiredZoom = availableWidth / DefaultPageWidth;
             ViewModel.ApplyZoomDelta(desiredZoom - ViewModel.ZoomLevel);
         }
     }
@@ -164,8 +170,8 @@ public partial class PdfEditorView : UserControl
         
         if (availableWidth > 0 && availableHeight > 0)
         {
-            var zoomW = availableWidth / 800.0;
-            var zoomH = availableHeight / 1000.0;
+            var zoomW = availableWidth / DefaultPageWidth;
+            var zoomH = availableHeight / DefaultPageHeight;
             var desiredZoom = Math.Min(zoomW, zoomH);
             ViewModel.ApplyZoomDelta(desiredZoom - ViewModel.ZoomLevel);
         }
