@@ -6,7 +6,10 @@
              xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
              mc:Ignorable="d"
              Background="{StaticResource BackgroundBrush}"
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="600" d:DesignWidth="900"
+             Focusable="True"
+             PreviewKeyDown="OnPreviewKeyDown"
+             PreviewMouseWheel="OnPreviewMouseWheel">
 
     <UserControl.DataContext>
         <vm:PdfEditorViewModel/>
@@ -19,12 +22,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Toolbar -->
+        <!-- Compact Toolbar (merged with navigation) -->
         <Border Grid.Row="0" 
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,12">
+                Padding="8,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -32,57 +35,51 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- File Actions -->
+                <!-- Left side: File Actions and Clear -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="📂 Open PDF"
+                    <Button Content="📂 Open"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding OpenPdfCommand}"
                             ToolTip="Open a PDF file"
-                            Padding="12,8"
-                            Margin="0,0,8,0"/>
+                            Padding="8,4"
+                            Margin="0,0,4,0"/>
                     <Button Content="💾 Save"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding SavePdfCommand}"
                             ToolTip="Save the edited PDF"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
+                            Padding="8,4"
+                            Margin="0,0,4,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
-                    <Button Content="📸 Screenshot"
+                    <!-- Open saved file hyperlink -->
+                    <Button Content="📁 Open Saved"
                             Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding TakeScreenshotCommand}"
-                            ToolTip="Take a screenshot of current view"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
+                            Command="{Binding OpenSavedFileCommand}"
+                            ToolTip="{Binding LastSavedFilePath}"
+                            Padding="8,4"
+                            Margin="0,0,4,0"
+                            Visibility="{Binding HasLastSavedFile, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     
-                    <Separator Margin="16,0"/>
+                    <Separator Margin="8,0"/>
                     
                     <!-- Clear Ink Buttons -->
-                    <Button Content="🧹 Clear Page"
+                    <Button Content="🧹"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ClearCurrentPageInkCommand}"
                             ToolTip="Clear all ink from current page"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
+                            Padding="6,4"
+                            Margin="0,0,4,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
-                    <Button Content="🗑️ Clear All"
+                    <Button Content="🗑️"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ClearAllInkCommand}"
                             ToolTip="Clear all ink from all pages"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
+                            Padding="6,4"
+                            Margin="0,0,4,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
-                    
-                    <Separator Margin="16,0"/>
                 </StackPanel>
 
-                <!-- Annotation Tools -->
+                <!-- Center: Annotation Tools -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Tools:" 
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,12,0"/>
-                    
                     <!-- Select Tool -->
                     <ToggleButton x:Name="SelectToolBtn"
                                   Content="👆"
@@ -90,8 +87,8 @@
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsSelectToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
                     <!-- Highlight Tool -->
                     <ToggleButton x:Name="HighlightToolBtn"
@@ -100,8 +97,8 @@
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsHighlightToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
                     <!-- Draw Tool -->
                     <ToggleButton x:Name="DrawToolBtn"
@@ -110,8 +107,8 @@
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsDrawToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
                     <!-- Erase Tool -->
                     <ToggleButton x:Name="EraseToolBtn"
@@ -119,8 +116,8 @@
                                   ToolTip="Erase ink strokes"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"
                                   Click="OnEraseToolClick"/>
                     
                     <!-- Text Tool -->
@@ -130,38 +127,38 @@
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsTextToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
                     <!-- Shape Tool -->
                     <ToggleButton x:Name="ShapeToolBtn"
                                   Content="🔷"
-                                  ToolTip="Add shapes (rectangle, circle, arrow)"
+                                  ToolTip="Add shapes - PDFKawankasi.Models.ShapeAnnotation"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsShapeToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
                     <!-- Comment Tool -->
                     <ToggleButton x:Name="CommentToolBtn"
                                   Content="💬"
-                                  ToolTip="Add comment"
+                                  ToolTip="Add comment - PDFKawankasi.Models.CommentAnnotation"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsCommentToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"/>
                     
-                    <!-- Image Tool -->
-                    <ToggleButton x:Name="ImageToolBtn"
-                                  Content="🖼️"
-                                  ToolTip="Add image"
-                                  Style="{StaticResource ToolToggleButtonStyle}"
-                                  IsChecked="{Binding IsImageToolActive}"
-                                  IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"/>
+                    <!-- Image Tool - Opens file picker immediately -->
+                    <Button x:Name="ImageToolBtn"
+                            Content="🖼️"
+                            ToolTip="Add image (opens file picker)"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            IsEnabled="{Binding IsPdfLoaded}"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
+                            Click="OnAddImageClick"/>
                     
                     <!-- Redact Tool -->
                     <ToggleButton x:Name="RedactToolBtn"
@@ -170,36 +167,27 @@
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsRedactToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
-                                  Padding="10,6"
-                                  Margin="0,0,4,0"
+                                  Padding="6,4"
+                                  Margin="0,0,2,0"
                                   Foreground="#E53E3E"/>
                     
-                    <Separator Margin="16,0"/>
+                    <Separator Margin="8,0"/>
                     
                     <!-- Color Picker -->
-                    <TextBlock Text="Color:" 
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <Border Width="28" Height="28" 
+                    <Border Width="24" Height="24" 
                             CornerRadius="4"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="2"
                             Cursor="Hand"
+                            Margin="0,0,4,0"
                             MouseLeftButtonUp="OnColorPickerClick">
                         <Border.Background>
                             <SolidColorBrush Color="{Binding SelectedColor}"/>
                         </Border.Background>
                     </Border>
                     
-                    <Separator Margin="16,0"/>
-                    
                     <!-- Pen Thickness Slider -->
-                    <TextBlock Text="Pen:" 
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <Slider Width="80"
+                    <Slider Width="60"
                             Minimum="1"
                             Maximum="20"
                             Value="{Binding PenThickness}"
@@ -208,49 +196,100 @@
                             IsEnabled="{Binding IsPdfLoaded}"/>
                 </StackPanel>
 
-                <!-- Zoom and Page Controls -->
+                <!-- Right side: Zoom, Page Nav, View Controls -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Panel toggles -->
+                    <Button Content="◀"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ToggleLeftPanelCommand}"
+                            ToolTip="Toggle pages panel"
+                            Padding="6,4"
+                            Margin="0,0,2,0"/>
+                    <Button Content="▶"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ToggleRightPanelCommand}"
+                            ToolTip="Toggle annotations panel"
+                            Padding="6,4"
+                            Margin="0,0,4,0"/>
+                    
+                    <Separator Margin="4,0"/>
+                    
+                    <!-- Zoom controls -->
                     <Button Content="➖"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ZoomOutCommand}"
-                            ToolTip="Zoom out"
-                            Padding="8,6"
-                            Margin="0,0,4,0"
+                            ToolTip="Zoom out (Ctrl+-)"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
                     <TextBlock Text="{Binding ZoomLevel, StringFormat={}{0:P0}}"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
-                               Width="50"
+                               Width="40"
                                TextAlignment="Center"
-                               Margin="0,0,4,0"/>
+                               FontSize="11"/>
                     <Button Content="➕"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ZoomInCommand}"
-                            ToolTip="Zoom in"
-                            Padding="8,6"
-                            Margin="0,0,16,0"
+                            ToolTip="Zoom in (Ctrl++)"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
+                    
+                    <!-- Fit buttons -->
+                    <Button Content="↔"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Fit page width to screen"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
+                            IsEnabled="{Binding IsPdfLoaded}"
+                            Click="OnFitToWidthClick"/>
+                    <Button Content="⬜"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Fit entire page to screen"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
+                            IsEnabled="{Binding IsPdfLoaded}"
+                            Click="OnFitToPageClick"/>
+                    
+                    <!-- Dual page toggle -->
+                    <ToggleButton Content="📖"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsDualPageMode}"
+                                  ToolTip="Dual page view"
+                                  Padding="6,4"
+                                  Margin="0,0,4,0"
+                                  IsEnabled="{Binding IsPdfLoaded}"/>
+                    
+                    <!-- Fullscreen toggle -->
+                    <Button Content="⛶"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ToggleFullscreenCommand}"
+                            ToolTip="Toggle fullscreen (F11)"
+                            Padding="6,4"
+                            Margin="0,0,4,0"/>
 
-                    <Separator Margin="0,0,16,0"/>
+                    <Separator Margin="4,0"/>
 
+                    <!-- Page Navigation -->
                     <Button Content="◀"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding PreviousPageCommand}"
                             ToolTip="Previous page"
-                            Padding="8,6"
-                            Margin="0,0,4,0"
+                            Padding="6,4"
+                            Margin="0,0,2,0"
                             IsEnabled="{Binding CanGoPrevious}"/>
-                    <TextBlock VerticalAlignment="Center" Margin="0,0,4,0">
-                        <Run Text="Page " Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock VerticalAlignment="Center" FontSize="11">
                         <Run Text="{Binding CurrentPage}" Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <Run Text=" of " Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Run Text="/" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <Run Text="{Binding TotalPages}" Foreground="{StaticResource TextPrimaryBrush}"/>
                     </TextBlock>
                     <Button Content="▶"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding NextPageCommand}"
                             ToolTip="Next page"
-                            Padding="8,6"
+                            Padding="6,4"
+                            Margin="2,0,0,0"
                             IsEnabled="{Binding CanGoNext}"/>
                 </StackPanel>
             </Grid>
@@ -259,18 +298,41 @@
         <!-- Main Content Area -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" MinWidth="150"/>
+                <ColumnDefinition x:Name="LeftPanelColumn" Width="180">
+                    <ColumnDefinition.Style>
+                        <Style TargetType="ColumnDefinition">
+                            <Setter Property="Width" Value="180"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLeftPanelVisible}" Value="False">
+                                    <Setter Property="Width" Value="0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ColumnDefinition.Style>
+                </ColumnDefinition>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="250" MinWidth="200"/>
+                <ColumnDefinition x:Name="RightPanelColumn" Width="220">
+                    <ColumnDefinition.Style>
+                        <Style TargetType="ColumnDefinition">
+                            <Setter Property="Width" Value="220"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRightPanelVisible}" Value="False">
+                                    <Setter Property="Width" Value="0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ColumnDefinition.Style>
+                </ColumnDefinition>
             </Grid.ColumnDefinitions>
 
-            <!-- Page Thumbnails Panel -->
+            <!-- Page Thumbnails Panel (Collapsible) -->
             <Border Grid.Column="0" 
                     Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="0,0,1,0">
+                    BorderThickness="0,0,1,0"
+                    Visibility="{Binding IsLeftPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -281,19 +343,19 @@
                                Text="Pages"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontWeight="SemiBold"
-                               FontSize="14"
-                               Padding="12"/>
+                               FontSize="12"
+                               Padding="8"/>
 
                     <ScrollViewer Grid.Row="1" 
                                   VerticalScrollBarVisibility="Auto"
-                                  Padding="8">
+                                  Padding="4">
                         <ItemsControl ItemsSource="{Binding PageThumbnails}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="White"
                                             BorderThickness="2"
-                                            CornerRadius="6"
-                                            Margin="0,0,0,8"
+                                            CornerRadius="4"
+                                            Margin="0,0,0,6"
                                             Cursor="Hand"
                                             MouseLeftButtonUp="OnThumbnailClick">
                                         <Border.Style>
@@ -309,17 +371,17 @@
                                         <Grid>
                                             <Image Source="{Binding Thumbnail}" 
                                                    Stretch="Uniform"
-                                                   MaxHeight="160"
-                                                   Margin="4"
+                                                   MaxHeight="120"
+                                                   Margin="2"
                                                    RenderOptions.BitmapScalingMode="HighQuality"/>
                                             <TextBlock Text="{Binding PageNumber}"
                                                        Foreground="{StaticResource TextPrimaryBrush}"
                                                        Background="{StaticResource SurfaceBrush}"
-                                                       Padding="4,2"
-                                                       FontSize="11"
+                                                       Padding="2,1"
+                                                       FontSize="10"
                                                        HorizontalAlignment="Right"
                                                        VerticalAlignment="Bottom"
-                                                       Margin="4"/>
+                                                       Margin="2"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -331,11 +393,11 @@
                     <TextBlock Grid.Row="1"
                                Text="Open a PDF to view pages"
                                Foreground="{StaticResource TextMutedBrush}"
-                               FontSize="12"
+                               FontSize="11"
                                TextWrapping="Wrap"
                                TextAlignment="Center"
                                VerticalAlignment="Center"
-                               Padding="12"
+                               Padding="8"
                                Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                 </Grid>
             </Border>
@@ -430,13 +492,15 @@
                           Width="4"
                           Background="Transparent"
                           HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"/>
+                          VerticalAlignment="Stretch"
+                          Visibility="{Binding IsRightPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <!-- Properties/Comments Panel -->
+            <!-- Properties/Comments Panel (Collapsible) -->
             <Border Grid.Column="4" 
                     Background="{StaticResource SurfaceBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1,0,0,0">
+                    BorderThickness="1,0,0,0"
+                    Visibility="{Binding IsRightPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -446,30 +510,30 @@
                     <!-- Panel Header -->
                     <Border Grid.Row="0" 
                             Background="{StaticResource CardBrush}"
-                            Padding="12">
+                            Padding="8">
                         <StackPanel>
-                            <TextBlock Text="Annotations &amp; Comments"
+                            <TextBlock Text="Annotations"
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        FontWeight="SemiBold"
-                                       FontSize="14"/>
+                                       FontSize="12"/>
                             <TextBlock Text="{Binding AnnotationCount, StringFormat={}{0} items}"
                                        Foreground="{StaticResource TextSecondaryBrush}"
-                                       FontSize="12"
-                                       Margin="0,4,0,0"/>
+                                       FontSize="10"
+                                       Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Annotations List -->
                     <ScrollViewer Grid.Row="1" 
                                   VerticalScrollBarVisibility="Auto"
-                                  Padding="8">
+                                  Padding="4">
                         <ItemsControl ItemsSource="{Binding AllAnnotations}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{StaticResource CardBrush}"
-                                            CornerRadius="6"
-                                            Padding="10"
-                                            Margin="0,0,0,8">
+                                            CornerRadius="4"
+                                            Padding="6"
+                                            Margin="0,0,0,4">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
@@ -479,24 +543,24 @@
 
                                             <TextBlock Grid.Column="0" 
                                                        Text="{Binding TypeIcon}"
-                                                       FontSize="20"
+                                                       FontSize="16"
                                                        VerticalAlignment="Top"
-                                                       Margin="0,0,10,0"/>
+                                                       Margin="0,0,6,0"/>
 
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock Text="{Binding TypeName}"
                                                            Foreground="{StaticResource TextPrimaryBrush}"
                                                            FontWeight="SemiBold"
-                                                           FontSize="13"/>
+                                                           FontSize="11"/>
                                                 <TextBlock Text="{Binding Description}"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
-                                                           FontSize="11"
+                                                           FontSize="10"
                                                            TextWrapping="Wrap"
-                                                           MaxWidth="150"/>
+                                                           MaxWidth="120"/>
                                                 <TextBlock Text="{Binding PageInfo}"
                                                            Foreground="{StaticResource TextMutedBrush}"
-                                                           FontSize="10"
-                                                           Margin="0,4,0,0"/>
+                                                           FontSize="9"
+                                                           Margin="0,2,0,0"/>
                                             </StackPanel>
 
                                             <Button Grid.Column="2"
@@ -504,8 +568,8 @@
                                                     Style="{StaticResource SecondaryButtonStyle}"
                                                     Command="{Binding DataContext.DeleteAnnotationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
-                                                    Padding="6,4"
-                                                    FontSize="10"
+                                                    Padding="4,2"
+                                                    FontSize="9"
                                                     VerticalAlignment="Top"/>
                                         </Grid>
                                     </Border>
@@ -516,27 +580,28 @@
 
                     <!-- Empty Annotations State -->
                     <TextBlock Grid.Row="1"
-                               Text="No annotations yet. Use the tools above to add highlights, comments, shapes, and more."
+                               Text="No annotations yet."
                                Foreground="{StaticResource TextMutedBrush}"
-                               FontSize="12"
+                               FontSize="10"
                                TextWrapping="Wrap"
                                TextAlignment="Center"
                                VerticalAlignment="Center"
-                               Padding="16"
+                               Padding="8"
                                Visibility="{Binding HasAnnotations, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Status Bar -->
+        <!-- Compact Status Bar -->
         <Border Grid.Row="2" 
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="12,8">
+                Padding="8,4">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -544,21 +609,33 @@
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
                            Foreground="{StaticResource TextSecondaryBrush}"
-                           VerticalAlignment="Center"/>
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
 
                 <TextBlock Grid.Column="1"
-                           Text="{Binding CurrentToolName}"
                            Foreground="{StaticResource TextPrimaryBrush}"
-                           FontWeight="SemiBold"
+                           FontSize="11"
                            VerticalAlignment="Center"
-                           Margin="0,0,24,0"/>
+                           Margin="8,0">
+                    <Run Text="Tool: "/>
+                    <Run Text="{Binding CurrentToolName}" FontWeight="SemiBold"/>
+                </TextBlock>
 
                 <TextBlock Grid.Column="2"
                            Foreground="{StaticResource TextMutedBrush}"
-                           FontSize="11"
-                           VerticalAlignment="Center">
-                    <Run Text="🔒 All editing happens locally on your device"/>
+                           FontSize="10"
+                           VerticalAlignment="Center"
+                           Margin="8,0">
+                    <Run Text="{Binding ZoomLevel, StringFormat={}{0:P0}}"/>
                 </TextBlock>
+
+                <TextBlock Grid.Column="3"
+                           Text="🔒 Local"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontSize="10"
+                           VerticalAlignment="Center"
+                           ToolTip="All editing happens locally on your device"/>
             </Grid>
         </Border>
     </Grid>

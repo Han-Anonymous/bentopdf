@@ -17,6 +17,10 @@ namespace PDFKawankasi.Views;
 /// </summary>
 public partial class PdfEditorView : UserControl
 {
+    // Constants for default page dimensions
+    private const double DefaultPageWidth = 800.0;
+    private const double DefaultPageHeight = 1000.0;
+    
     private PdfEditorViewModel ViewModel => (PdfEditorViewModel)DataContext;
     private bool _isDrawing;
     private Point _startPoint;
@@ -46,6 +50,14 @@ public partial class PdfEditorView : UserControl
             
             // Subscribe to save current page strokes request
             ViewModel.OnSaveCurrentPageStrokes += OnSaveCurrentPageStrokes;
+            
+            // Subscribe to fullscreen toggle
+            ViewModel.OnFullscreenToggled += OnFullscreenToggled;
+            
+            // Focus the control to enable keyboard shortcuts
+            // Done after event subscriptions to ensure proper initialization
+            Dispatcher.BeginInvoke(new Action(() => this.Focus()), 
+                System.Windows.Threading.DispatcherPriority.Input);
         }
     }
 
@@ -61,8 +73,121 @@ public partial class PdfEditorView : UserControl
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.OnInkRenderRequested -= OnInkRenderRequested;
             ViewModel.OnSaveCurrentPageStrokes -= OnSaveCurrentPageStrokes;
+            ViewModel.OnFullscreenToggled -= OnFullscreenToggled;
         }
     }
+
+    #region Keyboard and Mouse Wheel Handlers
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // F11 for fullscreen toggle
+        if (e.Key == Key.F11)
+        {
+            ViewModel.ToggleFullscreenCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // Handle Ctrl+Plus and Ctrl+Minus for zooming
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            if (e.Key == Key.Add || e.Key == Key.OemPlus)
+            {
+                ViewModel.ZoomInCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
+            {
+                ViewModel.ZoomOutCommand.Execute(null);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.D0 || e.Key == Key.NumPad0)
+            {
+                // Ctrl+0 to reset zoom to 100%
+                if (ViewModel.IsPdfLoaded)
+                {
+                    ViewModel.ApplyZoomDelta(1.0 - ViewModel.ZoomLevel);
+                }
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        // Ctrl+Mouse Wheel for zooming
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            if (ViewModel.IsPdfLoaded)
+            {
+                double delta = e.Delta > 0 ? 0.1 : -0.1;
+                ViewModel.ApplyZoomDelta(delta);
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void OnFullscreenToggled(bool isFullscreen)
+    {
+        // Find parent window and toggle fullscreen
+        var window = Window.GetWindow(this);
+        if (window != null)
+        {
+            if (isFullscreen)
+            {
+                window.WindowStyle = WindowStyle.None;
+                window.WindowState = WindowState.Maximized;
+            }
+            else
+            {
+                window.WindowStyle = WindowStyle.SingleBorderWindow;
+                window.WindowState = WindowState.Normal;
+            }
+        }
+    }
+
+    private void OnFitToWidthClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsPdfLoaded || PdfScrollViewer == null) return;
+
+        // Calculate zoom to fit width
+        var availableWidth = PdfScrollViewer.ActualWidth - 20; // Subtract scrollbar width
+        if (availableWidth > 0 && ViewModel.CanvasWidth > 0)
+        {
+            var desiredZoom = availableWidth / DefaultPageWidth;
+            ViewModel.ApplyZoomDelta(desiredZoom - ViewModel.ZoomLevel);
+        }
+    }
+
+    private void OnFitToPageClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsPdfLoaded || PdfScrollViewer == null) return;
+
+        // Calculate zoom to fit entire page
+        var availableWidth = PdfScrollViewer.ActualWidth - 20;
+        var availableHeight = PdfScrollViewer.ActualHeight - 20;
+        
+        if (availableWidth > 0 && availableHeight > 0)
+        {
+            var zoomW = availableWidth / DefaultPageWidth;
+            var zoomH = availableHeight / DefaultPageHeight;
+            var desiredZoom = Math.Min(zoomW, zoomH);
+            ViewModel.ApplyZoomDelta(desiredZoom - ViewModel.ZoomLevel);
+        }
+    }
+
+    private void OnAddImageClick(object sender, RoutedEventArgs e)
+    {
+        // Immediately open file picker for adding image
+        if (ViewModel.IsPdfLoaded)
+        {
+            ViewModel.AddImage();
+            RefreshImagesDisplay();
+        }
+    }
+
+    #endregion
 
     private void OnSaveCurrentPageStrokes()
     {
