@@ -202,7 +202,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0"
-                                  Foreground="#E53E3E"/>
+                                  Foreground="{StaticResource DangerBrush}"/>
                     
                     <Separator Margin="8,0"/>
                     
@@ -424,7 +424,7 @@
                                                         <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="BorderBrush" Value="#E53E3E"/>
+                                                        <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -434,7 +434,7 @@
                                                 <MenuItem Header="Add Page Above" Click="OnAddPageAboveClick"/>
                                                 <MenuItem Header="Add Page Below" Click="OnAddPageBelowClick"/>
                                                 <Separator/>
-                                                <MenuItem Header="Delete Page" Click="OnDeletePageClick" Foreground="#E53E3E"/>
+                                                <MenuItem Header="Delete Page" Click="OnDeletePageClick" Foreground="{StaticResource DangerBrush}"/>
                                             </ContextMenu>
                                         </Border.ContextMenu>
                                         <Grid>

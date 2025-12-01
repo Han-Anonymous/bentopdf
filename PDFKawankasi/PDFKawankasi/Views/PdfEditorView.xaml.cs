@@ -27,6 +27,10 @@ public partial class PdfEditorView : UserControl
     private const double MinTextBoxWidth = 100.0;
     private const double MinTextBoxHeight = 50.0;
     
+    // Constants for snap assist angle thresholds (in degrees)
+    private const double SnapHorizontalThreshold = 22.5;
+    private const double SnapVerticalThreshold = 67.5;
+    
     private PdfEditorViewModel ViewModel => (PdfEditorViewModel)DataContext;
     private bool _isDrawing;
     private Point _startPoint;
@@ -429,11 +433,25 @@ public partial class PdfEditorView : UserControl
         }
     }
 
-    private void OnAddPageAboveClick(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Helper method to get thumbnail from context menu event sender
+    /// </summary>
+    private PageThumbnailModel? GetThumbnailFromContextMenuEvent(object sender)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
+        if (sender is MenuItem menuItem 
+            && menuItem.Parent is ContextMenu contextMenu 
             && contextMenu.PlacementTarget is Border border 
             && border.DataContext is PageThumbnailModel thumbnail)
+        {
+            return thumbnail;
+        }
+        return null;
+    }
+
+    private void OnAddPageAboveClick(object sender, RoutedEventArgs e)
+    {
+        var thumbnail = GetThumbnailFromContextMenuEvent(sender);
+        if (thumbnail != null)
         {
             ViewModel.AddPageAboveCommand.Execute(thumbnail.PageNumber);
         }
@@ -441,9 +459,8 @@ public partial class PdfEditorView : UserControl
 
     private void OnAddPageBelowClick(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
-            && contextMenu.PlacementTarget is Border border 
-            && border.DataContext is PageThumbnailModel thumbnail)
+        var thumbnail = GetThumbnailFromContextMenuEvent(sender);
+        if (thumbnail != null)
         {
             ViewModel.AddPageBelowCommand.Execute(thumbnail.PageNumber);
         }
@@ -451,9 +468,8 @@ public partial class PdfEditorView : UserControl
 
     private void OnDeletePageClick(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu 
-            && contextMenu.PlacementTarget is Border border 
-            && border.DataContext is PageThumbnailModel thumbnail)
+        var thumbnail = GetThumbnailFromContextMenuEvent(sender);
+        if (thumbnail != null)
         {
             ViewModel.DeletePageCommand.Execute(thumbnail.PageNumber);
         }
@@ -513,12 +529,12 @@ public partial class PdfEditorView : UserControl
             double angle = Math.Atan2(Math.Abs(dy), Math.Abs(dx)) * 180 / Math.PI;
             
             StylusPoint newEndPoint;
-            if (angle < 22.5)
+            if (angle < SnapHorizontalThreshold)
             {
                 // Snap to horizontal
                 newEndPoint = new StylusPoint(endPoint.X, startPoint.Y);
             }
-            else if (angle > 67.5)
+            else if (angle > SnapVerticalThreshold)
             {
                 // Snap to vertical
                 newEndPoint = new StylusPoint(startPoint.X, endPoint.Y);
