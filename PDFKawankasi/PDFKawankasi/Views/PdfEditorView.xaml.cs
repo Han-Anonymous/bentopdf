@@ -523,9 +523,14 @@ public partial class PdfEditorView : UserControl
             var newX = InkCanvas.GetLeft(element) + deltaX;
             var newY = InkCanvas.GetTop(element) + deltaY;
 
+            // Get image dimensions from the annotation
+            var imageAnnotation = ViewModel.CurrentPageImages.FirstOrDefault(i => i.Id == _draggingImageId);
+            var elementWidth = imageAnnotation?.Width ?? 100;
+            var elementHeight = imageAnnotation?.Height ?? 100;
+
             // Clamp to canvas bounds
-            newX = Math.Max(0, Math.Min(newX, ViewModel.CanvasWidth - element.ActualWidth));
-            newY = Math.Max(0, Math.Min(newY, ViewModel.CanvasHeight - element.ActualHeight));
+            newX = Math.Max(0, Math.Min(newX, ViewModel.CanvasWidth - elementWidth));
+            newY = Math.Max(0, Math.Min(newY, ViewModel.CanvasHeight - elementHeight));
 
             InkCanvas.SetLeft(element, newX);
             InkCanvas.SetTop(element, newY);

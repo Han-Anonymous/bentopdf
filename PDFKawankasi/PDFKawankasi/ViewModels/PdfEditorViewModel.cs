@@ -972,14 +972,18 @@ public partial class PdfEditorViewModel : ObservableObject
                 bitmap.EndInit();
                 bitmap.Freeze();
 
+                // Ensure canvas dimensions are valid
+                var maxWidth = CanvasWidth > 0 ? CanvasWidth / 2 : 400;
+                var maxHeight = CanvasHeight > 0 ? CanvasHeight / 2 : 500;
+
                 var imageAnnotation = new ImageAnnotation
                 {
                     Image = bitmap,
                     ImageBytes = imageBytes,
                     X = 100,
                     Y = 100,
-                    Width = Math.Min(bitmap.PixelWidth, CanvasWidth / 2),
-                    Height = Math.Min(bitmap.PixelHeight, CanvasHeight / 2)
+                    Width = Math.Min(bitmap.PixelWidth, maxWidth),
+                    Height = Math.Min(bitmap.PixelHeight, maxHeight)
                 };
 
                 CurrentPageImages.Add(imageAnnotation);
@@ -1166,9 +1170,10 @@ public partial class PdfEditorViewModel : ObservableObject
                             
                             gfx.DrawImage(xImage, pdfX, pdfY, pdfWidth, pdfHeight);
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // Skip this image if there's an error
+                            // Log and skip this image if there's an error loading/drawing it
+                            System.Diagnostics.Debug.WriteLine($"Failed to embed image on page {pageNumber}: {ex.Message}");
                         }
                     }
                 }
