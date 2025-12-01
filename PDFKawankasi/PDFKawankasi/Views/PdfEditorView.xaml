@@ -47,20 +47,6 @@
                             Padding="12,8"
                             Margin="0,0,8,0"
                             IsEnabled="{Binding IsPdfLoaded}"/>
-                    <Button Content="📤 Export Ink"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ExportInkStrokesCommand}"
-                            ToolTip="Export ink strokes to ISF file"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
-                    <Button Content="📥 Import Ink"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ImportInkStrokesCommand}"
-                            ToolTip="Import ink strokes from ISF file"
-                            Padding="12,8"
-                            Margin="0,0,8,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
                     <Button Content="📸 Screenshot"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding TakeScreenshotCommand}"
@@ -163,6 +149,16 @@
                                   ToolTip="Add comment"
                                   Style="{StaticResource ToolToggleButtonStyle}"
                                   IsChecked="{Binding IsCommentToolActive}"
+                                  IsEnabled="{Binding IsPdfLoaded}"
+                                  Padding="10,6"
+                                  Margin="0,0,4,0"/>
+                    
+                    <!-- Image Tool -->
+                    <ToggleButton x:Name="ImageToolBtn"
+                                  Content="🖼️"
+                                  ToolTip="Add image"
+                                  Style="{StaticResource ToolToggleButtonStyle}"
+                                  IsChecked="{Binding IsImageToolActive}"
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="10,6"
                                   Margin="0,0,4,0"/>
@@ -294,7 +290,7 @@
                         <ItemsControl ItemsSource="{Binding PageThumbnails}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource CardBrush}"
+                                    <Border Background="White"
                                             BorderThickness="2"
                                             CornerRadius="6"
                                             Margin="0,0,0,8"
@@ -314,7 +310,8 @@
                                             <Image Source="{Binding Thumbnail}" 
                                                    Stretch="Uniform"
                                                    MaxHeight="160"
-                                                   Margin="4"/>
+                                                   Margin="4"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
                                             <TextBlock Text="{Binding PageNumber}"
                                                        Foreground="{StaticResource TextPrimaryBrush}"
                                                        Background="{StaticResource SurfaceBrush}"
