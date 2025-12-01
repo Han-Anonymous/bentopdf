@@ -49,6 +49,9 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     
+    <!-- SVG Support for WPF -->
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.4" />
+    
     <!-- File Dialogs and Windows Integration -->
     <!-- Pin to the latest available version on nuget.org (1.1.0). Version 1.1.5 is not available on public nuget.org feed. -->
     <PackageReference Include="Microsoft.WindowsAPICodePack-Shell" Version="1.1.0" />
