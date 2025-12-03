@@ -819,20 +819,50 @@ public partial class PdfEditorView : UserControl
         grid.Children.Add(resizeHandle);
         grid.Children.Add(deleteButton);
 
-        // Create container border
+        // Create container border (initially transparent)
         var container = new Border
         {
-            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
-            BorderThickness = new Thickness(2),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
             Cursor = Cursors.SizeAll,
             Child = grid,
-            Tag = $"IMAGE:{imgAnnotation.Id}"
+            Tag = $"IMAGE:{imgAnnotation.Id}",
+            Focusable = true
         };
 
         container.MouseLeftButtonDown += OnImageMouseDown;
         container.MouseLeftButtonUp += OnImageMouseUp;
         container.MouseMove += OnImageMouseMove;
+        
+        // Show border when mouse enters or gets focus
+        container.MouseEnter += (s, e) =>
+        {
+            container.BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241));
+            container.BorderThickness = new Thickness(2);
+        };
+        
+        // Hide border when mouse leaves and not focused
+        container.MouseLeave += (s, e) =>
+        {
+            if (!container.IsKeyboardFocusWithin)
+            {
+                container.BorderBrush = Brushes.Transparent;
+                container.BorderThickness = new Thickness(0);
+            }
+        };
+        
+        container.GotFocus += (s, e) =>
+        {
+            container.BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241));
+            container.BorderThickness = new Thickness(2);
+        };
+        
+        container.LostFocus += (s, e) =>
+        {
+            container.BorderBrush = Brushes.Transparent;
+            container.BorderThickness = new Thickness(0);
+        };
 
         // Position the image
         InkCanvas.SetLeft(container, imgAnnotation.X);
@@ -986,12 +1016,117 @@ public partial class PdfEditorView : UserControl
 
     private void AddTextBoxToCanvas(PdfEditorViewModel.TextBoxAnnotation textBoxAnnotation)
     {
+        // Create font control toolbar
+        var fontToolbar = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)),
+            Height = 28,
+            Margin = new Thickness(2, 2, 2, 0)
+        };
+
+        // Font family combo box
+        var fontFamilyCombo = new ComboBox
+        {
+            Width = 110,
+            Height = 24,
+            Margin = new Thickness(2),
+            FontSize = 9,
+            SelectedItem = textBoxAnnotation.FontFamily,
+            Tag = textBoxAnnotation.Id
+        };
+        foreach (var font in new[] { "Arial", "Times New Roman", "Courier New", "Verdana", "Georgia", "Tahoma", "Comic Sans MS" })
+        {
+            fontFamilyCombo.Items.Add(font);
+        }
+        fontFamilyCombo.SelectionChanged += (s, e) =>
+        {
+            if (s is ComboBox cb && cb.Tag is string id && cb.SelectedItem is string fontFamily)
+            {
+                var annotation = ViewModel.CurrentPageTextBoxes.FirstOrDefault(t => t.Id == id);
+                if (annotation != null)
+                {
+                    annotation.FontFamily = fontFamily;
+                    ViewModel.SaveCurrentPageTextBoxes();
+                    RefreshTextBoxesDisplay();
+                }
+            }
+        };
+
+        // Font size combo box
+        var fontSizeCombo = new ComboBox
+        {
+            Width = 45,
+            Height = 24,
+            Margin = new Thickness(2),
+            FontSize = 9,
+            SelectedItem = textBoxAnnotation.FontSize,
+            Tag = textBoxAnnotation.Id
+        };
+        foreach (var size in new[] { 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0 })
+        {
+            fontSizeCombo.Items.Add(size);
+        }
+        fontSizeCombo.SelectionChanged += (s, e) =>
+        {
+            if (s is ComboBox cb && cb.Tag is string id && cb.SelectedItem is double fontSize)
+            {
+                var annotation = ViewModel.CurrentPageTextBoxes.FirstOrDefault(t => t.Id == id);
+                if (annotation != null)
+                {
+                    annotation.FontSize = fontSize;
+                    ViewModel.SaveCurrentPageTextBoxes();
+                    RefreshTextBoxesDisplay();
+                }
+            }
+        };
+
+        // Color picker button
+        var colorPicker = new ComboBox
+        {
+            Width = 65,
+            Height = 24,
+            Margin = new Thickness(2),
+            FontSize = 9,
+            Tag = textBoxAnnotation.Id
+        };
+        var colorOptions = new[] { 
+            ("Black", Colors.Black), 
+            ("Red", Colors.Red), 
+            ("Blue", Colors.Blue), 
+            ("Green", Colors.Green)
+        };
+        foreach (var color in colorOptions)
+        {
+            colorPicker.Items.Add(color.Item1);
+            if (color.Item2 == textBoxAnnotation.TextColor)
+                colorPicker.SelectedItem = color.Item1;
+        }
+        colorPicker.SelectionChanged += (s, e) =>
+        {
+            if (s is ComboBox cb && cb.Tag is string id && cb.SelectedItem is string colorName)
+            {
+                var annotation = ViewModel.CurrentPageTextBoxes.FirstOrDefault(t => t.Id == id);
+                if (annotation != null)
+                {
+                    var selectedColor = colorOptions.FirstOrDefault(c => c.Item1 == colorName).Item2;
+                    annotation.TextColor = selectedColor;
+                    ViewModel.SaveCurrentPageTextBoxes();
+                    RefreshTextBoxesDisplay();
+                }
+            }
+        };
+
+        fontToolbar.Children.Add(fontFamilyCombo);
+        fontToolbar.Children.Add(fontSizeCombo);
+        fontToolbar.Children.Add(colorPicker);
+
         // Create editable TextBox
         var textBox = new TextBox
         {
             Text = textBoxAnnotation.Text,
             Width = textBoxAnnotation.Width - TextBoxBorderPadding,
-            Height = textBoxAnnotation.Height - TextBoxDragHandleHeight, // Leave room for drag handle
+            Height = textBoxAnnotation.Height - TextBoxDragHandleHeight - 32, // Leave room for drag handle and toolbar
             FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
             FontSize = textBoxAnnotation.FontSize,
             Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
@@ -1005,7 +1140,24 @@ public partial class PdfEditorView : UserControl
         };
 
         textBox.TextChanged += OnTextBoxTextChanged;
-        textBox.LostFocus += OnTextBoxLostFocus;
+        textBox.GotFocus += (s, e) =>
+        {
+            // Show border when focused
+            if (_textBoxElements.TryGetValue(textBoxAnnotation.Id, out var container))
+            {
+                container.BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241));
+                container.BorderThickness = new Thickness(2);
+            }
+        };
+        textBox.LostFocus += (s, e) =>
+        {
+            // Hide border when unfocused
+            if (_textBoxElements.TryGetValue(textBoxAnnotation.Id, out var container))
+            {
+                container.BorderBrush = Brushes.Transparent;
+                container.BorderThickness = new Thickness(0);
+            }
+        };
 
         // Create resize handle
         var resizeHandle = new Border
@@ -1072,22 +1224,25 @@ public partial class PdfEditorView : UserControl
 
         // Create grid to hold text box and controls
         var grid = new Grid();
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Drag handle
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Font toolbar
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Text box
 
         Grid.SetRow(dragHandle, 0);
-        Grid.SetRow(textBox, 1);
+        Grid.SetRow(fontToolbar, 1);
+        Grid.SetRow(textBox, 2);
 
         grid.Children.Add(dragHandle);
+        grid.Children.Add(fontToolbar);
         grid.Children.Add(textBox);
         grid.Children.Add(resizeHandle);
         grid.Children.Add(deleteButton);
 
-        // Create container border
+        // Create container border (initially transparent)
         var container = new Border
         {
-            BorderBrush = new SolidColorBrush(Color.FromRgb(99, 102, 241)),
-            BorderThickness = new Thickness(2),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(4),
             Child = grid,

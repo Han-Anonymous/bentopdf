@@ -51,13 +51,24 @@
                     </Button>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding SavePdfCommand}"
-                            ToolTip="Save the edited PDF (Ctrl+S)"
+                            ToolTip="Save to original file (Ctrl+S)"
                             Padding="8,4"
                             Margin="0,0,4,0"
                             IsEnabled="{Binding IsPdfLoaded}">
                         <StackPanel Orientation="Horizontal">
                             <Image Source="{svgc:SvgImage /Assets/PDF Editor/diskette.svg}" Width="16" Height="16" Margin="0,0,4,0"/>
                             <TextBlock Text="Save"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SavePdfAsCommand}"
+                            ToolTip="Save to a new file (Ctrl+Shift+S)"
+                            Padding="8,4"
+                            Margin="0,0,4,0"
+                            IsEnabled="{Binding IsPdfLoaded}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{svgc:SvgImage /Assets/PDF Editor/diskette.svg}" Width="16" Height="16" Margin="0,0,4,0"/>
+                            <TextBlock Text="Save As"/>
                         </StackPanel>
                     </Button>
                     <!-- Open saved file hyperlink -->
