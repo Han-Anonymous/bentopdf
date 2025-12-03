@@ -747,54 +747,116 @@ public partial class PdfEditorViewModel : ObservableObject
 
                 // Create UI for page selection
                 var grid = new Grid { Margin = new Thickness(10) };
-                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Selection buttons row
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Content row
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Action buttons row
+
+                // Add Select All / Deselect All buttons at the top
+                var selectionButtonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+
+                var selectAllButton = new Button
+                {
+                    Content = "Select All",
+                    Padding = new Thickness(15, 6, 15, 6),
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Background = new SolidColorBrush(Color.FromRgb(56, 189, 248)),
+                    Foreground = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand
+                };
+                selectAllButton.Click += (s, e) => viewModel.SelectAll();
+
+                var deselectAllButton = new Button
+                {
+                    Content = "Deselect All",
+                    Padding = new Thickness(15, 6, 15, 6),
+                    Background = new SolidColorBrush(Color.FromRgb(71, 85, 105)),
+                    Foreground = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand
+                };
+                deselectAllButton.Click += (s, e) => viewModel.DeselectAll();
+
+                selectionButtonPanel.Children.Add(selectAllButton);
+                selectionButtonPanel.Children.Add(deselectAllButton);
+
+                Grid.SetRow(selectionButtonPanel, 0);
+                grid.Children.Add(selectionButtonPanel);
 
                 var scrollViewer = new ScrollViewer
                 {
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    Background = new SolidColorBrush(Colors.White) // White background for thumbnails
                 };
 
                 var itemsControl = new ItemsControl
                 {
-                    ItemsSource = viewModel.Pages
+                    ItemsSource = viewModel.Pages,
+                    Background = new SolidColorBrush(Colors.White)
                 };
 
                 // Create item template for page thumbnails with checkboxes
                 var dataTemplate = new DataTemplate();
+                
+                // Main container with white background
+                var borderFactory = new FrameworkElementFactory(typeof(Border));
+                borderFactory.SetValue(Border.BackgroundProperty, new SolidColorBrush(Colors.White));
+                borderFactory.SetValue(Border.MarginProperty, new Thickness(5));
+                borderFactory.SetValue(Border.PaddingProperty, new Thickness(10));
+                borderFactory.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(200, 200, 200)));
+                borderFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+                borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+
                 var stackPanelFactory = new FrameworkElementFactory(typeof(StackPanel));
                 stackPanelFactory.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-                stackPanelFactory.SetValue(StackPanel.MarginProperty, new Thickness(5));
 
                 var checkBoxFactory = new FrameworkElementFactory(typeof(CheckBox));
                 checkBoxFactory.SetBinding(CheckBox.IsCheckedProperty, new System.Windows.Data.Binding("IsSelected") { Mode = System.Windows.Data.BindingMode.TwoWay });
                 checkBoxFactory.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
                 checkBoxFactory.SetValue(CheckBox.MarginProperty, new Thickness(0, 0, 10, 0));
 
+                // White background for image
+                var imageBorderFactory = new FrameworkElementFactory(typeof(Border));
+                imageBorderFactory.SetValue(Border.BackgroundProperty, new SolidColorBrush(Colors.White));
+                imageBorderFactory.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(220, 220, 220)));
+                imageBorderFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+                imageBorderFactory.SetValue(Border.MarginProperty, new Thickness(0, 0, 10, 0));
+                imageBorderFactory.SetValue(Border.PaddingProperty, new Thickness(5));
+
                 var imageFactory = new FrameworkElementFactory(typeof(Image));
                 imageFactory.SetBinding(Image.SourceProperty, new System.Windows.Data.Binding("Thumbnail"));
                 imageFactory.SetValue(Image.WidthProperty, 100.0);
                 imageFactory.SetValue(Image.HeightProperty, 140.0);
-                imageFactory.SetValue(Image.MarginProperty, new Thickness(0, 0, 10, 0));
+                imageFactory.SetValue(Image.StretchProperty, Stretch.Uniform);
+
+                imageBorderFactory.AppendChild(imageFactory);
 
                 var textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
                 textBlockFactory.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("PageNumber") { StringFormat = "Page {0}" });
                 textBlockFactory.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
-                textBlockFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Colors.White));
+                textBlockFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Colors.Black));
+                textBlockFactory.SetValue(TextBlock.FontSizeProperty, 14.0);
 
                 stackPanelFactory.AppendChild(checkBoxFactory);
-                stackPanelFactory.AppendChild(imageFactory);
+                stackPanelFactory.AppendChild(imageBorderFactory);
                 stackPanelFactory.AppendChild(textBlockFactory);
-                dataTemplate.VisualTree = stackPanelFactory;
+                
+                borderFactory.AppendChild(stackPanelFactory);
+                dataTemplate.VisualTree = borderFactory;
 
                 itemsControl.ItemTemplate = dataTemplate;
                 scrollViewer.Content = itemsControl;
 
-                Grid.SetRow(scrollViewer, 0);
+                Grid.SetRow(scrollViewer, 1);
                 grid.Children.Add(scrollViewer);
 
-                // Add buttons
+                // Add action buttons
                 var buttonPanel = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -828,7 +890,7 @@ public partial class PdfEditorViewModel : ObservableObject
                 buttonPanel.Children.Add(insertButton);
                 buttonPanel.Children.Add(cancelButton);
 
-                Grid.SetRow(buttonPanel, 1);
+                Grid.SetRow(buttonPanel, 2);
                 grid.Children.Add(buttonPanel);
 
                 selectionWindow.Content = grid;
@@ -1617,6 +1679,115 @@ public partial class PdfEditorViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Regenerate thumbnail for a specific page to reflect changes (annotations, ink, images, text)
+    /// </summary>
+    private void RegeneratePageThumbnail(int pageNumber)
+    {
+        if (_pdfBytes == null || pageNumber < 1 || pageNumber > TotalPages) return;
+
+        try
+        {
+            // Get the thumbnail model
+            var thumbnail = PageThumbnails.FirstOrDefault(p => p.PageNumber == pageNumber);
+            if (thumbnail == null) return;
+
+            // Render page at thumbnail size
+            using var reader = _docLib!.GetDocReader(_pdfBytes, new PageDimensions(ThumbnailWidth, ThumbnailHeight));
+            using var pageReader = reader.GetPageReader(pageNumber - 1);
+            
+            var width = pageReader.GetPageWidth();
+            var height = pageReader.GetPageHeight();
+            var rawBytes = pageReader.GetImage();
+
+            // Check if page has any annotations/changes
+            var hasStrokes = _pageStrokes.ContainsKey(pageNumber) && _pageStrokes[pageNumber].Count > 0;
+            var hasImages = _pageImages.ContainsKey(pageNumber) && _pageImages[pageNumber].Count > 0;
+            var hasTextBoxes = _pageTextBoxes.ContainsKey(pageNumber) && _pageTextBoxes[pageNumber].Count > 0;
+
+            if (hasStrokes || hasImages || hasTextBoxes)
+            {
+                // Create a visual representation with annotations
+                var drawingVisual = new DrawingVisual();
+                using (var drawingContext = drawingVisual.RenderOpen())
+                {
+                    // Draw base PDF page
+                    var baseBitmap = CreateBitmapFromRawBytes(rawBytes, width, height);
+                    drawingContext.DrawImage(baseBitmap, new Rect(0, 0, width, height));
+
+                    // Calculate scale factor for thumbnail
+                    var scaleX = (double)width / DefaultPageWidth;
+                    var scaleY = (double)height / DefaultPageHeight;
+
+                    // Draw strokes
+                    if (hasStrokes)
+                    {
+                        foreach (var stroke in _pageStrokes[pageNumber])
+                        {
+                            var scaledStroke = stroke.Clone();
+                            var matrix = new System.Windows.Media.Matrix(scaleX, 0, 0, scaleY, 0, 0);
+                            scaledStroke.Transform(matrix, false);
+                            scaledStroke.Draw(drawingContext, scaledStroke.DrawingAttributes);
+                        }
+                    }
+
+                    // Draw images
+                    if (hasImages)
+                    {
+                        foreach (var img in _pageImages[pageNumber])
+                        {
+                            if (img.Image != null)
+                            {
+                                var scaledRect = new Rect(
+                                    img.X * scaleX,
+                                    img.Y * scaleY,
+                                    img.Width * scaleX,
+                                    img.Height * scaleY);
+                                drawingContext.DrawImage(img.Image, scaledRect);
+                            }
+                        }
+                    }
+
+                    // Draw text boxes
+                    if (hasTextBoxes)
+                    {
+                        foreach (var textBox in _pageTextBoxes[pageNumber])
+                        {
+                            var formattedText = new System.Windows.Media.FormattedText(
+                                textBox.Text,
+                                System.Globalization.CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface(textBox.FontFamily),
+                                textBox.FontSize * scaleY,
+                                new SolidColorBrush(textBox.TextColor),
+                                1.0);
+
+                            drawingContext.DrawText(formattedText, 
+                                new Point(textBox.X * scaleX, textBox.Y * scaleY));
+                        }
+                    }
+                }
+
+                // Render to bitmap
+                var renderBitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                renderBitmap.Render(drawingVisual);
+                renderBitmap.Freeze();
+
+                thumbnail.Thumbnail = renderBitmap;
+            }
+            else
+            {
+                // No annotations, just use base PDF rendering
+                var baseThumbnail = CreateBitmapFromRawBytes(rawBytes, width, height);
+                thumbnail.Thumbnail = baseThumbnail;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error regenerating thumbnail: {ex.Message}";
+        }
+    }
+
     private void RenderCurrentPage()
     {
         if (_pdfBytes == null || CurrentPage < 1 || CurrentPage > TotalPages) return;
@@ -1867,6 +2038,7 @@ public partial class PdfEditorViewModel : ObservableObject
     {
         _pageStrokes[CurrentPage] = new StrokeCollection(strokes);
         HasPendingChanges = true;
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     public void NotifyStrokeAdded()
@@ -1883,6 +2055,7 @@ public partial class PdfEditorViewModel : ObservableObject
             Stroke = stroke
         };
         PushUndoAction(action);
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     public void NotifyStrokeErasedWithUndo(Stroke stroke)
@@ -1893,6 +2066,7 @@ public partial class PdfEditorViewModel : ObservableObject
             Stroke = stroke
         };
         PushUndoAction(action);
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     public void ClearCurrentPageStrokes()
@@ -1902,6 +2076,7 @@ public partial class PdfEditorViewModel : ObservableObject
         {
             _pageStrokes[CurrentPage].Clear();
         }
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     private void LoadCurrentPageImages()
@@ -1920,6 +2095,7 @@ public partial class PdfEditorViewModel : ObservableObject
     public void SaveCurrentPageImages()
     {
         _pageImages[CurrentPage] = new List<ImageAnnotation>(CurrentPageImages);
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     private void LoadCurrentPageTextBoxes()
@@ -1938,6 +2114,7 @@ public partial class PdfEditorViewModel : ObservableObject
     public void SaveCurrentPageTextBoxes()
     {
         _pageTextBoxes[CurrentPage] = new List<TextBoxAnnotation>(CurrentPageTextBoxes);
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     /// <summary>
@@ -1971,6 +2148,7 @@ public partial class PdfEditorViewModel : ObservableObject
         PushUndoAction(action);
         
         StatusMessage = $"Added text box to page {CurrentPage}. Click to edit, drag to move.";
+        RegeneratePageThumbnail(CurrentPage);
     }
 
     public void UpdateTextBoxPosition(string textBoxId, double x, double y)
@@ -2023,6 +2201,7 @@ public partial class PdfEditorViewModel : ObservableObject
             CurrentPageTextBoxes.Remove(textBox);
             SaveCurrentPageTextBoxes();
             StatusMessage = "Text box deleted";
+            RegeneratePageThumbnail(CurrentPage);
         }
     }
 
@@ -2074,6 +2253,7 @@ public partial class PdfEditorViewModel : ObservableObject
                 PushUndoAction(action);
                 
                 StatusMessage = $"Added image to page {CurrentPage}. Use Select tool to move/resize.";
+                RegeneratePageThumbnail(CurrentPage);
             }
             catch (Exception ex)
             {
@@ -2121,6 +2301,7 @@ public partial class PdfEditorViewModel : ObservableObject
             CurrentPageImages.Remove(image);
             SaveCurrentPageImages();
             StatusMessage = "Image deleted";
+            RegeneratePageThumbnail(CurrentPage);
         }
     }
 

@@ -29,6 +29,7 @@ public partial class PdfPageSelectorViewModel : ObservableObject
         try
         {
             var pdfBytes = File.ReadAllBytes(filePath);
+            // Create a new DocLib instance to avoid conflicts with the main editor's instance
             using var docLib = DocLib.Instance;
             using var reader = docLib.GetDocReader(pdfBytes, new PageDimensions(ThumbnailWidth, ThumbnailHeight));
 
@@ -76,5 +77,21 @@ public partial class PdfPageSelectorViewModel : ObservableObject
     public List<int> GetSelectedPageNumbers()
     {
         return Pages.Where(p => p.IsSelected).Select(p => p.PageNumber).ToList();
+    }
+
+    public void SelectAll()
+    {
+        foreach (var page in Pages)
+        {
+            page.IsSelected = true;
+        }
+    }
+
+    public void DeselectAll()
+    {
+        foreach (var page in Pages)
+        {
+            page.IsSelected = false;
+        }
     }
 }
