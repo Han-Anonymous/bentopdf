@@ -802,11 +802,22 @@ public partial class PdfEditorViewModel : ObservableObject
                     Background = new SolidColorBrush(Colors.White) // White background for thumbnails
                 };
 
-                var itemsControl = new ItemsControl
+                // Create ListBox with WrapPanel for grid layout
+                var listBox = new ListBox
                 {
                     ItemsSource = viewModel.Pages,
-                    Background = new SolidColorBrush(Colors.White)
+                    Background = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(0),
+                    AllowDrop = true,
+                    SelectionMode = SelectionMode.Single
                 };
+
+                // Set WrapPanel as ItemsPanel for grid layout
+                var itemsPanelTemplate = new ItemsPanelTemplate();
+                var wrapPanelFactory = new FrameworkElementFactory(typeof(WrapPanel));
+                wrapPanelFactory.SetValue(WrapPanel.OrientationProperty, Orientation.Horizontal);
+                itemsPanelTemplate.VisualTree = wrapPanelFactory;
+                listBox.ItemsPanel = itemsPanelTemplate;
 
                 // Create item template for page thumbnails with checkboxes
                 var dataTemplate = new DataTemplate();
@@ -814,51 +825,146 @@ public partial class PdfEditorViewModel : ObservableObject
                 // Main container with white background
                 var borderFactory = new FrameworkElementFactory(typeof(Border));
                 borderFactory.SetValue(Border.BackgroundProperty, new SolidColorBrush(Colors.White));
-                borderFactory.SetValue(Border.MarginProperty, new Thickness(5));
+                borderFactory.SetValue(Border.MarginProperty, new Thickness(8));
                 borderFactory.SetValue(Border.PaddingProperty, new Thickness(10));
                 borderFactory.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(200, 200, 200)));
                 borderFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
                 borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+                borderFactory.SetValue(Border.CursorProperty, Cursors.Hand);
 
-                var stackPanelFactory = new FrameworkElementFactory(typeof(StackPanel));
-                stackPanelFactory.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+                var mainStackFactory = new FrameworkElementFactory(typeof(StackPanel));
+                mainStackFactory.SetValue(StackPanel.OrientationProperty, Orientation.Vertical);
+
+                // Top row: Checkbox and page number
+                var topRowFactory = new FrameworkElementFactory(typeof(StackPanel));
+                topRowFactory.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+                topRowFactory.SetValue(StackPanel.MarginProperty, new Thickness(0, 0, 0, 8));
 
                 var checkBoxFactory = new FrameworkElementFactory(typeof(CheckBox));
                 checkBoxFactory.SetBinding(CheckBox.IsCheckedProperty, new System.Windows.Data.Binding("IsSelected") { Mode = System.Windows.Data.BindingMode.TwoWay });
                 checkBoxFactory.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
-                checkBoxFactory.SetValue(CheckBox.MarginProperty, new Thickness(0, 0, 10, 0));
+                checkBoxFactory.SetValue(CheckBox.MarginProperty, new Thickness(0, 0, 8, 0));
 
-                // White background for image
+                var pageNumberFactory = new FrameworkElementFactory(typeof(TextBlock));
+                pageNumberFactory.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("PageNumber") { StringFormat = "Page {0}" });
+                pageNumberFactory.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+                pageNumberFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Colors.Black));
+                pageNumberFactory.SetValue(TextBlock.FontSizeProperty, 13.0);
+                pageNumberFactory.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
+
+                topRowFactory.AppendChild(checkBoxFactory);
+                topRowFactory.AppendChild(pageNumberFactory);
+
+                // Image with border
                 var imageBorderFactory = new FrameworkElementFactory(typeof(Border));
                 imageBorderFactory.SetValue(Border.BackgroundProperty, new SolidColorBrush(Colors.White));
                 imageBorderFactory.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(220, 220, 220)));
                 imageBorderFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-                imageBorderFactory.SetValue(Border.MarginProperty, new Thickness(0, 0, 10, 0));
                 imageBorderFactory.SetValue(Border.PaddingProperty, new Thickness(5));
 
                 var imageFactory = new FrameworkElementFactory(typeof(Image));
                 imageFactory.SetBinding(Image.SourceProperty, new System.Windows.Data.Binding("Thumbnail"));
-                imageFactory.SetValue(Image.WidthProperty, 100.0);
-                imageFactory.SetValue(Image.HeightProperty, 140.0);
+                imageFactory.SetValue(Image.WidthProperty, 120.0);
+                imageFactory.SetValue(Image.HeightProperty, 160.0);
                 imageFactory.SetValue(Image.StretchProperty, Stretch.Uniform);
 
                 imageBorderFactory.AppendChild(imageFactory);
 
-                var textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
-                textBlockFactory.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("PageNumber") { StringFormat = "Page {0}" });
-                textBlockFactory.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
-                textBlockFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Colors.Black));
-                textBlockFactory.SetValue(TextBlock.FontSizeProperty, 14.0);
-
-                stackPanelFactory.AppendChild(checkBoxFactory);
-                stackPanelFactory.AppendChild(imageBorderFactory);
-                stackPanelFactory.AppendChild(textBlockFactory);
+                mainStackFactory.AppendChild(topRowFactory);
+                mainStackFactory.AppendChild(imageBorderFactory);
                 
-                borderFactory.AppendChild(stackPanelFactory);
+                borderFactory.AppendChild(mainStackFactory);
                 dataTemplate.VisualTree = borderFactory;
 
-                itemsControl.ItemTemplate = dataTemplate;
-                scrollViewer.Content = itemsControl;
+                listBox.ItemTemplate = dataTemplate;
+
+                // Implement drag-drop reordering
+                PageThumbnailModel? draggedItem = null;
+                Point startPoint = new Point();
+
+                listBox.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    startPoint = e.GetPosition(null);
+                    var listBoxItem = FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource);
+                    if (listBoxItem != null)
+                    {
+                        draggedItem = listBoxItem.DataContext as PageThumbnailModel;
+                    }
+                };
+
+                listBox.PreviewMouseMove += (s, e) =>
+                {
+                    if (draggedItem != null && e.LeftButton == MouseButtonState.Pressed)
+                    {
+                        Point mousePos = e.GetPosition(null);
+                        Vector diff = startPoint - mousePos;
+
+                        if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                            Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+                        {
+                            var dragData = new DataObject("PageThumbnailModel", draggedItem);
+                            DragDrop.DoDragDrop(listBox, dragData, DragDropEffects.Move);
+                        }
+                    }
+                };
+
+                listBox.Drop += (s, e) =>
+                {
+                    if (e.Data.GetDataPresent("PageThumbnailModel"))
+                    {
+                        var droppedItem = e.Data.GetData("PageThumbnailModel") as PageThumbnailModel;
+                        var targetItem = FindAncestor<ListBoxItem>((DependencyObject)e.OriginalSource);
+                        
+                        if (droppedItem != null && targetItem != null)
+                        {
+                            var target = targetItem.DataContext as PageThumbnailModel;
+                            if (target != null && droppedItem != target)
+                            {
+                                int oldIndex = viewModel.Pages.IndexOf(droppedItem);
+                                int newIndex = viewModel.Pages.IndexOf(target);
+                                
+                                if (oldIndex >= 0 && newIndex >= 0)
+                                {
+                                    viewModel.Pages.Move(oldIndex, newIndex);
+                                    
+                                    // Update page numbers after reordering
+                                    for (int i = 0; i < viewModel.Pages.Count; i++)
+                                    {
+                                        viewModel.Pages[i].PageNumber = i + 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    draggedItem = null;
+                };
+
+                listBox.DragOver += (s, e) =>
+                {
+                    if (e.Data.GetDataPresent("PageThumbnailModel"))
+                    {
+                        e.Effects = DragDropEffects.Move;
+                    }
+                    else
+                    {
+                        e.Effects = DragDropEffects.None;
+                    }
+                    e.Handled = true;
+                };
+
+                scrollViewer.Content = listBox;
+
+                // Helper method to find ancestor of specific type
+                T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
+                {
+                    while (current != null)
+                    {
+                        if (current is T ancestor)
+                            return ancestor;
+                        current = VisualTreeHelper.GetParent(current);
+                    }
+                    return null;
+                }
 
                 Grid.SetRow(scrollViewer, 1);
                 grid.Children.Add(scrollViewer);

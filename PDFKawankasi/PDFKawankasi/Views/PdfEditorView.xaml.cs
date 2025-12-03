@@ -1125,8 +1125,8 @@ public partial class PdfEditorView : UserControl
         var textBox = new TextBox
         {
             Text = textBoxAnnotation.Text,
-            Width = textBoxAnnotation.Width - TextBoxBorderPadding,
-            Height = textBoxAnnotation.Height - TextBoxDragHandleHeight - 32, // Leave room for drag handle and toolbar
+            Width = Math.Max(50, textBoxAnnotation.Width - TextBoxBorderPadding),
+            Height = Math.Max(30, textBoxAnnotation.Height - TextBoxDragHandleHeight - 32), // Leave room for drag handle and toolbar, ensure minimum height
             FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
             FontSize = textBoxAnnotation.FontSize,
             Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
