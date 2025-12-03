@@ -466,6 +466,24 @@ public partial class PdfEditorView : UserControl
         }
     }
 
+    private void OnInsertPdfPagesAboveClick(object sender, RoutedEventArgs e)
+    {
+        var thumbnail = GetThumbnailFromContextMenuEvent(sender);
+        if (thumbnail != null)
+        {
+            ViewModel.InsertPdfPagesAboveCommand.Execute(thumbnail.PageNumber);
+        }
+    }
+
+    private void OnInsertPdfPagesBelowClick(object sender, RoutedEventArgs e)
+    {
+        var thumbnail = GetThumbnailFromContextMenuEvent(sender);
+        if (thumbnail != null)
+        {
+            ViewModel.InsertPdfPagesBelowCommand.Execute(thumbnail.PageNumber);
+        }
+    }
+
     private void OnDeletePageClick(object sender, RoutedEventArgs e)
     {
         var thumbnail = GetThumbnailFromContextMenuEvent(sender);

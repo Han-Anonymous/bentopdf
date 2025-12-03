@@ -436,6 +436,9 @@
                                                 <MenuItem Header="Add Page Above" Click="OnAddPageAboveClick"/>
                                                 <MenuItem Header="Add Page Below" Click="OnAddPageBelowClick"/>
                                                 <Separator/>
+                                                <MenuItem Header="Insert Above - PDF Page(s)" Click="OnInsertPdfPagesAboveClick"/>
+                                                <MenuItem Header="Insert Below - PDF Page(s)" Click="OnInsertPdfPagesBelowClick"/>
+                                                <Separator/>
                                                 <MenuItem Header="Delete Page" Click="OnDeletePageClick" Foreground="{StaticResource DangerBrush}"/>
                                             </ContextMenu>
                                         </Border.ContextMenu>

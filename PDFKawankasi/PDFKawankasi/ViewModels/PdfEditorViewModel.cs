@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Docnet.Core;
 using Docnet.Core.Models;
 using PDFKawankasi.Models;
+using PDFKawankasi.Services;
 using PdfSharpCore.Drawing;
 
 // Use aliases to avoid conflicts between PdfSharpCore and iText7
@@ -37,6 +38,7 @@ public partial class PdfEditorViewModel : ObservableObject
     private const string DefaultTextBoxPlaceholder = "Type text here...";
     
     private IDocLib? _docLib;
+    private readonly PdfService _pdfService;
     private string? _currentFilePath;
     private byte[]? _pdfBytes;
 
@@ -261,7 +263,7 @@ public partial class PdfEditorViewModel : ObservableObject
         }
         public override void Redo(PdfEditorViewModel vm)
         {
-            vm.DeletePageInternal(PageNumber, recordUndo: false);
+            vm.DeletePageInternal(PageNumber, recordUndo: false, updatePdfFile: false);
         }
     }
 
@@ -271,11 +273,11 @@ public partial class PdfEditorViewModel : ObservableObject
         public override string Description => $"Add page at {PageNumber}";
         public override void Undo(PdfEditorViewModel vm)
         {
-            vm.DeletePageInternal(PageNumber, recordUndo: false);
+            vm.DeletePageInternal(PageNumber, recordUndo: false, updatePdfFile: false);
         }
         public override void Redo(PdfEditorViewModel vm)
         {
-            vm.AddBlankPageInternal(PageNumber, recordUndo: false);
+            _ = vm.AddBlankPageInternal(PageNumber, recordUndo: false, updatePdfFile: false);
         }
     }
 
@@ -434,6 +436,7 @@ public partial class PdfEditorViewModel : ObservableObject
     public PdfEditorViewModel()
     {
         _docLib = DocLib.Instance;
+        _pdfService = new PdfService();
         InitializeInkDrawingAttributes();
     }
 
@@ -627,7 +630,7 @@ public partial class PdfEditorViewModel : ObservableObject
         StatusMessage = $"Deleted page {pageNumber}";
     }
 
-    private void DeletePageInternal(int pageNumber, bool recordUndo)
+    private void DeletePageInternal(int pageNumber, bool recordUndo, bool updatePdfFile = true)
     {
         if (pageNumber < 1 || pageNumber > TotalPages) return;
         
@@ -687,20 +690,198 @@ public partial class PdfEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddPageAbove(int pageNumber)
+    private async Task AddPageAbove(int pageNumber)
     {
-        AddBlankPageInternal(pageNumber, recordUndo: true);
+        await AddBlankPageInternal(pageNumber, recordUndo: true);
         StatusMessage = $"Added blank page above page {pageNumber}";
     }
 
     [RelayCommand]
-    private void AddPageBelow(int pageNumber)
+    private async Task AddPageBelow(int pageNumber)
     {
-        AddBlankPageInternal(pageNumber + 1, recordUndo: true);
+        await AddBlankPageInternal(pageNumber + 1, recordUndo: true);
         StatusMessage = $"Added blank page below page {pageNumber}";
     }
 
-    private void AddBlankPageInternal(int insertPosition, bool recordUndo)
+    [RelayCommand]
+    private async Task InsertPdfPagesAbove(int pageNumber)
+    {
+        await InsertPdfPagesAtPosition(pageNumber, "above");
+    }
+
+    [RelayCommand]
+    private async Task InsertPdfPagesBelow(int pageNumber)
+    {
+        await InsertPdfPagesAtPosition(pageNumber + 1, "below");
+    }
+
+    private async Task InsertPdfPagesAtPosition(int insertPosition, string location)
+    {
+        try
+        {
+            // Open file dialog to select PDF
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = $"Select PDF to Insert {location}",
+                Filter = "PDF Files (*.pdf)|*.pdf",
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                StatusMessage = "Loading PDF for page selection...";
+
+                // Create and show page selection window
+                var selectionWindow = new Window
+                {
+                    Title = $"Select Pages to Insert {location}",
+                    Width = 800,
+                    Height = 600,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Application.Current.MainWindow,
+                    Background = new SolidColorBrush(Color.FromRgb(28, 32, 38))
+                };
+
+                var viewModel = new PdfPageSelectorViewModel(dialog.FileName);
+                selectionWindow.DataContext = viewModel;
+
+                // Create UI for page selection
+                var grid = new Grid { Margin = new Thickness(10) };
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var scrollViewer = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                };
+
+                var itemsControl = new ItemsControl
+                {
+                    ItemsSource = viewModel.Pages
+                };
+
+                // Create item template for page thumbnails with checkboxes
+                var dataTemplate = new DataTemplate();
+                var stackPanelFactory = new FrameworkElementFactory(typeof(StackPanel));
+                stackPanelFactory.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+                stackPanelFactory.SetValue(StackPanel.MarginProperty, new Thickness(5));
+
+                var checkBoxFactory = new FrameworkElementFactory(typeof(CheckBox));
+                checkBoxFactory.SetBinding(CheckBox.IsCheckedProperty, new System.Windows.Data.Binding("IsSelected") { Mode = System.Windows.Data.BindingMode.TwoWay });
+                checkBoxFactory.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
+                checkBoxFactory.SetValue(CheckBox.MarginProperty, new Thickness(0, 0, 10, 0));
+
+                var imageFactory = new FrameworkElementFactory(typeof(Image));
+                imageFactory.SetBinding(Image.SourceProperty, new System.Windows.Data.Binding("Thumbnail"));
+                imageFactory.SetValue(Image.WidthProperty, 100.0);
+                imageFactory.SetValue(Image.HeightProperty, 140.0);
+                imageFactory.SetValue(Image.MarginProperty, new Thickness(0, 0, 10, 0));
+
+                var textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
+                textBlockFactory.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("PageNumber") { StringFormat = "Page {0}" });
+                textBlockFactory.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+                textBlockFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Colors.White));
+
+                stackPanelFactory.AppendChild(checkBoxFactory);
+                stackPanelFactory.AppendChild(imageFactory);
+                stackPanelFactory.AppendChild(textBlockFactory);
+                dataTemplate.VisualTree = stackPanelFactory;
+
+                itemsControl.ItemTemplate = dataTemplate;
+                scrollViewer.Content = itemsControl;
+
+                Grid.SetRow(scrollViewer, 0);
+                grid.Children.Add(scrollViewer);
+
+                // Add buttons
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+
+                var insertButton = new Button
+                {
+                    Content = "Insert Selected Pages",
+                    Padding = new Thickness(20, 8, 20, 8),
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Background = new SolidColorBrush(Color.FromRgb(56, 189, 248)),
+                    Foreground = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand
+                };
+                insertButton.Click += (s, e) => { selectionWindow.DialogResult = true; selectionWindow.Close(); };
+
+                var cancelButton = new Button
+                {
+                    Content = "Cancel",
+                    Padding = new Thickness(20, 8, 20, 8),
+                    Background = new SolidColorBrush(Color.FromRgb(71, 85, 105)),
+                    Foreground = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(0),
+                    Cursor = Cursors.Hand
+                };
+                cancelButton.Click += (s, e) => { selectionWindow.DialogResult = false; selectionWindow.Close(); };
+
+                buttonPanel.Children.Add(insertButton);
+                buttonPanel.Children.Add(cancelButton);
+
+                Grid.SetRow(buttonPanel, 1);
+                grid.Children.Add(buttonPanel);
+
+                selectionWindow.Content = grid;
+
+                // Show dialog and process selection
+                if (selectionWindow.ShowDialog() == true)
+                {
+                    var selectedPages = viewModel.GetSelectedPageNumbers();
+                    if (selectedPages.Any())
+                    {
+                        StatusMessage = $"Inserting {selectedPages.Count} page(s)...";
+
+                        // Insert pages using PdfService
+                        if (_currentFilePath != null && File.Exists(_currentFilePath))
+                        {
+                            var newPdfBytes = await _pdfService.InsertPdfPagesAsync(
+                                _currentFilePath,
+                                dialog.FileName,
+                                selectedPages.ToArray(),
+                                insertPosition);
+
+                            // Update the PDF bytes in memory
+                            _pdfBytes = newPdfBytes;
+
+                            // Save the updated PDF back to disk
+                            await File.WriteAllBytesAsync(_currentFilePath, newPdfBytes);
+
+                            // Reload the PDF to update thumbnails and page count
+                            LoadPdf(_currentFilePath);
+
+                            StatusMessage = $"Inserted {selectedPages.Count} page(s) at position {insertPosition}";
+                        }
+                    }
+                    else
+                    {
+                        StatusMessage = "No pages selected";
+                    }
+                }
+                else
+                {
+                    StatusMessage = "Insert cancelled";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error inserting PDF pages: {ex.Message}";
+            System.Windows.MessageBox.Show($"Error inserting PDF pages: {ex.Message}", "Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private async Task AddBlankPageInternal(int insertPosition, bool recordUndo, bool updatePdfFile = true)
     {
         if (insertPosition < 1) insertPosition = 1;
         if (insertPosition > TotalPages + 1) insertPosition = TotalPages + 1;
@@ -710,33 +891,100 @@ public partial class PdfEditorViewModel : ObservableObject
             PushUndoAction(new PageAddedAction { PageNumber = insertPosition });
         }
 
-        // Shift all subsequent page data up
-        for (int i = TotalPages; i >= insertPosition; i--)
+        try
         {
-            if (_pageStrokes.ContainsKey(i))
+            if (updatePdfFile)
             {
-                _pageStrokes[i + 1] = _pageStrokes[i];
-                _pageStrokes.Remove(i);
+                StatusMessage = "Adding blank page...";
+
+                // Add blank page to the actual PDF file
+                if (_currentFilePath != null && File.Exists(_currentFilePath))
+                {
+                    // Get current page dimensions (default to A4 if can't determine)
+                    double width = 595; // A4 width in points
+                    double height = 842; // A4 height in points
+
+                    if (_pdfBytes != null && _docLib != null)
+                    {
+                        using var reader = _docLib.GetDocReader(_pdfBytes, new PageDimensions(1));
+                        if (reader.GetPageCount() > 0)
+                        {
+                            using var pageReader = reader.GetPageReader(0);
+                            width = pageReader.GetPageWidth();
+                            height = pageReader.GetPageHeight();
+                        }
+                    }
+
+                    // Add blank page using PdfService
+                    var newPdfBytes = await _pdfService.AddBlankPageAsync(_currentFilePath, insertPosition, width, height);
+                    
+                    // Update the PDF bytes in memory
+                    _pdfBytes = newPdfBytes;
+                    
+                    // Save the updated PDF back to disk
+                    await File.WriteAllBytesAsync(_currentFilePath, newPdfBytes);
+                }
             }
-            if (_pageImages.ContainsKey(i))
+
+            // Shift all subsequent page data up
+            for (int i = TotalPages; i >= insertPosition; i--)
             {
-                _pageImages[i + 1] = _pageImages[i];
-                _pageImages.Remove(i);
+                if (_pageStrokes.ContainsKey(i))
+                {
+                    _pageStrokes[i + 1] = _pageStrokes[i];
+                    _pageStrokes.Remove(i);
+                }
+                if (_pageImages.ContainsKey(i))
+                {
+                    _pageImages[i + 1] = _pageImages[i];
+                    _pageImages.Remove(i);
+                }
+                if (_pageTextBoxes.ContainsKey(i))
+                {
+                    _pageTextBoxes[i + 1] = _pageTextBoxes[i];
+                    _pageTextBoxes.Remove(i);
+                }
             }
-            if (_pageTextBoxes.ContainsKey(i))
+
+            // Shift annotations to new page numbers
+            foreach (var annotation in AllAnnotations.Where(a => a.PageNumber >= insertPosition))
             {
-                _pageTextBoxes[i + 1] = _pageTextBoxes[i];
-                _pageTextBoxes.Remove(i);
+                annotation.PageNumber++;
+            }
+
+            // Reload thumbnails from the updated PDF
+            TotalPages++;
+            
+            if (updatePdfFile)
+            {
+                LoadPageThumbnails();
+            }
+            else
+            {
+                // For undo/redo, just create a blank thumbnail
+                var blankThumbnail = CreateBlankPageThumbnail(insertPosition);
+                PageThumbnails.Insert(insertPosition - 1, blankThumbnail);
+                UpdateAllThumbnailPageNumbers();
+            }
+            
+            // Update IsCurrentPage on all thumbnails
+            UpdateThumbnailCurrentPageStates();
+            
+            UpdatePageNavigation();
+            
+            // Navigate to the newly inserted page
+            CurrentPage = insertPosition;
+            RenderCurrentPage();
+            
+            if (updatePdfFile)
+            {
+                StatusMessage = $"Blank page added at position {insertPosition}";
             }
         }
-
-        // Create blank page thumbnail
-        var blankThumbnail = CreateBlankPageThumbnail(insertPosition);
-        PageThumbnails.Insert(insertPosition - 1, blankThumbnail);
-        
-        TotalPages++;
-        UpdateAllThumbnailPageNumbers();
-        UpdatePageNavigation();
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error adding blank page: {ex.Message}";
+        }
     }
 
     private PageThumbnailModel CreateBlankPageThumbnail(int pageNumber)
@@ -767,6 +1015,14 @@ public partial class PdfEditorViewModel : ObservableObject
         for (int i = 0; i < PageThumbnails.Count; i++)
         {
             PageThumbnails[i].PageNumber = i + 1;
+        }
+    }
+
+    private void UpdateThumbnailCurrentPageStates()
+    {
+        foreach (var thumb in PageThumbnails)
+        {
+            thumb.IsCurrentPage = thumb.PageNumber == CurrentPage;
         }
     }
 

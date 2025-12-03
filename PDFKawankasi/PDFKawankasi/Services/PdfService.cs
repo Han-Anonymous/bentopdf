@@ -356,6 +356,62 @@ public class PdfService
     }
 
     /// <summary>
+    /// Insert pages from another PDF at a specific position
+    /// </summary>
+    public async Task<byte[]> InsertPdfPagesAsync(string targetFilePath, string sourcePdfPath, int[] sourcePageNumbers, int insertPosition, IProgress<int>? progress = null)
+    {
+        return await Task.Run(() =>
+        {
+            using var targetDocument = PdfSharpReader.Open(targetFilePath, PdfSharpOpenMode.Import);
+            using var sourceDocument = PdfSharpReader.Open(sourcePdfPath, PdfSharpOpenMode.Import);
+            using var outputDocument = new PdfSharpDocument();
+
+            var processed = 0;
+            var totalPages = targetDocument.PageCount + sourcePageNumbers.Length;
+
+            // Copy pages from target document up to insertion point
+            for (int i = 0; i < targetDocument.PageCount; i++)
+            {
+                if (i + 1 == insertPosition)
+                {
+                    // Insert pages from source document
+                    foreach (var pageNum in sourcePageNumbers.OrderBy(p => p))
+                    {
+                        if (pageNum >= 1 && pageNum <= sourceDocument.PageCount)
+                        {
+                            outputDocument.AddPage(sourceDocument.Pages[pageNum - 1]);
+                            processed++;
+                            progress?.Report((int)((double)processed / totalPages * 100));
+                        }
+                    }
+                }
+
+                outputDocument.AddPage(targetDocument.Pages[i]);
+                processed++;
+                progress?.Report((int)((double)processed / totalPages * 100));
+            }
+
+            // If insertion position is after the last page, add pages at the end
+            if (insertPosition > targetDocument.PageCount)
+            {
+                foreach (var pageNum in sourcePageNumbers.OrderBy(p => p))
+                {
+                    if (pageNum >= 1 && pageNum <= sourceDocument.PageCount)
+                    {
+                        outputDocument.AddPage(sourceDocument.Pages[pageNum - 1]);
+                        processed++;
+                        progress?.Report((int)((double)processed / totalPages * 100));
+                    }
+                }
+            }
+
+            using var stream = new MemoryStream();
+            outputDocument.Save(stream);
+            return stream.ToArray();
+        });
+    }
+
+    /// <summary>
     /// Convert PDF pages to JPG images
     /// </summary>
     public async Task<List<byte[]>> PdfToJpgAsync(string filePath, int quality = 90, IProgress<int>? progress = null)
