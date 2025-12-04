@@ -349,7 +349,7 @@ public partial class PdfEditorViewModel : ObservableObject
     private bool _isImageToolActive;
 
     [ObservableProperty]
-    private Color _selectedColor = Colors.Yellow;
+    private Color _selectedColor = Colors.Black;
 
     [ObservableProperty]
     private string _currentToolName = "Select";
@@ -2233,6 +2233,7 @@ public partial class PdfEditorViewModel : ObservableObject
         public string FontFamily { get; set; } = "Arial";
         public double FontSize { get; set; } = 14;
         public Color TextColor { get; set; } = Colors.Black;
+        public double LetterSpacing { get; set; } = 0;
         public bool IsSelected { get; set; }
     }
 
