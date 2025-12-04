@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -1017,6 +1018,10 @@ public partial class PdfEditorView : UserControl
 
     private void AddTextBoxToCanvas(PdfEditorViewModel.TextBoxAnnotation textBoxAnnotation)
     {
+        // Declare RichTextBox FIRST so it can be referenced in toolbar button handlers
+        RichTextBox richTextBox = null!;
+        TextBlock placeholderText = null!;
+        
         // Main container for the text box and its controls
         var mainContainer = new Grid();
         
@@ -1101,8 +1106,8 @@ public partial class PdfEditorView : UserControl
                 {
                     textBoxAnnotation.TextColor = c;
                     colorCircle.Fill = new SolidColorBrush(c);
+                    richTextBox.Foreground = new SolidColorBrush(c);
                     ViewModel.SaveCurrentPageTextBoxes();
-                    RefreshTextBoxesDisplay();
                     popup.IsOpen = false;
                 };
                 pPanel.Children.Add(cBtn);
@@ -1131,8 +1136,9 @@ public partial class PdfEditorView : UserControl
         incFontBtn.Click += (s, e) => 
         {
             textBoxAnnotation.FontSize = Math.Min(textBoxAnnotation.FontSize + 2, 72);
+            richTextBox.FontSize = textBoxAnnotation.FontSize;
             ViewModel.SaveCurrentPageTextBoxes();
-            RefreshTextBoxesDisplay();
+            e.Handled = true;
         };
 
         // 3. Decrease Font Size
@@ -1147,8 +1153,9 @@ public partial class PdfEditorView : UserControl
         decFontBtn.Click += (s, e) => 
         {
             textBoxAnnotation.FontSize = Math.Max(textBoxAnnotation.FontSize - 2, 8);
+            richTextBox.FontSize = textBoxAnnotation.FontSize;
             ViewModel.SaveCurrentPageTextBoxes();
-            RefreshTextBoxesDisplay();
+            e.Handled = true;
         };
 
         // 4. Increase Letter Spacing
@@ -1164,7 +1171,7 @@ public partial class PdfEditorView : UserControl
         {
             textBoxAnnotation.LetterSpacing = Math.Min(textBoxAnnotation.LetterSpacing + 1, 20);
             ViewModel.SaveCurrentPageTextBoxes();
-            RefreshTextBoxesDisplay();
+            e.Handled = true;
         };
 
         // 5. Decrease Letter Spacing
@@ -1180,7 +1187,7 @@ public partial class PdfEditorView : UserControl
         {
             textBoxAnnotation.LetterSpacing = Math.Max(textBoxAnnotation.LetterSpacing - 1, -5);
             ViewModel.SaveCurrentPageTextBoxes();
-            RefreshTextBoxesDisplay();
+            e.Handled = true;
         };
 
         // 6. Delete Button
@@ -1241,10 +1248,9 @@ public partial class PdfEditorView : UserControl
         dragHandle.MouseLeftButtonUp += OnTextBoxDragHandleMouseUp;
         dragHandle.MouseMove += OnTextBoxDragHandleMouseMove;
 
-        // TextBox with placeholder support
-        var textBox = new TextBox
+        // RichTextBox for text editing with letter spacing support
+        richTextBox = new RichTextBox
         {
-            Text = textBoxAnnotation.Text,
             Width = Math.Max(150, textBoxAnnotation.Width),
             Height = Math.Max(40, textBoxAnnotation.Height),
             FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
@@ -1252,69 +1258,40 @@ public partial class PdfEditorView : UserControl
             Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
             Background = Brushes.White,
             BorderThickness = new Thickness(0),
-            TextWrapping = TextWrapping.Wrap,
-            AcceptsReturn = false,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             Padding = new Thickness(8, 6, 8, 6),
             Tag = textBoxAnnotation.Id,
-            VerticalContentAlignment = VerticalAlignment.Top
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            IsReadOnly = false,
+            AcceptsReturn = false
         };
 
-        // TextBlock for displaying text with letter spacing (when not editing)
-        var displayTextBlock = new TextBlock
-        {
-            Text = textBoxAnnotation.Text,
-            Width = Math.Max(150, textBoxAnnotation.Width),
-            Height = Math.Max(40, textBoxAnnotation.Height),
-            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
-            FontSize = textBoxAnnotation.FontSize,
-            Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
-            Background = Brushes.White,
-            TextWrapping = TextWrapping.Wrap,
-            Padding = new Thickness(8, 6, 8, 6),
-            VerticalAlignment = VerticalAlignment.Top,
-            IsHitTestVisible = true,
-            Visibility = Visibility.Visible // Show by default
-        };
-        
-        // Apply letter spacing to display TextBlock
+        // Set initial text content
+        var paragraph = new Paragraph(new Run(textBoxAnnotation.Text));
+        paragraph.Margin = new Thickness(0);
+        richTextBox.Document.Blocks.Clear();
+        richTextBox.Document.Blocks.Add(paragraph);
+
+        // Apply letter spacing if set
         if (textBoxAnnotation.LetterSpacing != 0)
         {
-            // Calculate character spacing in pixels (LetterSpacing is in logical units)
-            var spacing = textBoxAnnotation.LetterSpacing;
-            var formattedText = new FormattedText(
-                textBoxAnnotation.Text,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                new Typeface(textBoxAnnotation.FontFamily),
-                textBoxAnnotation.FontSize,
-                new SolidColorBrush(textBoxAnnotation.TextColor),
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
-            
-            // Create a string with spaces between characters to simulate letter spacing
-            if (!string.IsNullOrEmpty(textBoxAnnotation.Text) && spacing != 0)
+            foreach (var block in richTextBox.Document.Blocks)
             {
-                var spacedText = string.Join(new string(' ', Math.Max(0, (int)spacing)), textBoxAnnotation.Text.ToCharArray());
-                displayTextBlock.Text = spacedText;
+                if (block is Paragraph para)
+                {
+                    foreach (var inline in para.Inlines)
+                    {
+                        if (inline is Run run)
+                        {
+                            run.SetValue(Typography.StandardLigaturesProperty, false);
+                        }
+                    }
+                }
             }
         }
 
-        // When clicking display text, switch to edit mode
-        displayTextBlock.MouseLeftButtonDown += (s, e) =>
-        {
-            displayTextBlock.Visibility = Visibility.Collapsed;
-            textBox.Visibility = Visibility.Visible;
-            textBox.Focus();
-            textBox.SelectAll();
-            e.Handled = true;
-        };
-
-        // Hide TextBox initially
-        textBox.Visibility = Visibility.Collapsed;
-
         // Placeholder text support
-        var placeholderText = new TextBlock
+        placeholderText = new TextBlock
         {
             Text = "Start typing here...",
             FontSize = textBoxAnnotation.FontSize,
@@ -1322,23 +1299,27 @@ public partial class PdfEditorView : UserControl
             Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
             IsHitTestVisible = false,
             Padding = new Thickness(8, 6, 8, 6),
-            VerticalAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
             Visibility = string.IsNullOrEmpty(textBoxAnnotation.Text) ? Visibility.Visible : Visibility.Collapsed
         };
 
-        textBox.TextChanged += (s, e) =>
+        // Update placeholder visibility on text change
+        richTextBox.TextChanged += (s, e) =>
         {
-            OnTextBoxTextChanged(s, e);
-            placeholderText.Visibility = string.IsNullOrEmpty(textBox.Text) ? Visibility.Visible : Visibility.Collapsed;
-            displayTextBlock.Text = textBox.Text;
+            var textRange = new TextRange(richTextBox.Document.ContentStart, richTextBox.Document.ContentEnd);
+            var text = textRange.Text.Trim();
+            placeholderText.Visibility = string.IsNullOrEmpty(text) ? Visibility.Visible : Visibility.Collapsed;
             
-            // Update display text with letter spacing
-            if (textBoxAnnotation.LetterSpacing != 0 && !string.IsNullOrEmpty(textBox.Text))
-            {
-                var spacing = textBoxAnnotation.LetterSpacing;
-                var spacedText = string.Join(new string(' ', Math.Max(0, (int)spacing)), textBox.Text.ToCharArray());
-                displayTextBlock.Text = spacedText;
-            }
+            // Update annotation text
+            textBoxAnnotation.Text = text;
+            ViewModel.UpdateTextBoxContent(textBoxAnnotation.Id, text);
+        };
+
+        // Click placeholder to focus RichTextBox
+        placeholderText.MouseLeftButtonDown += (s, e) =>
+        {
+            richTextBox.Focus();
+            e.Handled = true;
         };
         
         // Dashed Border using Rectangle
@@ -1348,13 +1329,12 @@ public partial class PdfEditorView : UserControl
             StrokeThickness = 1,
             StrokeDashArray = new DoubleCollection { 4, 2 }, // Dashed pattern
             RadiusX = 4, RadiusY = 4,
-            IsHitTestVisible = false // Let clicks pass through to TextBox
+            IsHitTestVisible = false // Let clicks pass through to RichTextBox
         };
 
-        // Container for TextBox + BorderRect + PlaceholderText + DisplayTextBlock
+        // Container for RichTextBox + BorderRect + PlaceholderText
         var textBoxContainer = new Grid();
-        textBoxContainer.Children.Add(displayTextBlock);
-        textBoxContainer.Children.Add(textBox);
+        textBoxContainer.Children.Add(richTextBox);
         textBoxContainer.Children.Add(placeholderText);
         textBoxContainer.Children.Add(borderRect);
 
@@ -1391,24 +1371,20 @@ public partial class PdfEditorView : UserControl
         mainContainer.Children.Add(contentGrid);
 
         // Focus Logic
-        textBox.GotFocus += (s, e) =>
+        richTextBox.GotFocus += (s, e) =>
         {
             toolbarBorder.Visibility = Visibility.Visible;
             dragHandle.Visibility = Visibility.Visible;
             resizeHandle.Visibility = Visibility.Visible;
             borderRect.Stroke = new SolidColorBrush(Color.FromRgb(0, 120, 215)); // Blue Stroke
-            displayTextBlock.Visibility = Visibility.Collapsed;
-            textBox.Visibility = Visibility.Visible;
         };
         
-        textBox.LostFocus += (s, e) =>
+        richTextBox.LostFocus += (s, e) =>
         {
              toolbarBorder.Visibility = Visibility.Collapsed;
              dragHandle.Visibility = Visibility.Collapsed;
              resizeHandle.Visibility = Visibility.Collapsed;
              borderRect.Stroke = Brushes.Transparent;
-             textBox.Visibility = Visibility.Collapsed;
-             displayTextBlock.Visibility = Visibility.Visible;
         };
 
         // Wrap in Border for _textBoxElements
@@ -1426,18 +1402,6 @@ public partial class PdfEditorView : UserControl
         _textBoxElements[textBoxAnnotation.Id] = containerBorder;
     }
 
-    private void OnTextBoxTextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (sender is TextBox textBox && textBox.Tag is string textBoxId)
-        {
-            ViewModel.UpdateTextBoxContent(textBoxId, textBox.Text);
-        }
-    }
-
-    private void OnTextBoxLostFocus(object sender, RoutedEventArgs e)
-    {
-        // Text is automatically saved via TextChanged
-    }
 
     private void OnDeleteTextBoxClick(object sender, RoutedEventArgs e)
     {

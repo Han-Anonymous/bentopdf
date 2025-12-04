@@ -77,10 +77,17 @@ public partial class PdfEditorViewModel : ObservableObject
             {
                 vm._pageStrokes[PageNumber] = new StrokeCollection();
             }
-            vm._pageStrokes[PageNumber].Add(Stroke);
+            // Check if stroke already exists before adding to prevent duplicate error
+            if (!vm._pageStrokes[PageNumber].Contains(Stroke))
+            {
+                vm._pageStrokes[PageNumber].Add(Stroke);
+            }
             if (vm.CurrentPage == PageNumber)
             {
-                vm.CurrentPageStrokes.Add(Stroke);
+                if (!vm.CurrentPageStrokes.Contains(Stroke))
+                {
+                    vm.CurrentPageStrokes.Add(Stroke);
+                }
             }
         }
     }
