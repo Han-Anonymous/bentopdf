@@ -1028,7 +1028,7 @@ public partial class PdfEditorView : UserControl
 
         // --- TextBox and Placeholder (at fixed position) ---
         // Calculate single-line height based on font size
-        var singleLineHeight = Math.Ceiling(textBoxAnnotation.FontSize * 1.5);
+        var singleLineHeight = Math.Ceiling(textBoxAnnotation.FontSize * 0.75);
         
         // TextBox for text editing with transparent background
         textBox = new TextBox
@@ -1347,6 +1347,7 @@ public partial class PdfEditorView : UserControl
             toolbarBorder.Visibility = Visibility.Visible;
             dragHandle.Visibility = Visibility.Visible;
             resizeHandle.Visibility = Visibility.Visible;
+            borderRect.Stroke = new SolidColorBrush(Color.FromRgb(0, 120, 215)); // Show border
         };
         
         textBox.LostFocus += (s, e) =>
@@ -1354,6 +1355,7 @@ public partial class PdfEditorView : UserControl
              toolbarBorder.Visibility = Visibility.Collapsed;
              dragHandle.Visibility = Visibility.Collapsed;
              resizeHandle.Visibility = Visibility.Collapsed;
+             borderRect.Stroke = Brushes.Transparent; // Hide border
         };
 
         // Wrap in Border for _textBoxElements

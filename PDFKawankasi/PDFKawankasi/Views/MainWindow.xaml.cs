@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Controls;
 using Microsoft.Win32;
 using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
@@ -12,6 +13,7 @@ namespace PDFKawankasi.Views;
 public partial class MainWindow : Window
 {
     private MainViewModel ViewModel => (MainViewModel)DataContext;
+    private int _tabCounter = 1;
 
     public MainWindow()
     {
@@ -35,6 +37,30 @@ public partial class MainWindow : Window
                 ViewModel.SearchQuery = string.Empty;
             }
             e.Handled = true;
+        }
+        
+        // Ctrl+T to open new tab
+        if (e.Key == Key.T && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (ViewModel.SelectedTool?.ToolType == ToolType.PdfEditor)
+            {
+                AddNewPdfTab();
+                e.Handled = true;
+            }
+        }
+        
+        // Ctrl+W to close current tab
+        if (e.Key == Key.W && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (ViewModel.SelectedTool?.ToolType == ToolType.PdfEditor && PdfTabControl.Items.Count > 1)
+            {
+                var currentTab = PdfTabControl.SelectedItem as TabItem;
+                if (currentTab != null)
+                {
+                    CloseTab(currentTab);
+                }
+                e.Handled = true;
+            }
         }
     }
 
@@ -86,6 +112,47 @@ public partial class MainWindow : Window
         {
             ViewModel.TogglePageSelectionCommand.Execute(pagePreview);
         }
+    }
+
+    private void OnTabCloseClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is TabItem tabItem)
+        {
+            CloseTab(tabItem);
+        }
+    }
+
+    private void OnNewTabClick(object sender, RoutedEventArgs e)
+    {
+        AddNewPdfTab();
+    }
+
+    private void CloseTab(TabItem tabItem)
+    {
+        // Don't close if it's the last tab
+        if (PdfTabControl.Items.Count <= 1)
+            return;
+
+        int index = PdfTabControl.Items.IndexOf(tabItem);
+        PdfTabControl.Items.Remove(tabItem);
+
+        // Select adjacent tab
+        if (PdfTabControl.Items.Count > 0)
+        {
+            PdfTabControl.SelectedIndex = Math.Min(index, PdfTabControl.Items.Count - 1);
+        }
+    }
+
+    private void AddNewPdfTab()
+    {
+        _tabCounter++;
+        var newTab = new TabItem
+        {
+            Header = $"Document {_tabCounter}",
+            Content = new PdfEditorView()
+        };
+        PdfTabControl.Items.Add(newTab);
+        PdfTabControl.SelectedItem = newTab;
     }
 
     private string GetFileFilter()

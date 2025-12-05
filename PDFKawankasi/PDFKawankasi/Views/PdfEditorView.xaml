@@ -97,24 +97,7 @@
                             Padding="6,4"
                             Margin="0,0,4,0"
                             IsEnabled="{Binding CanRedo}"/>
-                    
-                    <Separator Margin="8,0"/>
-                    
-                    <!-- Clear Ink Buttons -->
-                    <Button Content="🧹"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ClearCurrentPageInkCommand}"
-                            ToolTip="Clear all ink from current page"
-                            Padding="6,4"
-                            Margin="0,0,4,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
-                    <Button Content="🗑️"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ClearAllInkCommand}"
-                            ToolTip="Clear all ink from all pages"
-                            Padding="6,4"
-                            Margin="0,0,4,0"
-                            IsEnabled="{Binding IsPdfLoaded}"/>
+
                 </StackPanel>
 
                 <!-- Center: Annotation Tools -->
@@ -250,12 +233,7 @@
                             ToolTip="Toggle pages panel"
                             Padding="6,4"
                             Margin="0,0,2,0"/>
-                    <Button Content="▶"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ToggleRightPanelCommand}"
-                            ToolTip="Toggle annotations panel"
-                            Padding="6,4"
-                            Margin="0,0,4,0"/>
+
                     
                     <Separator Margin="4,0"/>
                     
@@ -370,19 +348,6 @@
                 </ColumnDefinition>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition x:Name="RightPanelColumn" Width="220">
-                    <ColumnDefinition.Style>
-                        <Style TargetType="ColumnDefinition">
-                            <Setter Property="Width" Value="220"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsRightPanelVisible}" Value="False">
-                                    <Setter Property="Width" Value="0"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ColumnDefinition.Style>
-                </ColumnDefinition>
             </Grid.ColumnDefinitions>
 
             <!-- Page Thumbnails Panel (Collapsible) -->
@@ -611,108 +576,9 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="3" 
-                          Width="4"
-                          Background="Transparent"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"
-                          Visibility="{Binding IsRightPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <!-- Properties/Comments Panel (Collapsible) -->
-            <Border Grid.Column="4" 
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1,0,0,0"
-                    Visibility="{Binding IsRightPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
 
-                    <!-- Panel Header -->
-                    <Border Grid.Row="0" 
-                            Background="{StaticResource CardBrush}"
-                            Padding="8">
-                        <StackPanel>
-                            <TextBlock Text="Annotations"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       FontWeight="SemiBold"
-                                       FontSize="12"/>
-                            <TextBlock Text="{Binding AnnotationCount, StringFormat={}{0} items}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       FontSize="10"
-                                       Margin="0,2,0,0"/>
-                        </StackPanel>
-                    </Border>
 
-                    <!-- Annotations List -->
-                    <ScrollViewer Grid.Row="1" 
-                                  VerticalScrollBarVisibility="Auto"
-                                  Padding="4">
-                        <ItemsControl ItemsSource="{Binding AllAnnotations}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{StaticResource CardBrush}"
-                                            CornerRadius="4"
-                                            Padding="6"
-                                            Margin="0,0,0,4">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <TextBlock Grid.Column="0" 
-                                                       Text="{Binding TypeIcon}"
-                                                       FontSize="16"
-                                                       VerticalAlignment="Top"
-                                                       Margin="0,0,6,0"/>
-
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock Text="{Binding TypeName}"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="11"/>
-                                                <TextBlock Text="{Binding Description}"
-                                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                                           FontSize="10"
-                                                           TextWrapping="Wrap"
-                                                           MaxWidth="120"/>
-                                                <TextBlock Text="{Binding PageInfo}"
-                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                           FontSize="9"
-                                                           Margin="0,2,0,0"/>
-                                            </StackPanel>
-
-                                            <Button Grid.Column="2"
-                                                    Content="✕"
-                                                    Style="{StaticResource SecondaryButtonStyle}"
-                                                    Command="{Binding DataContext.DeleteAnnotationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Padding="4,2"
-                                                    FontSize="9"
-                                                    VerticalAlignment="Top"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <!-- Empty Annotations State -->
-                    <TextBlock Grid.Row="1"
-                               Text="No annotations yet."
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontSize="10"
-                               TextWrapping="Wrap"
-                               TextAlignment="Center"
-                               VerticalAlignment="Center"
-                               Padding="8"
-                               Visibility="{Binding HasAnnotations, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                </Grid>
-            </Border>
         </Grid>
 
         <!-- Compact Status Bar -->
