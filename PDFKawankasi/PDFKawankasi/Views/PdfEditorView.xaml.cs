@@ -1018,28 +1018,75 @@ public partial class PdfEditorView : UserControl
 
     private void AddTextBoxToCanvas(PdfEditorViewModel.TextBoxAnnotation textBoxAnnotation)
     {
-        // Declare RichTextBox FIRST so it can be referenced in toolbar button handlers
-        RichTextBox richTextBox = null!;
+        // Declare TextBox FIRST so it can be referenced in toolbar button handlers
+        TextBox textBox = null!;
         TextBlock placeholderText = null!;
+        Border toolbarBorder = null!;
         
-        // Main container for the text box and its controls
-        var mainContainer = new Grid();
+        // Main container - Using Canvas for absolute positioning to prevent toolbar from affecting textbox position
+        var mainContainer = new Canvas();
+
+        // --- TextBox and Placeholder (at fixed position) ---
+        // Calculate single-line height based on font size
+        var singleLineHeight = Math.Ceiling(textBoxAnnotation.FontSize * 1.5);
         
-        // Row 0: Toolbar (Floating above)
-        // Row 1: Content Area (Drag Handle + TextBox + Resize Handle)
-        mainContainer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        mainContainer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // TextBox for text editing with transparent background
+        textBox = new TextBox
+        {
+            Text = textBoxAnnotation.Text,
+            Width = Math.Max(150, textBoxAnnotation.Width),
+            Height = string.IsNullOrEmpty(textBoxAnnotation.Text) ? singleLineHeight : Math.Max(singleLineHeight, textBoxAnnotation.Height),
+            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
+            FontSize = textBoxAnnotation.FontSize,
+            Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            TextWrapping = TextWrapping.Wrap,
+            AcceptsReturn = true,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            Padding = new Thickness(4, 2, 4, 2),
+            Tag = textBoxAnnotation.Id,
+            VerticalContentAlignment = VerticalAlignment.Top
+        };
+
+        // Placeholder text support
+        placeholderText = new TextBlock
+        {
+            Text = "Start typing here...",
+            FontSize = textBoxAnnotation.FontSize,
+            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
+            Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
+            IsHitTestVisible = false,
+            Padding = new Thickness(4, 2, 4, 2),
+            VerticalAlignment = VerticalAlignment.Top,
+            Visibility = string.IsNullOrEmpty(textBoxAnnotation.Text) ? Visibility.Visible : Visibility.Collapsed
+        };
+
+        // Update placeholder visibility on text change
+        textBox.TextChanged += (s, e) =>
+        {
+            placeholderText.Visibility = string.IsNullOrEmpty(textBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+            textBoxAnnotation.Text = textBox.Text;
+            ViewModel.UpdateTextBoxContent(textBoxAnnotation.Id, textBox.Text);
+        };
+
+        // Click placeholder to focus TextBox
+        placeholderText.MouseLeftButtonDown += (s, e) =>
+        {
+            textBox.Focus();
+            e.Handled = true;
+        };
 
         // --- Toolbar ---
-        var toolbarBorder = new Border
+        toolbarBorder = new Border
         {
             Background = Brushes.White,
             CornerRadius = new CornerRadius(4),
             Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 8, ShadowDepth = 2, Opacity = 0.3 },
-            Margin = new Thickness(0, 0, 0, 5),
             Padding = new Thickness(6, 4, 6, 4),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Visibility = Visibility.Collapsed, // Hidden by default
+            Visibility = Visibility.Visible, // Show by default on drop
             BorderBrush = new SolidColorBrush(Color.FromRgb(220, 220, 220)),
             BorderThickness = new Thickness(1)
         };
@@ -1063,59 +1110,78 @@ public partial class PdfEditorView : UserControl
             };
         }
         
-        // 1. Color Picker Button
-        var colorBtnContent = new Grid { Width = 18, Height = 18 };
-        var colorCircle = new Ellipse 
+        // 1. Color Picker Button - Vertical color circles like in image
+        var colorPickerBtn = CreateToolbarButton(new Viewbox 
         { 
-            Width = 18, 
-            Height = 18, 
-            Fill = new SolidColorBrush(textBoxAnnotation.TextColor),
-            Stroke = new SolidColorBrush(Color.FromRgb(180, 180, 180)),
-            StrokeThickness = 1
-        };
-        colorBtnContent.Children.Add(colorCircle);
+            Width = 20, 
+            Height = 20,
+            Child = new Canvas
+            {
+                Width = 24,
+                Height = 24,
+                Children =
+                {
+                    new Ellipse { Width = 8, Height = 8, Fill = Brushes.Red, Margin = new Thickness(8, 0, 0, 0) },
+                    new Ellipse { Width = 8, Height = 8, Fill = Brushes.Green, Margin = new Thickness(8, 5, 0, 0) },
+                    new Ellipse { Width = 8, Height = 8, Fill = new SolidColorBrush(textBoxAnnotation.TextColor), Margin = new Thickness(8, 10, 0, 0) },
+                    new Ellipse { Width = 8, Height = 8, Fill = Brushes.Black, Margin = new Thickness(8, 15, 0, 0) }
+                }
+            }
+        }, "Text Color");
         
-        var colorBtn = CreateToolbarButton(colorBtnContent, "Text Color");
-        colorBtn.Click += (s, e) => 
+        colorPickerBtn.Click += (s, e) => 
         {
             var popup = new System.Windows.Controls.Primitives.Popup
             {
-                PlacementTarget = colorBtn,
+                PlacementTarget = colorPickerBtn,
                 Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
                 IsOpen = true,
-                StaysOpen = false
+                StaysOpen = false,
+                AllowsTransparency = true
             };
             
-            var pPanel = new WrapPanel { Width = 160, Background = Brushes.White, Margin = new Thickness(5) };
-            var colors = new[] { Colors.Black, Colors.Red, Colors.Blue, Colors.Green, Colors.Orange, Colors.Purple, Colors.Brown, Colors.Gray };
+            // Vertical stack of color circles like the image
+            var colorStack = new StackPanel 
+            { 
+                Background = Brushes.White, 
+                Margin = new Thickness(8)
+            };
+            
+            var colors = new[] 
+            { 
+                Colors.Red, 
+                Colors.Green, 
+                (Color)ColorConverter.ConvertFromString("#0078D4"), // Blue from image
+                Colors.Black 
+            };
             
             foreach(var c in colors)
             {
-                var cBtn = new Button 
+                var colorEllipse = new Ellipse 
                 { 
-                    Width = 28, 
-                    Height = 28, 
-                    Background = new SolidColorBrush(c), 
-                    Margin = new Thickness(3), 
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(180,180,180)), 
-                    BorderThickness = new Thickness(2), 
+                    Width = 32, 
+                    Height = 32, 
+                    Fill = new SolidColorBrush(c), 
+                    Stroke = c == textBoxAnnotation.TextColor ? new SolidColorBrush(Color.FromRgb(0, 120, 215)) : Brushes.Transparent,
+                    StrokeThickness = 3,
                     Cursor = Cursors.Hand,
-                    Style = null
+                    Margin = new Thickness(0, 3, 0, 3) // Spacing between circles
                 };
-                cBtn.Click += (sender, args) => 
+                
+                colorEllipse.MouseLeftButtonDown += (sender, args) => 
                 {
                     textBoxAnnotation.TextColor = c;
-                    colorCircle.Fill = new SolidColorBrush(c);
-                    richTextBox.Foreground = new SolidColorBrush(c);
+                    textBox.Foreground = new SolidColorBrush(c);
                     ViewModel.SaveCurrentPageTextBoxes();
                     popup.IsOpen = false;
                 };
-                pPanel.Children.Add(cBtn);
+                
+                colorStack.Children.Add(colorEllipse);
             }
             
             popup.Child = new Border 
             { 
-                Child = pPanel, 
+                Child = colorStack, 
                 BorderThickness = new Thickness(1), 
                 BorderBrush = new SolidColorBrush(Color.FromRgb(200,200,200)), 
                 Background = Brushes.White, 
@@ -1136,7 +1202,8 @@ public partial class PdfEditorView : UserControl
         incFontBtn.Click += (s, e) => 
         {
             textBoxAnnotation.FontSize = Math.Min(textBoxAnnotation.FontSize + 2, 72);
-            richTextBox.FontSize = textBoxAnnotation.FontSize;
+            textBox.FontSize = textBoxAnnotation.FontSize;
+            placeholderText.FontSize = textBoxAnnotation.FontSize;
             ViewModel.SaveCurrentPageTextBoxes();
             e.Handled = true;
         };
@@ -1153,44 +1220,13 @@ public partial class PdfEditorView : UserControl
         decFontBtn.Click += (s, e) => 
         {
             textBoxAnnotation.FontSize = Math.Max(textBoxAnnotation.FontSize - 2, 8);
-            richTextBox.FontSize = textBoxAnnotation.FontSize;
+            textBox.FontSize = textBoxAnnotation.FontSize;
+            placeholderText.FontSize = textBoxAnnotation.FontSize;
             ViewModel.SaveCurrentPageTextBoxes();
             e.Handled = true;
         };
 
-        // 4. Increase Letter Spacing
-        var incSpacingBtn = CreateToolbarButton(new TextBlock 
-        { 
-            Text = "A↔", 
-            FontSize = 12, 
-            FontWeight = FontWeights.Bold,
-            VerticalAlignment = VerticalAlignment.Center, 
-            HorizontalAlignment = HorizontalAlignment.Center 
-        }, "Increase Letter Spacing");
-        incSpacingBtn.Click += (s, e) => 
-        {
-            textBoxAnnotation.LetterSpacing = Math.Min(textBoxAnnotation.LetterSpacing + 1, 20);
-            ViewModel.SaveCurrentPageTextBoxes();
-            e.Handled = true;
-        };
-
-        // 5. Decrease Letter Spacing
-        var decSpacingBtn = CreateToolbarButton(new TextBlock 
-        { 
-            Text = "A↔", 
-            FontSize = 10, 
-            FontWeight = FontWeights.Bold,
-            VerticalAlignment = VerticalAlignment.Center, 
-            HorizontalAlignment = HorizontalAlignment.Center 
-        }, "Decrease Letter Spacing");
-        decSpacingBtn.Click += (s, e) => 
-        {
-            textBoxAnnotation.LetterSpacing = Math.Max(textBoxAnnotation.LetterSpacing - 1, -5);
-            ViewModel.SaveCurrentPageTextBoxes();
-            e.Handled = true;
-        };
-
-        // 6. Delete Button
+        // 4. Delete Button
         var trashPath = new System.Windows.Shapes.Path 
         { 
             Data = Geometry.Parse("M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"),
@@ -1205,37 +1241,31 @@ public partial class PdfEditorView : UserControl
             RefreshTextBoxesDisplay();
         };
 
-        toolbarStack.Children.Add(colorBtn);
+        toolbarStack.Children.Add(colorPickerBtn);
         var separator1 = new Rectangle { Width = 1, Height = 20, Fill = new SolidColorBrush(Color.FromRgb(220, 220, 220)), Margin = new Thickness(4, 0, 4, 0) };
         toolbarStack.Children.Add(separator1);
         toolbarStack.Children.Add(incFontBtn);
         toolbarStack.Children.Add(decFontBtn);
         var separator2 = new Rectangle { Width = 1, Height = 20, Fill = new SolidColorBrush(Color.FromRgb(220, 220, 220)), Margin = new Thickness(4, 0, 4, 0) };
         toolbarStack.Children.Add(separator2);
-        toolbarStack.Children.Add(incSpacingBtn);
-        toolbarStack.Children.Add(decSpacingBtn);
-        var separator3 = new Rectangle { Width = 1, Height = 20, Fill = new SolidColorBrush(Color.FromRgb(220, 220, 220)), Margin = new Thickness(4, 0, 4, 0) };
-        toolbarStack.Children.Add(separator3);
         toolbarStack.Children.Add(delBtn);
         toolbarBorder.Child = toolbarStack;
 
-        Grid.SetRow(toolbarBorder, 0);
+        // Position toolbar at top-left (0, -40) so it floats above without affecting textbox position
+        Canvas.SetLeft(toolbarBorder, 0);
+        Canvas.SetTop(toolbarBorder, -40);
         mainContainer.Children.Add(toolbarBorder);
 
-        // --- Content Area ---
-        var contentGrid = new Grid();
-        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // Drag Handle
-        contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // TextBox
-        
-        // Drag Handle (Left) - Blue bar with dots
+        // --- Drag Handle (Left side of textbox) ---
         var dragHandle = new Border
         {
             Width = 20,
             Background = new SolidColorBrush(Color.FromRgb(0, 120, 215)), // Blue
             CornerRadius = new CornerRadius(4, 0, 0, 4),
             Cursor = Cursors.SizeAll,
-            Visibility = Visibility.Collapsed,
-            Tag = $"DRAG_TB:{textBoxAnnotation.Id}"
+            Visibility = Visibility.Visible, // Show by default
+            Tag = $"DRAG_TB:{textBoxAnnotation.Id}",
+            Height = textBox.Height
         };
         var dotsStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
         for(int i=0; i<4; i++) 
@@ -1248,143 +1278,82 @@ public partial class PdfEditorView : UserControl
         dragHandle.MouseLeftButtonUp += OnTextBoxDragHandleMouseUp;
         dragHandle.MouseMove += OnTextBoxDragHandleMouseMove;
 
-        // RichTextBox for text editing with letter spacing support
-        richTextBox = new RichTextBox
-        {
-            Width = Math.Max(150, textBoxAnnotation.Width),
-            Height = Math.Max(40, textBoxAnnotation.Height),
-            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
-            FontSize = textBoxAnnotation.FontSize,
-            Foreground = new SolidColorBrush(textBoxAnnotation.TextColor),
-            Background = Brushes.White,
-            BorderThickness = new Thickness(0),
-            Padding = new Thickness(8, 6, 8, 6),
-            Tag = textBoxAnnotation.Id,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            IsReadOnly = false,
-            AcceptsReturn = false
-        };
-
-        // Set initial text content
-        var paragraph = new Paragraph(new Run(textBoxAnnotation.Text));
-        paragraph.Margin = new Thickness(0);
-        richTextBox.Document.Blocks.Clear();
-        richTextBox.Document.Blocks.Add(paragraph);
-
-        // Apply letter spacing if set
-        if (textBoxAnnotation.LetterSpacing != 0)
-        {
-            foreach (var block in richTextBox.Document.Blocks)
-            {
-                if (block is Paragraph para)
-                {
-                    foreach (var inline in para.Inlines)
-                    {
-                        if (inline is Run run)
-                        {
-                            run.SetValue(Typography.StandardLigaturesProperty, false);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Placeholder text support
-        placeholderText = new TextBlock
-        {
-            Text = "Start typing here...",
-            FontSize = textBoxAnnotation.FontSize,
-            FontFamily = new FontFamily(textBoxAnnotation.FontFamily),
-            Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
-            IsHitTestVisible = false,
-            Padding = new Thickness(8, 6, 8, 6),
-            VerticalAlignment = VerticalAlignment.Top,
-            Visibility = string.IsNullOrEmpty(textBoxAnnotation.Text) ? Visibility.Visible : Visibility.Collapsed
-        };
-
-        // Update placeholder visibility on text change
-        richTextBox.TextChanged += (s, e) =>
-        {
-            var textRange = new TextRange(richTextBox.Document.ContentStart, richTextBox.Document.ContentEnd);
-            var text = textRange.Text.Trim();
-            placeholderText.Visibility = string.IsNullOrEmpty(text) ? Visibility.Visible : Visibility.Collapsed;
-            
-            // Update annotation text
-            textBoxAnnotation.Text = text;
-            ViewModel.UpdateTextBoxContent(textBoxAnnotation.Id, text);
-        };
-
-        // Click placeholder to focus RichTextBox
-        placeholderText.MouseLeftButtonDown += (s, e) =>
-        {
-            richTextBox.Focus();
-            e.Handled = true;
-        };
+        // Position drag handle at left edge
+        Canvas.SetLeft(dragHandle, -20);
+        Canvas.SetTop(dragHandle, 0);
+        mainContainer.Children.Add(dragHandle);
         
         // Dashed Border using Rectangle
         var borderRect = new Rectangle
         {
-            Stroke = Brushes.Transparent,
+            Width = textBox.Width,
+            Height = textBox.Height,
+            Stroke = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
             StrokeThickness = 1,
             StrokeDashArray = new DoubleCollection { 4, 2 }, // Dashed pattern
             RadiusX = 4, RadiusY = 4,
-            IsHitTestVisible = false // Let clicks pass through to RichTextBox
+            IsHitTestVisible = false // Let clicks pass through to TextBox
         };
 
-        // Container for RichTextBox + BorderRect + PlaceholderText
-        var textBoxContainer = new Grid();
-        textBoxContainer.Children.Add(richTextBox);
-        textBoxContainer.Children.Add(placeholderText);
-        textBoxContainer.Children.Add(borderRect);
+        // Position border at same location as textbox
+        Canvas.SetLeft(borderRect, 0);
+        Canvas.SetTop(borderRect, 0);
+        mainContainer.Children.Add(borderRect);
 
-        // Resize Handle (Right) - Floating circle
+        // Position TextBox at (0, 0) in canvas
+        Canvas.SetLeft(textBox, 0);
+        Canvas.SetTop(textBox, 0);
+        mainContainer.Children.Add(textBox);
+
+        // Position placeholder at same location
+        Canvas.SetLeft(placeholderText, 0);
+        Canvas.SetTop(placeholderText, 0);
+        mainContainer.Children.Add(placeholderText);
+
+        // Resize Handle (Right-bottom corner)
         var resizeHandle = new Ellipse
         {
             Width = 10, Height = 10,
             Fill = Brushes.White,
             Stroke = new SolidColorBrush(Color.FromRgb(0, 120, 215)),
-            StrokeThickness = 1,
-            Cursor = Cursors.SizeWE,
-            Visibility = Visibility.Collapsed,
-            Tag = $"RESIZE_TB:{textBoxAnnotation.Id}",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, -5, 0) // Overlap the border
+            StrokeThickness = 2,
+            Cursor = Cursors.SizeNWSE,
+            Visibility = Visibility.Visible, // Show by default
+            Tag = $"RESIZE_TB:{textBoxAnnotation.Id}"
         };
         
         resizeHandle.MouseLeftButtonDown += OnTextBoxResizeHandleMouseDown;
         resizeHandle.MouseLeftButtonUp += OnTextBoxResizeHandleMouseUp;
         resizeHandle.MouseMove += OnTextBoxResizeHandleMouseMove;
 
-        // Assemble Content
-        Grid.SetColumn(dragHandle, 0);
-        contentGrid.Children.Add(dragHandle);
-        
-        Grid.SetColumn(textBoxContainer, 1);
-        contentGrid.Children.Add(textBoxContainer);
-        
-        Grid.SetColumn(resizeHandle, 1); // Overlay on right edge
-        contentGrid.Children.Add(resizeHandle);
+        // Position resize handle at bottom-right corner
+        Canvas.SetLeft(resizeHandle, textBox.Width - 5);
+        Canvas.SetTop(resizeHandle, textBox.Height - 5);
+        mainContainer.Children.Add(resizeHandle);
 
-        Grid.SetRow(contentGrid, 1);
-        mainContainer.Children.Add(contentGrid);
+        // Update border and resize handle when textbox size changes
+        textBox.SizeChanged += (s, e) =>
+        {
+            borderRect.Width = textBox.Width;
+            borderRect.Height = textBox.Height;
+            dragHandle.Height = textBox.Height;
+            Canvas.SetLeft(resizeHandle, textBox.Width - 5);
+            Canvas.SetTop(resizeHandle, textBox.Height - 5);
+        };
 
-        // Focus Logic
-        richTextBox.GotFocus += (s, e) =>
+        // Focus Logic - only toggle visibility, don't affect layout
+        textBox.GotFocus += (s, e) =>
         {
             toolbarBorder.Visibility = Visibility.Visible;
             dragHandle.Visibility = Visibility.Visible;
             resizeHandle.Visibility = Visibility.Visible;
-            borderRect.Stroke = new SolidColorBrush(Color.FromRgb(0, 120, 215)); // Blue Stroke
         };
         
-        richTextBox.LostFocus += (s, e) =>
+        textBox.LostFocus += (s, e) =>
         {
              toolbarBorder.Visibility = Visibility.Collapsed;
              dragHandle.Visibility = Visibility.Collapsed;
              resizeHandle.Visibility = Visibility.Collapsed;
-             borderRect.Stroke = Brushes.Transparent;
         };
 
         // Wrap in Border for _textBoxElements
@@ -1498,19 +1467,11 @@ public partial class PdfEditorView : UserControl
             var deltaX = currentPoint.X - _dragStartPoint.X;
             var deltaY = currentPoint.Y - _dragStartPoint.Y;
 
-            // Find the TextBox inside the element
+            // Find the TextBox inside the Canvas
             TextBox? textBox = null;
-            if (element.Child is Grid mainContainer)
+            if (element.Child is Canvas mainContainer)
             {
-                var contentGrid = mainContainer.Children.OfType<Grid>().FirstOrDefault();
-                if (contentGrid != null)
-                {
-                    var textBoxContainer = contentGrid.Children.OfType<Grid>().FirstOrDefault();
-                    if (textBoxContainer != null)
-                    {
-                        textBox = textBoxContainer.Children.OfType<TextBox>().FirstOrDefault();
-                    }
-                }
+                textBox = mainContainer.Children.OfType<TextBox>().FirstOrDefault();
             }
 
             if (textBox != null)
