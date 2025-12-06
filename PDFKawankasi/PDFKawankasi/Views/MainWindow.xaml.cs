@@ -68,6 +68,45 @@ public partial class MainWindow : Window
         Close();
     }
 
+    private async void RegisterAsDefaultPdfViewer_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Get the app's Application User Model ID from Package.appxmanifest
+            // For packaged apps, use registeredAUMID parameter
+            string appAumid = "PDFKawankasi_8wekyb3d8bbwe!App"; // Format: PackageFamilyName!AppId
+            
+            // Launch Windows Settings directly to the default apps page for this app
+            string settingsUri = $"ms-settings:defaultapps?registeredAUMID={Uri.EscapeDataString(appAumid)}";
+            
+            // Use Process.Start for WPF apps (Windows.System.Launcher is for UWP)
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = settingsUri,
+                UseShellExecute = true
+            };
+            
+            System.Diagnostics.Process.Start(psi);
+            
+            MessageBox.Show(
+                "Windows Settings will open where you can set PDF Kawankasi as the default PDF viewer.\n\n" +
+                "Look for '.pdf' in the file type list and select PDF Kawankasi.",
+                "Register as Default PDF Viewer",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to open Settings: {ex.Message}\n\n" +
+                "You can manually set PDF Kawankasi as default by going to:\n" +
+                "Settings > Apps > Default apps > PDF Kawankasi",
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private void MainWindow_KeyDown(object sender, KeyEventArgs e)
     {
         // Escape to go back

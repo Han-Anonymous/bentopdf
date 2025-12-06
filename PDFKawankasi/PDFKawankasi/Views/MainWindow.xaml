@@ -14,7 +14,7 @@
         WindowStyle="SingleBorderWindow">
     
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="32"
+        <WindowChrome CaptionHeight="40"
                       ResizeBorderThickness="5"
                       GlassFrameThickness="0"
                       CornerRadius="0"/>
@@ -26,27 +26,28 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="32"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
+        <!-- Custom Title Bar with Menu Bar -->
         <Grid x:Name="CustomTitleBar" Grid.Row="0" Background="{StaticResource BackgroundBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
-            <!-- App Icon (with non-client area hit test to enable dragging) -->
+            <!-- App Icon -->
             <Image Grid.Column="0" 
                    Source="/Assets/PDF Editor/icon.png"
                    Width="16" Height="16"
-                   Margin="12,0,0,0"/>
+                   Margin="12,0,0,0"
+                   VerticalAlignment="Center"/>
             
             <!-- App Title -->
             <TextBlock Grid.Column="2"
@@ -55,8 +56,64 @@
                        FontSize="12"
                        VerticalAlignment="Center"/>
             
+            <!-- Menu Bar (merged into title bar) -->
+            <Menu x:Name="AppMenuBar" Grid.Column="3"
+                  Background="Transparent"
+                  Foreground="{StaticResource TextPrimaryBrush}"
+                  VerticalAlignment="Center"
+                  WindowChrome.IsHitTestVisibleInChrome="True">
+                
+                <!-- File Menu -->
+                <MenuItem Header="_File">
+                    <MenuItem Header="Open" Command="{Binding DataContext.OpenPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+O"/>
+                    <MenuItem Header="Save" Command="{Binding DataContext.SavePdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+S"/>
+                    <MenuItem Header="Save As" Command="{Binding DataContext.SaveAsPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+Shift+S"/>
+                    <Separator/>
+                    <MenuItem Header="Register as Default PDF Viewer" Click="RegisterAsDefaultPdfViewer_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Export" Command="{Binding DataContext.ExportPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}"/>
+                    <MenuItem Header="Print" Command="{Binding DataContext.PrintPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+P"/>
+                </MenuItem>
+                
+                <!-- Tools Menu -->
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="Merge PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.MergePdf}"/>
+                    <MenuItem Header="Split PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.SplitPdf}"/>
+                    <MenuItem Header="Compress PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.CompressPdf}"/>
+                    <Separator/>
+                    <MenuItem Header="Extract Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ExtractPages}"/>
+                    <MenuItem Header="Delete Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.DeletePages}"/>
+                    <MenuItem Header="Rotate PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RotatePdf}"/>
+                </MenuItem>
+                
+                <!-- Edit Menu -->
+                <MenuItem Header="_Edit">
+                    <MenuItem Header="Add Page Numbers" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddPageNumbers}"/>
+                    <MenuItem Header="Add Watermark" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddWatermark}"/>
+                    <MenuItem Header="Invert Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.InvertColors}"/>
+                    <MenuItem Header="Change Background Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.BackgroundColor}"/>
+                    <MenuItem Header="Remove Annotations" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RemoveAnnotations}"/>
+                </MenuItem>
+                
+                <!-- Image Menu -->
+                <MenuItem Header="_Image">
+                    <MenuItem Header="Image to PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ImageToPdf}"/>
+                    <MenuItem Header="PDF to Image" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToJpg}"/>
+                    <MenuItem Header="PDF to Grayscale" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToGreyscale}"/>
+                </MenuItem>
+                
+                <!-- Metadata Menu -->
+                <MenuItem Header="_Metadata">
+                    <MenuItem Header="View Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ViewMetadata}"/>
+                    <MenuItem Header="Edit Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.EditMetadata}"/>
+                </MenuItem>
+            </Menu>
+            
+            <!-- Drag Region (empty space for dragging window) -->
+            <Border Grid.Column="4" Background="Transparent"/>
+            
             <!-- Window Control Buttons -->
-            <StackPanel Grid.Column="4" Orientation="Horizontal" 
+            <StackPanel Grid.Column="5" Orientation="Horizontal" 
                        WindowChrome.IsHitTestVisibleInChrome="True">
                 <Button x:Name="MinimizeButton"
                         Content="&#xE921;"
@@ -131,60 +188,8 @@
             </StackPanel>
         </Grid>
 
-        <!-- Menu Bar (with WindowChrome.IsHitTestVisibleInChrome to make it clickable) -->
-        <Menu x:Name="AppMenuBar" Grid.Row="1" 
-              Background="{StaticResource SurfaceBrush}"
-              BorderBrush="{StaticResource BorderBrush}"
-              BorderThickness="0,0,0,1"
-              Foreground="{StaticResource TextPrimaryBrush}"
-              WindowChrome.IsHitTestVisibleInChrome="True">
-            
-            <!-- File Menu -->
-            <MenuItem Header="_File">
-                <MenuItem Header="Open" Command="{Binding DataContext.OpenPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+O"/>
-                <MenuItem Header="Save" Command="{Binding DataContext.SavePdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+S"/>
-                <MenuItem Header="Save As" Command="{Binding DataContext.SaveAsPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+Shift+S"/>
-                <Separator/>
-                <MenuItem Header="Export" Command="{Binding DataContext.ExportPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}"/>
-                <MenuItem Header="Print" Command="{Binding DataContext.PrintPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+P"/>
-            </MenuItem>
-            
-            <!-- Tools Menu -->
-            <MenuItem Header="_Tools">
-                <MenuItem Header="Merge PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.MergePdf}"/>
-                <MenuItem Header="Split PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.SplitPdf}"/>
-                <MenuItem Header="Compress PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.CompressPdf}"/>
-                <Separator/>
-                <MenuItem Header="Extract Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ExtractPages}"/>
-                <MenuItem Header="Delete Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.DeletePages}"/>
-                <MenuItem Header="Rotate PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RotatePdf}"/>
-            </MenuItem>
-            
-            <!-- Edit Menu -->
-            <MenuItem Header="_Edit">
-                <MenuItem Header="Add Page Numbers" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddPageNumbers}"/>
-                <MenuItem Header="Add Watermark" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddWatermark}"/>
-                <MenuItem Header="Invert Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.InvertColors}"/>
-                <MenuItem Header="Change Background Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.BackgroundColor}"/>
-                <MenuItem Header="Remove Annotations" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RemoveAnnotations}"/>
-            </MenuItem>
-            
-            <!-- Image Menu -->
-            <MenuItem Header="_Image">
-                <MenuItem Header="Image to PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ImageToPdf}"/>
-                <MenuItem Header="PDF to Image" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToJpg}"/>
-                <MenuItem Header="PDF to Grayscale" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToGreyscale}"/>
-            </MenuItem>
-            
-            <!-- Metadata Menu -->
-            <MenuItem Header="_Metadata">
-                <MenuItem Header="View Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ViewMetadata}"/>
-                <MenuItem Header="Edit Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.EditMetadata}"/>
-            </MenuItem>
-        </Menu>
-
         <!-- Main Content Area - PDF Editor Only -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <!-- Tools Grid View (hidden by default, PDF Editor is default) -->
             <ScrollViewer x:Name="ToolsScrollViewer"
                           Visibility="Collapsed"
@@ -754,7 +759,7 @@
         </Grid>
 
         <!-- Status Bar (Hidden when PDF Editor is active) -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" 
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                 Padding="12,6">
             <Border.Style>
