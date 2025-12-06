@@ -131,10 +131,124 @@
         </Setter>
     </Style>
 
-    <!-- MenuItem Style for Contrast in Dark Mode -->
+    <!-- MenuItem Style for Dark Mode with Submenu Support -->
     <Style TargetType="MenuItem">
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Icon -->
+                            <ContentPresenter Grid.Column="0"
+                                            ContentSource="Icon"
+                                            Margin="6,0,6,0"
+                                            VerticalAlignment="Center"/>
+                            
+                            <!-- Header -->
+                            <ContentPresenter Grid.Column="1"
+                                            ContentSource="Header"
+                                            Margin="6,3"
+                                            RecognizesAccessKey="True"
+                                            VerticalAlignment="Center"/>
+                            
+                            <!-- Shortcut -->
+                            <TextBlock Grid.Column="2"
+                                     Text="{TemplateBinding InputGestureText}"
+                                     Margin="16,3,6,3"
+                                     Foreground="{StaticResource TextMutedBrush}"
+                                     VerticalAlignment="Center"/>
+                            
+                            <!-- Submenu Arrow -->
+                            <Path Grid.Column="3"
+                                x:Name="ArrowPath"
+                                Margin="6,0,6,0"
+                                VerticalAlignment="Center"
+                                Fill="{TemplateBinding Foreground}"
+                                Data="M 0 0 L 4 4 L 0 8 Z"
+                                Visibility="Collapsed"/>
+                            
+                            <!-- Submenu Popup -->
+                            <Popup x:Name="PART_Popup"
+                                 AllowsTransparency="True"
+                                 Placement="Right"
+                                 IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                 Focusable="False"
+                                 PopupAnimation="Fade"
+                                 HorizontalOffset="-2"
+                                 VerticalOffset="-4">
+                                <Border Background="{StaticResource SurfaceBrush}"
+                                      BorderBrush="{StaticResource BorderBrush}"
+                                      BorderThickness="1"
+                                      CornerRadius="4"
+                                      Padding="0,4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="10" ShadowDepth="2"/>
+                                    </Border.Effect>
+                                    <ScrollViewer Style="{DynamicResource {ComponentResourceKey TypeInTargetAssembly={x:Type FrameworkElement}, ResourceId=MenuScrollViewer}}"
+                                                CanContentScroll="True">
+                                        <ItemsPresenter Margin="0"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Top Level Menu Item (in MenuBar) -->
+                        <Trigger Property="Role" Value="TopLevelHeader">
+                            <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom"/>
+                            <Setter TargetName="PART_Popup" Property="VerticalOffset" Value="2"/>
+                            <Setter TargetName="PART_Popup" Property="HorizontalOffset" Value="0"/>
+                            <Setter Property="Padding" Value="12,8"/>
+                        </Trigger>
+                        
+                        <!-- Submenu Item -->
+                        <Trigger Property="Role" Value="SubmenuHeader">
+                            <Setter TargetName="ArrowPath" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        
+                        <!-- Hover Effect -->
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource CardBrush}"/>
+                        </Trigger>
+                        
+                        <!-- Top Level Hover/Open -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsHighlighted" Value="True"/>
+                                <Condition Property="Role" Value="TopLevelHeader"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource CardBrush}"/>
+                        </MultiTrigger>
+                        
+                        <!-- Disabled State -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                        
+                        <!-- Separator -->
+                        <Trigger Property="Role" Value="TopLevelItem">
+                            <Setter Property="Padding" Value="12,8"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Modern TextBox -->

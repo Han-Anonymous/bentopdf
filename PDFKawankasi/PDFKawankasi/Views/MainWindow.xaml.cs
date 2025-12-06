@@ -23,6 +23,49 @@ public partial class MainWindow : Window
         
         // Set up keyboard shortcuts
         KeyDown += MainWindow_KeyDown;
+        
+        // Update maximize/restore button on state changed
+        StateChanged += MainWindow_StateChanged;
+        UpdateMaximizeRestoreButton();
+    }
+
+    private void MainWindow_StateChanged(object? sender, EventArgs e)
+    {
+        UpdateMaximizeRestoreButton();
+    }
+
+    private void UpdateMaximizeRestoreButton()
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            MaximizeRestoreButton.Content = "\uE923"; // Restore icon
+        }
+        else
+        {
+            MaximizeRestoreButton.Content = "\uE922"; // Maximize icon
+        }
+    }
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void MaximizeRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            WindowState = WindowState.Normal;
+        }
+        else
+        {
+            WindowState = WindowState.Maximized;
+        }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     private void MainWindow_KeyDown(object sender, KeyEventArgs e)

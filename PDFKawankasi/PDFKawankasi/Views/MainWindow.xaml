@@ -10,7 +10,15 @@
         Height="800" Width="1200"
         MinHeight="600" MinWidth="900"
         Background="{StaticResource BackgroundBrush}"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow">
+    
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32"
+                      ResizeBorderThickness="5"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
     
     <Window.DataContext>
         <vm:MainViewModel/>
@@ -18,17 +26,118 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="32"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Menu Bar -->
-        <Menu Grid.Row="0" 
+        <!-- Custom Title Bar -->
+        <Grid x:Name="CustomTitleBar" Grid.Row="0" Background="{StaticResource BackgroundBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- App Icon (with non-client area hit test to enable dragging) -->
+            <Image Grid.Column="0" 
+                   Source="/Assets/PDF Editor/icon.png"
+                   Width="16" Height="16"
+                   Margin="12,0,0,0"/>
+            
+            <!-- App Title -->
+            <TextBlock Grid.Column="2"
+                       Text="PDF Kawankasi"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="12"
+                       VerticalAlignment="Center"/>
+            
+            <!-- Window Control Buttons -->
+            <StackPanel Grid.Column="4" Orientation="Horizontal" 
+                       WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button x:Name="MinimizeButton"
+                        Content="&#xE921;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="10"
+                        Width="46" Height="32"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        BorderThickness="0"
+                        Click="MinimizeButton_Click"
+                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource CardBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button x:Name="MaximizeRestoreButton"
+                        Content="&#xE922;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="10"
+                        Width="46" Height="32"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        BorderThickness="0"
+                        Click="MaximizeRestoreButton_Click"
+                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource CardBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button x:Name="CloseButton"
+                        Content="&#xE8BB;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="10"
+                        Width="46" Height="32"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        BorderThickness="0"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#E81123"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Menu Bar (with WindowChrome.IsHitTestVisibleInChrome to make it clickable) -->
+        <Menu x:Name="AppMenuBar" Grid.Row="1" 
               Background="{StaticResource SurfaceBrush}"
               BorderBrush="{StaticResource BorderBrush}"
               BorderThickness="0,0,0,1"
-              Foreground="{StaticResource TextPrimaryBrush}">
+              Foreground="{StaticResource TextPrimaryBrush}"
+              WindowChrome.IsHitTestVisibleInChrome="True">
             
             <!-- File Menu -->
             <MenuItem Header="_File">
@@ -75,7 +184,7 @@
         </Menu>
 
         <!-- Main Content Area - PDF Editor Only -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <!-- Tools Grid View (hidden by default, PDF Editor is default) -->
             <ScrollViewer x:Name="ToolsScrollViewer"
                           Visibility="Collapsed"
@@ -517,7 +626,7 @@
                                                 BorderBrush="{StaticResource BorderBrush}"
                                                 BorderThickness="1,1,1,0"
                                                 CornerRadius="6,6,0,0"
-                                                Padding="12,6"
+                                                Padding="8,4"
                                                 Margin="2,0,0,0"
                                                 AllowDrop="True"
                                                 MouseMove="OnTabMouseMove"
