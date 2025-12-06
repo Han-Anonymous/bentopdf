@@ -14,6 +14,8 @@ public partial class MainWindow : Window
 {
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private int _tabCounter = 1;
+    private TabItem? _draggedTab;
+    private Point _dragStartPoint;
 
     public MainWindow()
     {
@@ -172,11 +174,84 @@ public partial class MainWindow : Window
         _tabCounter++;
         var newTab = new TabItem
         {
-            Header = $"Document {_tabCounter}",
+            // Header binding is handled by template binding to Content.DataContext.DocumentTitle
             Content = new PdfEditorView()
         };
         PdfTabControl.Items.Add(newTab);
         PdfTabControl.SelectedItem = newTab;
+    }
+
+    private void OnTabMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Border border)
+        {
+            _dragStartPoint = e.GetPosition(border);
+        }
+    }
+
+    private void OnTabMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed && sender is Border border)
+        {
+            var tabItem = FindParent<TabItem>(border);
+            if (tabItem != null && _draggedTab == null)
+            {
+                var currentPosition = e.GetPosition(border);
+                if (Math.Abs(currentPosition.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(currentPosition.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    _draggedTab = tabItem;
+                    DragDrop.DoDragDrop(tabItem, tabItem, DragDropEffects.Move);
+                    _draggedTab = null;
+                }
+            }
+        }
+    }
+
+    private void OnTabDrop(object sender, DragEventArgs e)
+    {
+        if (sender is Border border)
+        {
+            var targetTab = FindParent<TabItem>(border);
+            if (targetTab != null && e.Data.GetData(typeof(TabItem)) is TabItem sourceTab && sourceTab != targetTab)
+            {
+                int sourceIndex = PdfTabControl.Items.IndexOf(sourceTab);
+                int targetIndex = PdfTabControl.Items.IndexOf(targetTab);
+
+                if (sourceIndex != -1 && targetIndex != -1)
+                {
+                    PdfTabControl.Items.RemoveAt(sourceIndex);
+                    PdfTabControl.Items.Insert(targetIndex, sourceTab);
+                    PdfTabControl.SelectedItem = sourceTab;
+                }
+            }
+            border.Background = System.Windows.Media.Brushes.Transparent;
+        }
+    }
+
+    private void OnTabDragEnter(object sender, DragEventArgs e)
+    {
+        if (sender is Border border && e.Data.GetDataPresent(typeof(TabItem)))
+        {
+            border.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(30, 100, 149, 237));
+        }
+    }
+
+    private void OnTabDragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is Border border)
+        {
+            border.Background = System.Windows.Media.Brushes.Transparent;
+        }
+    }
+
+    private T? FindParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var parent = System.Windows.Media.VisualTreeHelper.GetParent(child);
+        if (parent == null) return null;
+        if (parent is T typedParent) return typedParent;
+        return FindParent<T>(parent);
     }
 
     private string GetFileFilter()

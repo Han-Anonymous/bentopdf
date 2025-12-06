@@ -131,6 +131,12 @@
         </Setter>
     </Style>
 
+    <!-- MenuItem Style for Contrast in Dark Mode -->
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+    </Style>
+
     <!-- Modern TextBox -->
     <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource CardBrush}"/>

@@ -87,14 +87,14 @@
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding UndoCommand}"
                             ToolTip="Undo (Ctrl+Z)"
-                            Padding="6,4"
+                            Padding="10,4"
                             Margin="0,0,2,0"
                             IsEnabled="{Binding CanUndo}"/>
                     <Button Content="↪"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding RedoCommand}"
                             ToolTip="Redo (Ctrl+Y)"
-                            Padding="6,4"
+                            Padding="10,4"
                             Margin="0,0,4,0"
                             IsEnabled="{Binding CanRedo}"/>
 

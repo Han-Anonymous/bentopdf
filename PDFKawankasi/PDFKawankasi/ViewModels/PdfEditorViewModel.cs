@@ -43,6 +43,9 @@ public partial class PdfEditorViewModel : ObservableObject
     private string? _currentFilePath;
     private byte[]? _pdfBytes;
 
+    [ObservableProperty]
+    private string _documentTitle = "New Document";
+
     // Undo/Redo stacks
     private readonly Stack<UndoableAction> _undoStack = new();
     private readonly Stack<UndoableAction> _redoStack = new();
@@ -1946,6 +1949,7 @@ public partial class PdfEditorViewModel : ObservableObject
             UpdatePageNavigation();
 
             IsPdfLoaded = true;
+            DocumentTitle = Path.GetFileNameWithoutExtension(filePath);
             StatusMessage = $"Loaded: {Path.GetFileName(filePath)} ({TotalPages} pages) - Editing in temporary workspace";
             
             // Add to recent documents
