@@ -645,6 +645,43 @@ public partial class PdfEditorViewModel : ObservableObject
         LoadPdf(document.FilePath);
     }
 
+    [RelayCommand]
+    private async Task ExportPdf()
+    {
+        if (!IsPdfLoaded)
+        {
+            StatusMessage = "No PDF loaded to export";
+            return;
+        }
+        await SavePdfAs();
+    }
+
+    [RelayCommand]
+    private void PrintPdf()
+    {
+        if (!IsPdfLoaded)
+        {
+            StatusMessage = "No PDF loaded to print";
+            return;
+        }
+        StatusMessage = "Print feature coming soon";
+    }
+
+    [RelayCommand]
+    private void RemoveRecentDocument(RecentDocument document)
+    {
+        if (document == null) return;
+        
+        // Remove from UI list
+        RecentDocuments.Remove(document);
+        
+        // Update saved list
+        var recentDocs = RecentDocuments.ToList();
+        RecentDocumentsService.SaveRecentDocuments(recentDocs);
+        
+        StatusMessage = "Removed from recent documents";
+    }
+
     #region Page Management Commands
 
     [RelayCommand]

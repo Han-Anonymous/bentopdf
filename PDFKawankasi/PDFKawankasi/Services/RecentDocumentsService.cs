@@ -81,7 +81,10 @@ public static class RecentDocumentsService
         }
     }
 
-    private static void SaveRecentDocuments(List<RecentDocument> documents)
+    /// <summary>
+    /// Save a list of recent documents
+    /// </summary>
+    public static void SaveRecentDocuments(List<RecentDocument> documents)
     {
         try
         {
