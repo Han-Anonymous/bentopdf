@@ -133,6 +133,30 @@ public partial class MainWindow : Window
         if (PdfTabControl.Items.Count <= 1)
             return;
 
+        // Check for unsaved changes
+        if (tabItem.Content is PdfEditorView editorView && 
+            editorView.DataContext is PdfEditorViewModel viewModel &&
+            viewModel.HasPendingChanges)
+        {
+            var result = MessageBox.Show(
+                "This document has unsaved changes. Do you want to save before closing?",
+                "Unsaved Changes",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Cancel)
+                return;
+
+            if (result == MessageBoxResult.Yes)
+            {
+                // Try to save
+                if (viewModel.SavePdfCommand.CanExecute(null))
+                {
+                    viewModel.SavePdfCommand.Execute(null);
+                }
+            }
+        }
+
         int index = PdfTabControl.Items.IndexOf(tabItem);
         PdfTabControl.Items.Remove(tabItem);
 

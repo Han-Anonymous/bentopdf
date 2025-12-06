@@ -18,15 +18,66 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Menu Bar (visible only in PDF Editor) -->
+        <Menu Grid.Row="0" 
+              Background="{StaticResource SurfaceBrush}"
+              BorderBrush="{StaticResource BorderBrush}"
+              BorderThickness="0,0,0,1">
+            <Menu.Style>
+                <Style TargetType="Menu">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedTool.ToolType}" Value="PdfEditor">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Menu.Style>
+            
+            <!-- Tools Menu -->
+            <MenuItem Header="_Tools">
+                <MenuItem Header="Merge PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.MergePdf}"/>
+                <MenuItem Header="Split PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.SplitPdf}"/>
+                <MenuItem Header="Compress PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.CompressPdf}"/>
+                <Separator/>
+                <MenuItem Header="Extract Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ExtractPages}"/>
+                <MenuItem Header="Delete Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.DeletePages}"/>
+                <MenuItem Header="Rotate PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RotatePdf}"/>
+            </MenuItem>
+            
+            <!-- Edit Menu -->
+            <MenuItem Header="_Edit">
+                <MenuItem Header="Add Page Numbers" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddPageNumbers}"/>
+                <MenuItem Header="Add Watermark" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddWatermark}"/>
+                <MenuItem Header="Invert Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.InvertColors}"/>
+                <MenuItem Header="Change Background Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.BackgroundColor}"/>
+                <MenuItem Header="Remove Annotations" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RemoveAnnotations}"/>
+            </MenuItem>
+            
+            <!-- Image Menu -->
+            <MenuItem Header="_Image">
+                <MenuItem Header="Image to PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ImageToPdf}"/>
+                <MenuItem Header="PDF to Image" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToJpg}"/>
+                <MenuItem Header="PDF to Grayscale" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToGreyscale}"/>
+            </MenuItem>
+            
+            <!-- Metadata Menu -->
+            <MenuItem Header="_Metadata">
+                <MenuItem Header="View Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ViewMetadata}"/>
+                <MenuItem Header="Edit Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.EditMetadata}"/>
+            </MenuItem>
+        </Menu>
+
         <!-- Main Content Area -->
-        <Grid Grid.Row="0">
-            <!-- Tools Grid View -->
+        <Grid Grid.Row="1">
+            <!-- Tools Grid View (hidden by default, PDF Editor is default) -->
             <ScrollViewer x:Name="ToolsScrollViewer"
-                          Visibility="{Binding IsToolViewVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                          Visibility="Collapsed"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="24">
@@ -568,7 +619,7 @@
         </Grid>
 
         <!-- Status Bar (Hidden when PDF Editor is active) -->
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" 
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" 
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                 Padding="12,6">
             <Border.Style>

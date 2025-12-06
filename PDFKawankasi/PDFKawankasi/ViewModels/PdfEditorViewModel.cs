@@ -377,6 +377,9 @@ public partial class PdfEditorViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasPendingChanges;
 
+    [ObservableProperty]
+    private ObservableCollection<RecentDocument> _recentDocuments = new();
+
     // Fullscreen mode toggle
     [ObservableProperty]
     private bool _isFullscreen;
@@ -446,6 +449,17 @@ public partial class PdfEditorViewModel : ObservableObject
         _docLib = DocLib.Instance;
         _pdfService = new PdfService();
         InitializeInkDrawingAttributes();
+        LoadRecentDocuments();
+    }
+
+    private void LoadRecentDocuments()
+    {
+        var recent = RecentDocumentsService.GetRecentDocuments();
+        RecentDocuments.Clear();
+        foreach (var doc in recent)
+        {
+            RecentDocuments.Add(doc);
+        }
     }
 
     private void InitializeInkDrawingAttributes()
@@ -597,6 +611,38 @@ public partial class PdfEditorViewModel : ObservableObject
     {
         IsContinuousScrollMode = !IsContinuousScrollMode;
         StatusMessage = IsContinuousScrollMode ? "Continuous scrolling enabled" : "Continuous scrolling disabled";
+    }
+
+    [RelayCommand]
+    private void OpenRecentDocument(RecentDocument document)
+    {
+        if (document == null || !File.Exists(document.FilePath))
+        {
+            StatusMessage = "File not found";
+            LoadRecentDocuments(); // Refresh list to remove missing files
+            return;
+        }
+
+        // Check for pending changes
+        if (IsPdfLoaded && HasPendingChanges)
+        {
+            var result = System.Windows.MessageBox.Show(
+                "You have unsaved changes. Do you want to save before opening a new file?",
+                "Unsaved Changes",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result == System.Windows.MessageBoxResult.Cancel)
+                return;
+
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                SavePdfCommand.Execute(null);
+            }
+        }
+
+        ResetEditorState();
+        LoadPdf(document.FilePath);
     }
 
     #region Page Management Commands
@@ -1864,6 +1910,10 @@ public partial class PdfEditorViewModel : ObservableObject
 
             IsPdfLoaded = true;
             StatusMessage = $"Loaded: {Path.GetFileName(filePath)} ({TotalPages} pages) - Editing in temporary workspace";
+            
+            // Add to recent documents
+            RecentDocumentsService.AddRecentDocument(filePath);
+            LoadRecentDocuments();
         }
         catch (Exception ex)
         {

@@ -551,9 +551,10 @@
                         </Grid>
                     </ScrollViewer>
 
-                    <!-- Empty State -->
+                    <!-- Empty State with Recent Documents -->
                     <StackPanel VerticalAlignment="Center" 
                                 HorizontalAlignment="Center"
+                                MaxWidth="600"
                                 Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                         <TextBlock Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
                         <TextBlock Text="PDF Editor"
@@ -571,7 +572,58 @@
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding OpenPdfCommand}"
                                 Padding="24,12"
-                                FontSize="16"/>
+                                FontSize="16"
+                                Margin="0,0,0,32"/>
+                        
+                        <!-- Recent Documents -->
+                        <Border Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16"
+                                Visibility="{Binding RecentDocuments.Count, Converter={StaticResource NonZeroToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Recent Documents"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,0,12"/>
+                                <ItemsControl ItemsSource="{Binding RecentDocuments}" MaxHeight="300">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding DataContext.OpenRecentDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    HorizontalContentAlignment="Left"
+                                                    Margin="0,0,0,4"
+                                                    Padding="12,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" 
+                                                               Text="📄" 
+                                                               FontSize="18" 
+                                                               Margin="0,0,12,0"
+                                                               VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding FileName}"
+                                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   FontSize="12"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding FilePath}"
+                                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                                   FontSize="10"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -47,6 +47,13 @@ public partial class MainViewModel : ObservableObject
         var categories = ToolsService.GetCategories();
         _categories = new ObservableCollection<ToolCategoryModel>(categories);
         _filteredCategories = new ObservableCollection<ToolCategoryModel>(categories);
+        
+        // Auto-select PDF Editor as default tool
+        var pdfEditorTool = ToolsService.GetAllTools().FirstOrDefault(t => t.ToolType == ToolType.PdfEditor);
+        if (pdfEditorTool != null)
+        {
+            SelectTool(pdfEditorTool);
+        }
     }
 
     partial void OnSearchQueryChanged(string value)
