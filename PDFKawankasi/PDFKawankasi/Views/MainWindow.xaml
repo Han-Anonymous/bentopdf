@@ -455,31 +455,24 @@
                     </Border>
                 </Grid>
 
-            </Grid>
+                <!-- PDF Editor View - Always Visible -->
+                <Grid Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-            <!-- PDF Editor View - Always Visible -->
-            <Grid Margin="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                    <!-- Tab Control Header Area -->
+                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="0"/>
 
-                <!-- Tab Control Header Area -->
-                <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="0"/>
-
-                <!-- PDF Editor Tab Control with New Tab Button -->
-                <Grid x:Name="juzo" Grid.Row="1" Visibility="Visible">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                <TabControl Grid.Column="0"
+                    <!-- PDF Editor Tab Control with New Tab Button -->
+                <TabControl Grid.Row="1"
                             x:Name="PdfTabControl"
                             Background="{StaticResource BackgroundBrush}"
                             BorderThickness="0"
                             Padding="0">
                     <TabControl.Resources>
+                        <!-- TabItem Style -->
                         <Style TargetType="TabItem">
                             <Setter Property="Template">
                                 <Setter.Value>
@@ -544,30 +537,44 @@
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
                                             </Trigger>
-                                        </ControlTemplate.Triggers>
+                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
                         </Style>
                     </TabControl.Resources>
 
-                    <!-- Default Tab -->
-                    <TabItem Header="Document 1">
-                        <local:PdfEditorView/>
-                    </TabItem>
-                </TabControl>
-                
-                <!-- New Tab Button (Browser Style) -->
-                <Button Grid.Column="1"
-                        Content="+"
-                        Click="OnNewTabClick"
-                        ToolTip="New tab (Ctrl+T)"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Foreground="{StaticResource TextSecondaryBrush}"
-                        FontSize="18"
-                        FontWeight="Normal"
-                        Padding="8,4"
+                    <!-- ItemsPanel - Define horizontal TabPanel for tab headers -->
+                    <TabControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </TabControl.ItemsPanel>
+
+                    <!-- Custom Template with Add Tab Button -->
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid Background="{TemplateBinding Background}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Tab Header Panel with Add Button -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Background="{StaticResource BackgroundBrush}">
+                                    <!-- Tab Items Container -->
+                                    <ItemsPresenter/>
+                                    
+                                    <!-- New Tab Button (Browser Style) -->
+                                    <Button Content="+"
+                                            Click="OnNewTabClick"
+                                            ToolTip="New tab (Ctrl+T)"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            FontSize="18"
+                                            FontWeight="Normal"
+                                            Padding="8,4"
                         Margin="4,0,4,0"
                         Cursor="Hand"
                         VerticalAlignment="Top"
@@ -595,25 +602,51 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                </Grid>
+                </StackPanel>
+                                
+                                <!-- Tab Content Area -->
+                                <Border Grid.Row="1"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1,0,1,1"
+                                        CornerRadius="0,0,8,8"
+                                        Padding="0">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                      Content="{TemplateBinding SelectedContent}"
+                                                      ContentTemplate="{TemplateBinding SelectedContentTemplate}"
+                                                      ContentTemplateSelector="{TemplateBinding SelectedContentTemplateSelector}"
+                                                      ContentStringFormat="{TemplateBinding SelectedContentStringFormat}"/>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </TabControl.Template>
+
+                    <!-- Default Tab -->
+                    <TabItem Header="Document 1">
+                        <local:PdfEditorView/>
+                    </TabItem>
+                </TabControl>
+
+                <!-- Processing Overlay -->
+                <Border Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Background="#CC000000">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <ProgressBar Width="300" Height="8"
+                                     Value="{Binding ProgressValue}"
+                                     Maximum="100"
+                                     Foreground="{StaticResource PrimaryBrush}"
+                                     Background="{StaticResource CardBrush}"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"/>
+                    </StackPanel>
+                </Border>
             </Grid>
 
-            <!-- Processing Overlay -->
-            <Border Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
-                    Background="#CC000000">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <ProgressBar Width="300" Height="8"
-                                 Value="{Binding ProgressValue}"
-                                 Maximum="100"
-                                 Foreground="{StaticResource PrimaryBrush}"
-                                 Background="{StaticResource CardBrush}"/>
-                    <TextBlock Text="{Binding StatusMessage}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontSize="16"
-                               HorizontalAlignment="Center"
-                               Margin="0,16,0,0"/>
-                </StackPanel>
-            </Border>
+        </Grid>
+
         </Grid>
 
         <!-- Status Bar (Hidden when PDF Editor is active) -->
