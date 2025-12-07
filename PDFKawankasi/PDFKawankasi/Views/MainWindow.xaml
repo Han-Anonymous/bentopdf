@@ -468,7 +468,7 @@
                 <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="0"/>
 
                 <!-- PDF Editor Tab Control with New Tab Button -->
-                <Grid x:Name="juzo" Grid.Row="1" Visibility="Hidden">
+                <Grid x:Name="juzo" Grid.Row="1" Visibility="Visible">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
