@@ -1493,4 +1493,38 @@ public partial class PdfEditorView : UserControl
     }
 
     #endregion
+
+    #region File Drop Handlers
+
+    private void OnFileDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files != null && files.Length > 0)
+            {
+                // Get the first PDF file
+                var pdfFile = files.FirstOrDefault(f => f.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
+                if (pdfFile != null && ViewModel.OpenPdfCommand.CanExecute(pdfFile))
+                {
+                    ViewModel.OpenPdfCommand.Execute(pdfFile);
+                }
+            }
+        }
+    }
+
+    private void OnDragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.Effects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    #endregion
 }
