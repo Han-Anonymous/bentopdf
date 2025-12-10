@@ -298,17 +298,33 @@ public partial class MainWindow : Window
         PdfTabControl.SelectedItem = newTab;
         
         // Open the PDF file in the new tab after it's loaded
-        pdfEditorView.Loaded += (s, e) =>
+        pdfEditorView.Loaded += OnPdfEditorViewLoadedForFile;
+        
+        // Store the file path for the Loaded event handler
+        pdfEditorView.Tag = pdfFilePath;
+    }
+
+    private void OnPdfEditorViewLoadedForFile(object sender, RoutedEventArgs e)
+    {
+        if (sender is not PdfEditorView editorView) return;
+        
+        // Remove the event handler to prevent multiple invocations
+        editorView.Loaded -= OnPdfEditorViewLoadedForFile;
+        
+        // Get the file path from Tag
+        if (editorView.Tag is not string pdfFilePath) return;
+        
+        // Get the ViewModel and open the file
+        if (editorView.DataContext is PDFKawankasi.ViewModels.PdfEditorViewModel viewModel)
         {
-            if (pdfEditorView.DataContext is PDFKawankasi.ViewModels.PdfEditorViewModel viewModel)
+            if (viewModel.OpenPdfCommand.CanExecute(pdfFilePath))
             {
-                // Execute the OpenPdf command with the file path
-                if (viewModel.OpenPdfCommand.CanExecute(pdfFilePath))
-                {
-                    viewModel.OpenPdfCommand.Execute(pdfFilePath);
-                }
+                viewModel.OpenPdfCommand.Execute(pdfFilePath);
             }
-        };
+        }
+        
+        // Clear the Tag
+        editorView.Tag = null;
     }
 
     private void OnTabMouseDown(object sender, MouseButtonEventArgs e)

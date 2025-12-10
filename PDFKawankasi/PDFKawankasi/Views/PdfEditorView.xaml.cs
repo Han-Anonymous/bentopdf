@@ -91,6 +91,31 @@ public partial class PdfEditorView : UserControl
 
     #region Keyboard and Mouse Wheel Handlers
 
+    /// <summary>
+    /// Saves current page state and restores state for the newly displayed page.
+    /// Used during page navigation to maintain annotation consistency.
+    /// </summary>
+    private void SaveAndRestorePageState()
+    {
+        if (PdfInkCanvas != null)
+        {
+            ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+            ViewModel.SaveCurrentPageImages();
+            ViewModel.SaveCurrentPageTextBoxes();
+        }
+
+        // Restore new page state
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (PdfInkCanvas != null)
+            {
+                PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+            }
+            RefreshImagesDisplay();
+            RefreshTextBoxesDisplay();
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         // Track Shift key for snap assist
@@ -184,27 +209,13 @@ public partial class PdfEditorView : UserControl
             {
                 if (ViewModel.CanGoNext)
                 {
-                    // Save current page state before switching
-                    if (PdfInkCanvas != null)
-                    {
-                        ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
-                        ViewModel.SaveCurrentPageImages();
-                        ViewModel.SaveCurrentPageTextBoxes();
-                    }
-
+                    SaveAndRestorePageState();
                     ViewModel.NextPageCommand.Execute(null);
                     
-                    // Scroll to top of new page
+                    // Scroll to top of new page after state is restored
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         PdfScrollViewer.ScrollToTop();
-                        // Load new page strokes
-                        if (PdfInkCanvas != null)
-                        {
-                            PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
-                        }
-                        RefreshImagesDisplay();
-                        RefreshTextBoxesDisplay();
                     }), System.Windows.Threading.DispatcherPriority.Loaded);
                     
                     e.Handled = true;
@@ -215,27 +226,13 @@ public partial class PdfEditorView : UserControl
             {
                 if (ViewModel.CanGoPrevious)
                 {
-                    // Save current page state before switching
-                    if (PdfInkCanvas != null)
-                    {
-                        ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
-                        ViewModel.SaveCurrentPageImages();
-                        ViewModel.SaveCurrentPageTextBoxes();
-                    }
-
+                    SaveAndRestorePageState();
                     ViewModel.PreviousPageCommand.Execute(null);
                     
-                    // Scroll to bottom of new page
+                    // Scroll to bottom of new page after state is restored
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         PdfScrollViewer.ScrollToBottom();
-                        // Load new page strokes
-                        if (PdfInkCanvas != null)
-                        {
-                            PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
-                        }
-                        RefreshImagesDisplay();
-                        RefreshTextBoxesDisplay();
                     }), System.Windows.Threading.DispatcherPriority.Loaded);
                     
                     e.Handled = true;
@@ -360,7 +357,11 @@ public partial class PdfEditorView : UserControl
     {
         // This event is useful for tracking scroll position
         // Currently used primarily for continuous scrolling in OnPreviewMouseWheel
-        // Could be extended in future for lazy loading or other optimizations
+        // TODO: Future enhancements could include:
+        // - Page preloading based on scroll position
+        // - Lazy loading/unloading of page content for memory optimization
+        // - Smooth scroll animations
+        // - Virtual scrolling with all pages in a single view
     }
 
     #endregion
