@@ -50,7 +50,15 @@ namespace PDFKawankasi
                 var imageData = new System.Collections.Generic.List<byte[]>();
                 foreach (var size in sizes)
                 {
-                    using var resized = new Bitmap(originalImage, size, size);
+                    // Create bitmap with transparency support
+                    using var resized = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+                    using var graphics = Graphics.FromImage(resized);
+                    graphics.Clear(Color.Transparent);
+                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
+                    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                    graphics.DrawImage(originalImage, 0, 0, size, size);
+                    
                     using var ms = new MemoryStream();
                     resized.Save(ms, ImageFormat.Png);
                     var data = ms.ToArray();

@@ -43,11 +43,14 @@
             </Grid.ColumnDefinitions>
             
             <!-- App Icon -->
-            <Image Grid.Column="0" 
-                   Source="/Assets/icon.png"
-                   Width="16" Height="16"
-                   Margin="12,0,0,0"
-                   VerticalAlignment="Center"/>
+            <Viewbox Grid.Column="0" 
+                     Width="20" Height="20"
+                     Margin="12,0,8,0"
+                     VerticalAlignment="Center">
+                <Image Source="/Assets/icon.png"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Stretch="Uniform"/>
+            </Viewbox>
             
             <!-- App Title -->
             <TextBlock Grid.Column="2"
