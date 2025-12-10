@@ -466,6 +466,7 @@
                     <ScrollViewer x:Name="PdfScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
+                                  ScrollChanged="OnScrollChanged"
                                   Visibility="{Binding IsPdfLoaded, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}" Background="White">
                             <!-- PDF Page Image as background -->

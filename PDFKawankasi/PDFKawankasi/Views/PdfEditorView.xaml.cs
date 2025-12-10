@@ -91,6 +91,31 @@ public partial class PdfEditorView : UserControl
 
     #region Keyboard and Mouse Wheel Handlers
 
+    /// <summary>
+    /// Saves current page state and restores state for the newly displayed page.
+    /// Used during page navigation to maintain annotation consistency.
+    /// </summary>
+    private void SaveAndRestorePageState()
+    {
+        if (PdfInkCanvas != null)
+        {
+            ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+            ViewModel.SaveCurrentPageImages();
+            ViewModel.SaveCurrentPageTextBoxes();
+        }
+
+        // Restore new page state
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (PdfInkCanvas != null)
+            {
+                PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+            }
+            RefreshImagesDisplay();
+            RefreshTextBoxesDisplay();
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         // Track Shift key for snap assist
@@ -170,6 +195,49 @@ public partial class PdfEditorView : UserControl
                 ViewModel.ApplyZoomDelta(delta);
             }
             e.Handled = true;
+            return;
+        }
+
+        // Continuous scrolling mode: navigate pages when scrolling at boundaries
+        if (ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
+        {
+            var verticalOffset = PdfScrollViewer.VerticalOffset;
+            var scrollableHeight = PdfScrollViewer.ScrollableHeight;
+
+            // Scrolling down at bottom of page -> go to next page
+            if (e.Delta < 0 && Math.Abs(verticalOffset - scrollableHeight) < 1.0)
+            {
+                if (ViewModel.CanGoNext)
+                {
+                    SaveAndRestorePageState();
+                    ViewModel.NextPageCommand.Execute(null);
+                    
+                    // Scroll to top of new page after state is restored
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        PdfScrollViewer.ScrollToTop();
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
+                    
+                    e.Handled = true;
+                }
+            }
+            // Scrolling up at top of page -> go to previous page
+            else if (e.Delta > 0 && verticalOffset < 1.0)
+            {
+                if (ViewModel.CanGoPrevious)
+                {
+                    SaveAndRestorePageState();
+                    ViewModel.PreviousPageCommand.Execute(null);
+                    
+                    // Scroll to bottom of new page after state is restored
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        PdfScrollViewer.ScrollToBottom();
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
+                    
+                    e.Handled = true;
+                }
+            }
         }
     }
 
@@ -283,6 +351,17 @@ public partial class PdfEditorView : UserControl
             ViewModel.AddImage();
             RefreshImagesDisplay();
         }
+    }
+
+    // Note: OnScrollChanged event handler is registered in XAML but currently not implemented.
+    // The continuous scrolling feature uses OnPreviewMouseWheel for boundary detection instead.
+    // Future versions may use this for:
+    // - Page preloading based on scroll position
+    // - Lazy loading/unloading of page content for memory optimization
+    // - Virtual scrolling with all pages in a single view
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        // Reserved for future implementation
     }
 
     #endregion
