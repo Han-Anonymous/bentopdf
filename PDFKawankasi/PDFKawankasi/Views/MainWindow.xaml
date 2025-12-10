@@ -44,7 +44,7 @@
             
             <!-- App Icon -->
             <Image Grid.Column="0" 
-                   Source="/Assets/PDF Editor/icon.png"
+                   Source="/Assets/icon.png"
                    Width="16" Height="16"
                    Margin="12,0,0,0"
                    VerticalAlignment="Center"/>

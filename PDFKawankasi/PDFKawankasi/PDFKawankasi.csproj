@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <!-- ApplicationIcon removed: Assets\app-icon.ico file not found -->
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
     
     <!-- Application Information -->
     <AssemblyName>PDFKawankasi</AssemblyName>
@@ -51,6 +51,9 @@
     
     <!-- SVG Support for WPF -->
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.4" />
+    
+    <!-- System.Drawing for ICO creation -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     
     <!-- File Dialogs and Windows Integration -->
     <!-- Pin to the latest available version on nuget.org (1.1.0). Version 1.1.5 is not available on public nuget.org feed. -->

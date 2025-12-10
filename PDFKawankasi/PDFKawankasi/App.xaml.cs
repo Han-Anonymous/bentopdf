@@ -12,12 +12,25 @@ public partial class App : Application
     {
         base.OnStartup(e);
         
-        // Check if we should launch the SVG test window (add --test-svg argument)
-        if (e.Args.Length > 0 && e.Args[0] == "--test-svg")
+        // Check for command-line arguments
+        if (e.Args.Length > 0)
         {
-            var testWindow = new SvgTestWindow();
-            testWindow.Show();
-            return;
+            // Convert logo: --convert-logo
+            if (e.Args[0] == "--convert-logo")
+            {
+                ConvertSvgToPng.ConvertLogo();
+                CreateIcoFromPng.CreateIco();
+                Shutdown();
+                return;
+            }
+            
+            // Test SVG: --test-svg
+            if (e.Args[0] == "--test-svg")
+            {
+                var testWindow = new SvgTestWindow();
+                testWindow.Show();
+                return;
+            }
         }
         
         // Set up global exception handling
