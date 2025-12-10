@@ -53,6 +53,7 @@
         <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation Name="pdfkawankasi">
             <uap:DisplayName>PDF Kawankasi</uap:DisplayName>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
             <uap:SupportedFileTypes>
               <uap:FileType ContentType="application/pdf">.pdf</uap:FileType>
             </uap:SupportedFileTypes>

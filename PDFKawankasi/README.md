@@ -21,6 +21,18 @@ PDF Kawankasi is a powerful Windows desktop application for manipulating, editin
 
 ### 📄 PDF Tools
 
+#### PDF Editor
+- **✏️ Advanced PDF Editor** - Full-featured PDF editor with:
+  - Annotation tools (highlight, draw, text, shapes, comments, images)
+  - Windows Ink support for stylus/pen input
+  - Undo/Redo functionality
+  - **Continuous Scrolling** - Seamlessly navigate through pages by scrolling
+  - Dual page view
+  - Zoom controls
+  - Page thumbnails sidebar
+  - Multi-tab support
+  - Recent documents list
+
 #### Popular Tools
 - **Merge PDF** - Combine multiple PDFs into one file
 - **Split PDF** - Extract a range of pages into a new PDF
@@ -74,6 +86,13 @@ PDF Kawankasi is a powerful Windows desktop application for manipulating, editin
 1. Open Microsoft Store
 2. Search for "PDF Kawankasi"
 3. Click Install
+
+#### Set as Default PDF Viewer
+After installation, you can set PDF Kawankasi as your default PDF viewer:
+1. Open the app
+2. Go to **File** → **Register as Default PDF Viewer**
+3. Windows Settings will open where you can select PDF Kawankasi for .pdf files
+4. Once set, double-clicking any PDF file in File Explorer will open it in PDF Kawankasi
 
 #### Build from Source
 ```bash
