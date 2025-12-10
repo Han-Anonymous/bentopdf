@@ -14,12 +14,31 @@
     <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <AppxBundle>Always</AppxBundle>
-    <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
+    <AppxBundlePlatforms>x86|x64|ARM64</AppxBundlePlatforms>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppInstallerUpdateFrequency>0</AppInstallerUpdateFrequency>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <UapAppxPackageBuildMode>StoreUpload</UapAppxPackageBuildMode>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM64'">
+    <PlatformTarget>ARM64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM64'">
+    <PlatformTarget>ARM64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>

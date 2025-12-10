@@ -1,0 +1,143 @@
+name: Build MSIX Package for Microsoft Store
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'PDFKawankasi/**'
+      - '.github/workflows/build-msix.yml'
+  pull_request:
+    paths:
+      - 'PDFKawankasi/**'
+      - '.github/workflows/build-msix.yml'
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: [Release]
+        platform: [x64, x86, ARM64]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet packages
+      run: |
+        cd PDFKawankasi
+        dotnet restore PDFKawankasi.sln
+
+    - name: Build main project (${{ matrix.platform }})
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.csproj `
+          /p:Configuration=${{ matrix.configuration }} `
+          /p:Platform=${{ matrix.platform }} `
+          /p:OutputPath=bin\${{ matrix.platform }}\${{ matrix.configuration }}\
+
+    - name: Build MSIX package (${{ matrix.platform }})
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.Package\PDFKawankasi.Package.wapproj `
+          /p:Configuration=${{ matrix.configuration }} `
+          /p:Platform=${{ matrix.platform }} `
+          /p:UapAppxPackageBuildMode=SideloadOnly `
+          /p:AppxBundle=Never `
+          /p:AppxPackageSigningEnabled=false
+
+    - name: Upload MSIX artifact (${{ matrix.platform }})
+      uses: actions/upload-artifact@v4
+      with:
+        name: msix-package-${{ matrix.platform }}
+        path: |
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msix
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msixbundle
+        retention-days: 30
+
+  build-msix-bundle:
+    runs-on: windows-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore NuGet packages
+      run: |
+        cd PDFKawankasi
+        dotnet restore PDFKawankasi.sln
+
+    - name: Build main project (x64)
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.csproj `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:OutputPath=bin\x64\Release\
+
+    - name: Build main project (x86)
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.csproj `
+          /p:Configuration=Release `
+          /p:Platform=x86 `
+          /p:OutputPath=bin\x86\Release\
+
+    - name: Build main project (ARM64)
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.csproj `
+          /p:Configuration=Release `
+          /p:Platform=ARM64 `
+          /p:OutputPath=bin\ARM64\Release\
+
+    - name: Build MSIX bundle for Store
+      run: |
+        cd PDFKawankasi
+        msbuild PDFKawankasi\PDFKawankasi.Package\PDFKawankasi.Package.wapproj `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:UapAppxPackageBuildMode=StoreUpload `
+          /p:AppxBundle=Always `
+          /p:AppxBundlePlatforms="x86|x64|ARM64" `
+          /p:AppxPackageSigningEnabled=false
+
+    - name: Upload Store package
+      uses: actions/upload-artifact@v4
+      with:
+        name: msix-store-bundle
+        path: |
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msixupload
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msixbundle
+        retention-days: 90
+
+    - name: Attach to Release (if release event)
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msixupload
+          PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/**/*.msixbundle
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
