@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Linq;
 
 namespace PDFKawankasi;
 
@@ -30,6 +31,19 @@ public partial class App : Application
                 var testWindow = new SvgTestWindow();
                 testWindow.Show();
                 return;
+            }
+            
+            // PDF file passed as command-line argument (file association)
+            // Filter to only process PDF files
+            var pdfFiles = e.Args.Where(arg => 
+                !arg.StartsWith("--") && 
+                System.IO.File.Exists(arg) && 
+                arg.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            if (pdfFiles.Any())
+            {
+                // Store PDF files to open after MainWindow is initialized
+                Current.Properties["PdfFilesToOpen"] = pdfFiles;
             }
         }
         

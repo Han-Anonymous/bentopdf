@@ -170,6 +170,77 @@ public partial class PdfEditorView : UserControl
                 ViewModel.ApplyZoomDelta(delta);
             }
             e.Handled = true;
+            return;
+        }
+
+        // Continuous scrolling mode: navigate pages when scrolling at boundaries
+        if (ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
+        {
+            var verticalOffset = PdfScrollViewer.VerticalOffset;
+            var scrollableHeight = PdfScrollViewer.ScrollableHeight;
+
+            // Scrolling down at bottom of page -> go to next page
+            if (e.Delta < 0 && Math.Abs(verticalOffset - scrollableHeight) < 1.0)
+            {
+                if (ViewModel.CanGoNext)
+                {
+                    // Save current page state before switching
+                    if (PdfInkCanvas != null)
+                    {
+                        ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+                        ViewModel.SaveCurrentPageImages();
+                        ViewModel.SaveCurrentPageTextBoxes();
+                    }
+
+                    ViewModel.NextPageCommand.Execute(null);
+                    
+                    // Scroll to top of new page
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        PdfScrollViewer.ScrollToTop();
+                        // Load new page strokes
+                        if (PdfInkCanvas != null)
+                        {
+                            PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+                        }
+                        RefreshImagesDisplay();
+                        RefreshTextBoxesDisplay();
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
+                    
+                    e.Handled = true;
+                }
+            }
+            // Scrolling up at top of page -> go to previous page
+            else if (e.Delta > 0 && verticalOffset < 1.0)
+            {
+                if (ViewModel.CanGoPrevious)
+                {
+                    // Save current page state before switching
+                    if (PdfInkCanvas != null)
+                    {
+                        ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+                        ViewModel.SaveCurrentPageImages();
+                        ViewModel.SaveCurrentPageTextBoxes();
+                    }
+
+                    ViewModel.PreviousPageCommand.Execute(null);
+                    
+                    // Scroll to bottom of new page
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        PdfScrollViewer.ScrollToBottom();
+                        // Load new page strokes
+                        if (PdfInkCanvas != null)
+                        {
+                            PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+                        }
+                        RefreshImagesDisplay();
+                        RefreshTextBoxesDisplay();
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
+                    
+                    e.Handled = true;
+                }
+            }
         }
     }
 
@@ -283,6 +354,13 @@ public partial class PdfEditorView : UserControl
             ViewModel.AddImage();
             RefreshImagesDisplay();
         }
+    }
+
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        // This event is useful for tracking scroll position
+        // Currently used primarily for continuous scrolling in OnPreviewMouseWheel
+        // Could be extended in future for lazy loading or other optimizations
     }
 
     #endregion

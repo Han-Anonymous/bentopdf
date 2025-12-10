@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Controls;
@@ -27,6 +29,25 @@ public partial class MainWindow : Window
         // Update maximize/restore button on state changed
         StateChanged += MainWindow_StateChanged;
         UpdateMaximizeRestoreButton();
+        
+        // Handle PDF files passed via file association
+        Loaded += MainWindow_Loaded;
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Check if PDF files were passed via command-line (file association)
+        if (Application.Current.Properties["PdfFilesToOpen"] is List<string> pdfFiles && pdfFiles.Any())
+        {
+            // Open each PDF file in a new tab
+            foreach (var pdfFile in pdfFiles)
+            {
+                OpenPdfInNewTab(pdfFile);
+            }
+            
+            // Clear the property so files aren't opened again
+            Application.Current.Properties.Remove("PdfFilesToOpen");
+        }
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
@@ -261,6 +282,33 @@ public partial class MainWindow : Window
         };
         PdfTabControl.Items.Add(newTab);
         PdfTabControl.SelectedItem = newTab;
+    }
+
+    private void OpenPdfInNewTab(string pdfFilePath)
+    {
+        // Create a new tab with PdfEditorView
+        _tabCounter++;
+        var pdfEditorView = new PdfEditorView();
+        var newTab = new TabItem
+        {
+            Content = pdfEditorView
+        };
+        
+        PdfTabControl.Items.Add(newTab);
+        PdfTabControl.SelectedItem = newTab;
+        
+        // Open the PDF file in the new tab after it's loaded
+        pdfEditorView.Loaded += (s, e) =>
+        {
+            if (pdfEditorView.DataContext is PDFKawankasi.ViewModels.PdfEditorViewModel viewModel)
+            {
+                // Execute the OpenPdf command with the file path
+                if (viewModel.OpenPdfCommand.CanExecute(pdfFilePath))
+                {
+                    viewModel.OpenPdfCommand.Execute(pdfFilePath);
+                }
+            }
+        };
     }
 
     private void OnTabMouseDown(object sender, MouseButtonEventArgs e)
