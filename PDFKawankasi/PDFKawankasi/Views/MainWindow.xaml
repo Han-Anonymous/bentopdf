@@ -11,7 +11,8 @@
         MinHeight="600" MinWidth="900"
         Background="{StaticResource BackgroundBrush}"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="SingleBorderWindow">
+        WindowStyle="SingleBorderWindow"
+        Icon="/Assets/icon.png">
     
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40"
