@@ -9,6 +9,10 @@ namespace PDFKawankasi;
 /// </summary>
 public partial class App : Application
 {
+    // File extension constant for PDF files
+    private const string PdfExtension = ".pdf";
+    
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -38,7 +42,7 @@ public partial class App : Application
             var pdfFiles = e.Args.Where(arg => 
                 !arg.StartsWith("--") && 
                 System.IO.File.Exists(arg) && 
-                arg.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)).ToList();
+                arg.EndsWith(PdfExtension, StringComparison.OrdinalIgnoreCase)).ToList();
             
             if (pdfFiles.Any())
             {

@@ -353,15 +353,15 @@ public partial class PdfEditorView : UserControl
         }
     }
 
+    // Note: OnScrollChanged event handler is registered in XAML but currently not implemented.
+    // The continuous scrolling feature uses OnPreviewMouseWheel for boundary detection instead.
+    // Future versions may use this for:
+    // - Page preloading based on scroll position
+    // - Lazy loading/unloading of page content for memory optimization
+    // - Virtual scrolling with all pages in a single view
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        // This event is useful for tracking scroll position
-        // Currently used primarily for continuous scrolling in OnPreviewMouseWheel
-        // TODO: Future enhancements could include:
-        // - Page preloading based on scroll position
-        // - Lazy loading/unloading of page content for memory optimization
-        // - Smooth scroll animations
-        // - Virtual scrolling with all pages in a single view
+        // Reserved for future implementation
     }
 
     #endregion

@@ -315,7 +315,7 @@ public partial class MainWindow : Window
         if (editorView.Tag is not string pdfFilePath) return;
         
         // Get the ViewModel and open the file
-        if (editorView.DataContext is PDFKawankasi.ViewModels.PdfEditorViewModel viewModel)
+        if (editorView.DataContext is PdfEditorViewModel viewModel)
         {
             if (viewModel.OpenPdfCommand.CanExecute(pdfFilePath))
             {
