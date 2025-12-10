@@ -53,7 +53,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PDFKawankasi.csproj">
-      <Project>{B51E94EA-7B29-3FEB-277E-2209D55995E4}</Project>
+      <Project>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</Project>
       <Name>PDFKawankasi</Name>
     </ProjectReference>
   </ItemGroup>
