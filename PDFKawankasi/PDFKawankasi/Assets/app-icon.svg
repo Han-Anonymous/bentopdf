@@ -1,17 +1,10 @@
-<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="256" height="256" rx="48" fill="#6366F1"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main green circle with lime/light green color (#84cc16) -->
+  <circle cx="256" cy="256" r="200" fill="#84cc16"/>
   
-  <!-- PDF Document Icon -->
-  <rect x="56" y="40" width="100" height="130" rx="8" fill="white"/>
-  <rect x="156" y="40" width="44" height="130" rx="8" fill="#E0E0FF"/>
+  <!-- Inner white circle -->
+  <circle cx="256" cy="256" r="140" fill="white"/>
   
-  <!-- Document fold -->
-  <path d="M156 40 L200 84 L156 84 Z" fill="#C7C7FF"/>
-  
-  <!-- PDF Text -->
-  <text x="128" y="140" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#6366F1" text-anchor="middle">PDF</text>
-  
-  <!-- Kawankasi brand element - stylized K -->
-  <path d="M70 175 L100 175 L130 205 L160 175 L190 175 L150 215 L190 255 L160 255 L130 225 L100 255 L70 255 L110 215 Z" fill="white" opacity="0.9"/>
+  <!-- Stylized "B" for Bento in the center -->
+  <path d="M216 180 L216 332 L276 332 C300 332 316 316 316 292 C316 276 308 264 296 260 C304 256 310 244 310 232 C310 208 296 180 272 180 Z M236 200 L268 200 C284 200 290 212 290 224 C290 236 284 248 268 248 L236 248 Z M236 264 L272 264 C288 264 296 276 296 288 C296 300 288 312 272 312 L236 312 Z" fill="#84cc16"/>
 </svg>
