@@ -16,13 +16,13 @@
     This will automatically update Name, Publisher, and PublisherDisplayName with your actual Store values.
   -->
   <Identity
-    Name="PDFKawankasi"
-    Publisher="CN=YourPublisherName"
+    Name="40030HanzalahAdalan.2620788AAD821"
+    Publisher="CN=FD627B2F-9EAF-46D2-8F1D-217754E48DDF"
     Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>PDF Kawankasi</DisplayName>
-    <PublisherDisplayName>Your Publisher Display Name</PublisherDisplayName>
+    <PublisherDisplayName>Hanzalah Adalan</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 

@@ -1,11 +1,8 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11222.15 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDFKawankasi", "PDFKawankasi\PDFKawankasi.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
-EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "PDFKawankasi.Package", "PDFKawankasi\PDFKawankasi.Package\PDFKawankasi.Package.wapproj", "{702511CB-908C-4742-8133-5E1818049AA0}"
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "WapProjTemplate1", "WapProjTemplate1\WapProjTemplate1.wapproj", "{78515480-5D50-4FC9-BFA0-D5476A47F308}"
 EndProject
@@ -37,28 +34,6 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.Build.0 = Release|x64
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.ActiveCfg = Release|x86
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x86.Build.0 = Release|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|Any CPU.Build.0 = Debug|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|ARM64.Build.0 = Debug|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|ARM64.Deploy.0 = Debug|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x64.ActiveCfg = Debug|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x64.Build.0 = Debug|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x64.Deploy.0 = Debug|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x86.ActiveCfg = Debug|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x86.Build.0 = Debug|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Debug|x86.Deploy.0 = Debug|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|Any CPU.ActiveCfg = Release|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|Any CPU.Build.0 = Release|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|ARM64.ActiveCfg = Release|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|ARM64.Build.0 = Release|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|ARM64.Deploy.0 = Release|ARM64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x64.ActiveCfg = Release|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x64.Build.0 = Release|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x64.Deploy.0 = Release|x64
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.ActiveCfg = Release|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.Build.0 = Release|x86
-		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.Deploy.0 = Release|x86
 		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|Any CPU.Build.0 = Debug|x86
 		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|ARM64.ActiveCfg = Debug|ARM64
@@ -84,5 +59,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E4ADE9DF-C7B9-4AFB-9ACD-AC1E14D96A63}
 	EndGlobalSection
 EndGlobal
