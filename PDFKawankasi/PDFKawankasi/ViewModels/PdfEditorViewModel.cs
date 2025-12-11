@@ -497,7 +497,7 @@ public partial class PdfEditorViewModel : ObservableObject
     #region Commands
 
     [RelayCommand]
-    private void OpenPdf()
+    private void OpenPdf(string? filePath = null)
     {
         // Check for pending changes before opening a new file
         if (IsPdfLoaded && HasPendingChanges)
@@ -520,6 +520,38 @@ public partial class PdfEditorViewModel : ObservableObject
             // If No, discard changes and continue opening new file
         }
 
+        // If a file path is provided (e.g., from file association), validate and use it directly
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            // Validate file exists
+            if (!File.Exists(filePath))
+            {
+                System.Windows.MessageBox.Show(
+                    $"The file does not exist:\n{filePath}",
+                    "File Not Found",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+            
+            // Validate file extension
+            if (!filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Windows.MessageBox.Show(
+                    $"The file is not a PDF:\n{filePath}",
+                    "Invalid File Type",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+            
+            // Reset all state before loading new PDF
+            ResetEditorState();
+            LoadPdf(filePath);
+            return;
+        }
+
+        // Otherwise, show file picker dialog
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "PDF Files (*.pdf)|*.pdf",
