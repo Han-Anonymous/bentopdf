@@ -10,7 +10,7 @@ param(
     [string]$Publisher = "CN=PDF Kawankasi Development",
     
     [Parameter(Mandatory=$false, HelpMessage="Password for the PFX certificate")]
-    [string]$CertPassword = "Pass@word1",
+    [string]$CertPassword = "TestCert$(Get-Random -Minimum 1000 -Maximum 9999)!",
     
     [Parameter(Mandatory=$false, HelpMessage="Path where the PFX certificate will be saved")]
     [string]$CertPath = ".\PDFKawankasi_TemporaryKey.pfx",
@@ -311,8 +311,10 @@ Write-Host ""
 Write-Info "🔐 Certificate Information:"
 Write-Host "  PFX File: $CertPath" -ForegroundColor White
 Write-Host "  CER File: $cerPath" -ForegroundColor White
-Write-Host "  Password: $CertPassword" -ForegroundColor White
+Write-Host "  Password: ******* (saved in variable, not displayed for security)" -ForegroundColor White
 Write-Host "  Publisher: $Publisher" -ForegroundColor White
+Write-Host ""
+Write-Warning "⚠️  Keep the certificate password secure. You'll need it to sign future updates."
 Write-Host ""
 
 Write-Info "📝 Next Steps:"

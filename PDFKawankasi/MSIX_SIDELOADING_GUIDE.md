@@ -76,11 +76,14 @@ param(
     [string]$Publisher = "CN=PDF Kawankasi Development",
     
     [Parameter(Mandatory=$false)]
-    [string]$CertPassword = "Pass@word1",
+    [string]$CertPassword = "YourSecurePassword123!",
     
     [Parameter(Mandatory=$false)]
     [string]$CertPath = ".\PDFKawankasi_TemporaryKey.pfx"
 )
+
+# ⚠️ SECURITY NOTE: In production, use a strong unique password and store it securely.
+# The default password shown here is just an example. The actual script generates a random password.
 
 # Requires Administrator privileges
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -260,7 +263,7 @@ $makecert = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\makecer
 # Convert to PFX
 $pvk2pfx = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\pvk2pfx.exe"
 & $pvk2pfx -pvk PDFKawankasi_Key.pvk -spc PDFKawankasi_Cert.cer `
-    -pfx PDFKawankasi_TemporaryKey.pfx -po "Pass@word1"
+    -pfx PDFKawankasi_TemporaryKey.pfx -po "YourSecurePassword123!"
 ```
 
 ### Step 2: Export Certificate
@@ -273,7 +276,7 @@ $cert = Get-ChildItem -Path Cert:\CurrentUser\My |
     Where-Object { $_.Subject -eq "CN=PDF Kawankasi Development" }
 
 # Export as PFX (for signing)
-$password = ConvertTo-SecureString -String "Pass@word1" -Force -AsPlainText
+$password = ConvertTo-SecureString -String "YourSecurePassword123!" -Force -AsPlainText
 Export-PfxCertificate -Cert $cert `
     -FilePath ".\PDFKawankasi_TemporaryKey.pfx" `
     -Password $password
@@ -327,7 +330,7 @@ Before signing, ensure `Package.appxmanifest` Publisher matches your certificate
 $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
 
 # Sign MSIX with PFX
-& $signtool sign /fd SHA256 /a /f ".\PDFKawankasi_TemporaryKey.pfx" /p "Pass@word1" `
+& $signtool sign /fd SHA256 /a /f ".\PDFKawankasi_TemporaryKey.pfx" /p "YourSecurePassword123!" `
     ".\PDFKawankasi.Package_1.0.0.0_x64.msix"
 ```
 
@@ -462,7 +465,7 @@ $env:PATH += ";C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64"
 **Solution:**
 ```powershell
 # Re-sign with timestamp server
-& $signtool sign /fd SHA256 /a /f ".\PDFKawankasi_TemporaryKey.pfx" /p "Pass@word1" `
+& $signtool sign /fd SHA256 /a /f ".\PDFKawankasi_TemporaryKey.pfx" /p "YourSecurePassword123!" `
     /tr http://timestamp.digicert.com /td SHA256 `
     ".\PDFKawankasi.Package_1.0.0.0_x64.msix"
 ```
@@ -496,7 +499,7 @@ msbuild WapProjTemplate1\WapProjTemplate1.wapproj `
     /p:AppxBundle=Never `
     /p:AppxPackageSigningEnabled=true `
     /p:PackageCertificateKeyFile="C:\Path\To\PDFKawankasi_TemporaryKey.pfx" `
-    /p:PackageCertificatePassword="Pass@word1"
+    /p:PackageCertificatePassword="YourSecurePassword123!"
 ```
 
 ## Automating for CI/CD
@@ -611,7 +614,7 @@ New-SelfSignedCertificate -Type Custom -Subject "CN=PDF Kawankasi Development" -
 ### Export Certificate
 ```powershell
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Subject -eq "CN=PDF Kawankasi Development" }
-$password = ConvertTo-SecureString "Pass@word1" -Force -AsPlainText
+$password = ConvertTo-SecureString "YourSecurePassword123!" -Force -AsPlainText
 Export-PfxCertificate -Cert $cert -FilePath "cert.pfx" -Password $password
 ```
 
@@ -622,7 +625,7 @@ Import-Certificate -FilePath "cert.cer" -CertStoreLocation Cert:\LocalMachine\Ro
 
 ### Sign Package
 ```powershell
-signtool sign /fd SHA256 /a /f "cert.pfx" /p "Pass@word1" "package.msix"
+signtool sign /fd SHA256 /a /f "cert.pfx" /p "YourSecurePassword123!" "package.msix"
 ```
 
 ### Install Package
