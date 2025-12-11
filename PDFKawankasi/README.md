@@ -157,6 +157,17 @@ PDFKawankasi/
 3. Select "Microsoft Store" as the distribution method
 4. Follow the wizard to create your package
 
+**For local testing and sideloading:**
+```powershell
+# Sign with self-signed certificate (fixes error 0x800B010A)
+.\scripts\Sign-MSIX.ps1 -MsixPath "path\to\package.msix"
+
+# Install
+Add-AppxPackage -Path "path\to\package.msix"
+```
+
+See [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md) for detailed sideloading instructions.
+
 ### Store Submission
 
 1. Go to [Partner Center](https://partner.microsoft.com/)
@@ -164,6 +175,12 @@ PDFKawankasi/
 3. Upload your MSIX package
 4. Fill in the store listing information
 5. Submit for certification
+
+**Documentation:**
+- [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md) - **Local testing with self-signed certificates**
+- [MICROSOFT_STORE_SUBMISSION.md](MICROSOFT_STORE_SUBMISSION.md) - Complete Store submission guide
+- [MSIX_BUILD_GUIDE.md](MSIX_BUILD_GUIDE.md) - Building MSIX packages
+- [QUICK_START_MSIX.md](QUICK_START_MSIX.md) - Quick reference
 
 ---
 

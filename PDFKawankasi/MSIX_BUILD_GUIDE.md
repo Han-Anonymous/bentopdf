@@ -207,13 +207,24 @@ Users can set PDF Kawankasi as their default PDF viewer through Windows Settings
 Before Store submission, you can test the package:
 
 1. Build the package without Store association
-2. Enable Developer Mode in Windows Settings
-3. Install the certificate (if self-signed)
+2. Sign with a self-signed certificate (see [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md))
+3. Install the certificate to Trusted Root
 4. Double-click the `.msix` file to install
 5. Or use PowerShell:
    ```powershell
    Add-AppxPackage -Path "path\to\PDFKawankasi.Package.msix"
    ```
+
+**Quick Sign & Install:**
+```powershell
+# Use the automated script (requires Administrator)
+.\scripts\Sign-MSIX.ps1 -MsixPath "path\to\Package.msix"
+
+# Then install
+Add-AppxPackage -Path "path\to\Package.msix"
+```
+
+> **Note:** For detailed sideloading instructions including certificate creation and troubleshooting error 0x800B010A, see [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md)
 
 ## Troubleshooting
 
@@ -234,9 +245,11 @@ Before Store submission, you can test the package:
 - Check Event Viewer > Windows Logs > Application for errors
 - Verify all dependencies are included in the package
 
-**Error: "Certificate not trusted"**
-- For sideloading, install the certificate first
-- For Store apps, this won't be an issue
+**Error: "Certificate not trusted" or "0x800B010A"**
+- For sideloading, you must install the certificate to Trusted Root first
+- Use the automated script: `.\scripts\Sign-MSIX.ps1 -MsixPath "package.msix"`
+- Or follow manual steps in [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md)
+- For Store apps, Microsoft handles signing automatically
 
 ## CI/CD Integration
 
@@ -256,6 +269,13 @@ For automated builds in CI/CD pipelines:
 
 ## Additional Resources
 
+### Internal Documentation
+- [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md) - **Sideloading and self-signed certificates** (fixes error 0x800B010A)
+- [MICROSOFT_STORE_SUBMISSION.md](MICROSOFT_STORE_SUBMISSION.md) - Complete Store submission guide
+- [QUICK_START_MSIX.md](QUICK_START_MSIX.md) - Quick reference for MSIX builds
+- [scripts/README.md](scripts/README.md) - Helper scripts documentation
+
+### Microsoft Learn
 - [Microsoft Store Documentation](https://learn.microsoft.com/en-us/windows/apps/publish/)
 - [MSIX Packaging Documentation](https://learn.microsoft.com/en-us/windows/msix/)
 - [Windows Application Packaging Project](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-packaging-dot-net)

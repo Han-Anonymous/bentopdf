@@ -27,3 +27,19 @@ dist-ssr
 coverage/
 *.lcov
 
+# Certificate files (do not commit private keys)
+*.pfx
+*.pvk
+*.cer
+*_TemporaryKey.*
+
+# MSIX build artifacts
+PDFKawankasi/WapProjTemplate1/AppPackages/
+PDFKawankasi/PDFKawankasi/PDFKawankasi.Package/AppPackages/
+*.msix
+*.msixbundle
+*.msixupload
+*.appx
+*.appxbundle
+*.appxupload
+

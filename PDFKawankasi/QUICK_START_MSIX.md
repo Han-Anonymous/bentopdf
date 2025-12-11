@@ -91,6 +91,14 @@ Before submitting to Store:
 
 ## Troubleshooting
 
+### "Certificate could not be verified" or Error 0x800B010A
+**Solution**: Sign the package with a self-signed certificate:
+```powershell
+# Use automated script (requires Administrator)
+.\scripts\Sign-MSIX.ps1 -MsixPath "path\to\package.msix"
+```
+Or see [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md) for detailed instructions.
+
 ### "The project needs to be associated with the Store"
 **Solution**: Associate with Store OR disable signing in `.wapproj`:
 ```xml
@@ -119,7 +127,11 @@ Artifacts are available in the Actions tab for 30-90 days.
 
 ## More Information
 
-For detailed documentation, see [MSIX_BUILD_GUIDE.md](MSIX_BUILD_GUIDE.md)
+**Detailed Documentation:**
+- [MSIX_SIDELOADING_GUIDE.md](MSIX_SIDELOADING_GUIDE.md) - **Sideloading with self-signed certificates** (fixes 0x800B010A)
+- [MSIX_BUILD_GUIDE.md](MSIX_BUILD_GUIDE.md) - Complete build guide
+- [MICROSOFT_STORE_SUBMISSION.md](MICROSOFT_STORE_SUBMISSION.md) - Store submission process
+- [scripts/README.md](scripts/README.md) - Helper scripts documentation
 
 ## Common Build Targets
 
