@@ -32,16 +32,14 @@ public partial class App : Application
         if (!createdNew)
         {
             // Another instance is already running
-            // Send PDF files to the existing instance via named pipe
+            // Extract PDF files from command-line arguments
             var pdfFiles = e.Args.Where(arg => 
                 !arg.StartsWith("--") && 
                 System.IO.File.Exists(arg) && 
                 arg.EndsWith(PdfExtension, StringComparison.OrdinalIgnoreCase)).ToList();
             
-            if (pdfFiles.Any())
-            {
-                SendFilesToExistingInstance(pdfFiles);
-            }
+            // Send files to the existing instance (empty list will just activate the window)
+            SendFilesToExistingInstance(pdfFiles);
             
             // Shutdown this instance
             Shutdown();
@@ -121,10 +119,21 @@ public partial class App : Application
             pipeClient.Connect(5000); // 5 second timeout
             
             using var writer = new StreamWriter(pipeClient, Encoding.UTF8);
-            foreach (var file in pdfFiles)
+            
+            if (pdfFiles.Any())
             {
-                writer.WriteLine(file);
+                // Send file paths
+                foreach (var file in pdfFiles)
+                {
+                    writer.WriteLine(file);
+                }
             }
+            else
+            {
+                // Send empty line to signal "just activate window"
+                writer.WriteLine("");
+            }
+            
             writer.Flush();
         }
         catch

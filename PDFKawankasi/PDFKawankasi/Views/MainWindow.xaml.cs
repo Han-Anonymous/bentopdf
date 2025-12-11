@@ -450,26 +450,26 @@ public partial class MainWindow : Window
                         }
                     }
 
-                    if (filePaths.Any())
+                    // Always bring window to foreground (even if no files)
+                    Dispatcher.Invoke(() =>
                     {
-                        // Open files in the UI thread
-                        Dispatcher.Invoke(() =>
+                        // Bring window to foreground
+                        if (WindowState == WindowState.Minimized)
                         {
-                            // Bring window to foreground
-                            if (WindowState == WindowState.Minimized)
-                            {
-                                WindowState = WindowState.Normal;
-                            }
-                            Activate();
-                            Focus();
+                            WindowState = WindowState.Normal;
+                        }
+                        Activate();
+                        Focus();
 
-                            // Open each PDF file in a new tab
+                        // Open each PDF file in a new tab if any files were sent
+                        if (filePaths.Any())
+                        {
                             foreach (var filePath in filePaths)
                             {
                                 OpenPdfInNewTab(filePath);
                             }
-                        });
-                    }
+                        }
+                    });
                 }
                 catch (OperationCanceledException)
                 {
