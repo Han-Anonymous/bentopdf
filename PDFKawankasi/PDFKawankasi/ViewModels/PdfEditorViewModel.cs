@@ -733,10 +733,11 @@ public partial class PdfEditorViewModel : ObservableObject
 
         try
         {
-            StatusMessage = "Preparing document for printing...";
+            StatusMessage = "Opening document for printing...";
             
-            // Print the PDF using the OS print dialog
-            // We'll print the current working copy that includes all annotations
+            // Open the PDF with default viewer for printing
+            // Using Windows.System.Launcher for Store-safe file opening (avoids WACK test failures)
+            // The user can then use Ctrl+P or the Print button in their PDF viewer
             if (_pdfBytes != null && _pdfBytes.Length > 0)
             {
                 // Save current state to a temporary file
@@ -745,28 +746,22 @@ public partial class PdfEditorViewModel : ObservableObject
                 
                 try
                 {
-                    // Use Process.Start with shell execute and "print" verb to open OS print dialog
-                    var processInfo = new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = tempFile,
-                        Verb = "print",
-                        CreateNoWindow = true,
-                        UseShellExecute = true
-                    };
+                    // Use Windows.System.Launcher for Store-safe file opening
+                    // This passes WACK tests and works in MSIX-packaged apps
+                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
+                    var success = await Launcher.LaunchFileAsync(file);
                     
-                    var process = System.Diagnostics.Process.Start(processInfo);
-                    
-                    if (process != null)
+                    if (success)
                     {
-                        StatusMessage = "Document sent to printer";
+                        StatusMessage = "Document opened - use Ctrl+P or Print button in the viewer to print";
                         
-                        // Clean up temp file after process exits
+                        // Clean up temp file after a delay to allow viewer to open it
                         _ = Task.Run(async () =>
                         {
                             try
                             {
-                                // Wait for the print dialog to close (or timeout after 30 seconds)
-                                await Task.Delay(30000);
+                                // Wait for the viewer to open and load the file (60 seconds should be enough)
+                                await Task.Delay(60000);
                                 
                                 if (File.Exists(tempFile))
                                     File.Delete(tempFile);
@@ -776,7 +771,7 @@ public partial class PdfEditorViewModel : ObservableObject
                     }
                     else
                     {
-                        StatusMessage = "Failed to open print dialog";
+                        StatusMessage = "Failed to open document in PDF viewer";
                         // Clean up temp file on error
                         if (File.Exists(tempFile))
                             File.Delete(tempFile);
