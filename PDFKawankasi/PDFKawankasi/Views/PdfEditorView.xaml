@@ -472,9 +472,7 @@
                             <!-- PDF Page Image as background -->
                             <Image x:Name="PdfPageImage"
                                    Source="{Binding CurrentPageImage}"
-                                   Stretch="Fill"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Stretch"/>
+                                   Stretch="Fill"/>
                             
                             <!-- Windows InkCanvas for native stylus/pen/touch support -->
                             <InkCanvas x:Name="PdfInkCanvas"
