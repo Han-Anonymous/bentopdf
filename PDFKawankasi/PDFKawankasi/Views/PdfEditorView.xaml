@@ -553,11 +553,20 @@
                     <!-- Continuous Scroll View (all pages like thumbnail panel) -->
                     <ScrollViewer x:Name="ContinuousScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Visible"
                                   Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Background="#F0F0F0"
-                                  Padding="20">
-                        <ItemsControl ItemsSource="{Binding PageThumbnails}">
+                                  Padding="20"
+                                  CanContentScroll="True">
+                        <ItemsControl ItemsSource="{Binding PageThumbnails}"
+                                      ScrollViewer.CanContentScroll="True"
+                                      VirtualizingPanel.ScrollUnit="Pixel"
+                                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="White"
