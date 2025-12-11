@@ -9,43 +9,63 @@ This guide explains how to build MSIX packages for PDF Kawankasi and prepare the
    - Universal Windows Platform development
    - Windows Application Packaging Project
 
-2. **Windows SDK** version 10.0.22621.0 or later
+2. **Windows SDK** version 10.0.26100.0 or later
 
 3. **Windows 10 version 1809 (build 17763)** or later for development
 
 ## Project Structure
 
+The solution contains two packaging projects:
+
 - **PDFKawankasi.csproj**: Main WPF application project
-- **PDFKawankasi.Package.wapproj**: Windows Application Packaging Project for MSIX
-- **Package.appxmanifest**: App manifest with Store metadata
+- **WapProjTemplate1.wapproj**: Official Windows Application Packaging Project for Microsoft Store (RECOMMENDED)
+- **PDFKawankasi.Package.wapproj**: Alternative packaging project (legacy)
+
+> **Note:** Use **WapProjTemplate1** for all Microsoft Store submissions. It is configured with the official Microsoft template and proper Store settings.
 
 ## Building MSIX Packages
 
-### Option 1: Using Visual Studio
+### Option 1: Using Visual Studio (Recommended for Store Submission)
 
 1. Open `PDFKawankasi.sln` in Visual Studio 2022
-2. Select the **PDFKawankasi.Package** project as the startup project
+2. Select the **WapProjTemplate1** project as the startup project
 3. Choose your target platform (x86, x64, or ARM64)
 4. Select **Release** configuration
-5. Right-click on **PDFKawankasi.Package** project
+5. Right-click on **WapProjTemplate1** project
 6. Select **Publish** > **Create App Packages**
-7. Follow the wizard to create packages for Microsoft Store submission
+7. Choose **Microsoft Store using an existing app name**
+8. Sign in to Partner Center and select your app
+9. Configure architectures (x86, x64, ARM64) and create the bundle
 
 ### Option 2: Using MSBuild Command Line
 
-For **x64** release build:
+For **Microsoft Store bundle** (all architectures):
 ```powershell
-msbuild PDFKawankasi.sln /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always
+# First build the main project for all platforms
+msbuild PDFKawankasi\PDFKawankasi.csproj /p:Configuration=Release /p:Platform=x64
+msbuild PDFKawankasi\PDFKawankasi.csproj /p:Configuration=Release /p:Platform=x86
+msbuild PDFKawankasi\PDFKawankasi.csproj /p:Configuration=Release /p:Platform=ARM64
+
+# Then create the Store bundle
+msbuild WapProjTemplate1\WapProjTemplate1.wapproj `
+  /p:Configuration=Release `
+  /p:Platform=x64 `
+  /p:UapAppxPackageBuildMode=StoreUpload `
+  /p:AppxBundle=Always `
+  /p:AppxBundlePlatforms="x86|x64|ARM64" `
+  /p:AppxPackageSigningEnabled=false
 ```
 
-For **x86** release build:
+For **individual platform builds** (testing/sideload):
 ```powershell
-msbuild PDFKawankasi.sln /p:Configuration=Release /p:Platform=x86 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always
-```
+# x64
+msbuild WapProjTemplate1\WapProjTemplate1.wapproj /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=SideloadOnly
 
-For **ARM64** release build:
-```powershell
-msbuild PDFKawankasi.sln /p:Configuration=Release /p:Platform=ARM64 /p:UapAppxPackageBuildMode=StoreUpload /p:AppxBundle=Always
+# x86
+msbuild WapProjTemplate1\WapProjTemplate1.wapproj /p:Configuration=Release /p:Platform=x86 /p:UapAppxPackageBuildMode=SideloadOnly
+
+# ARM64
+msbuild WapProjTemplate1\WapProjTemplate1.wapproj /p:Configuration=Release /p:Platform=ARM64 /p:UapAppxPackageBuildMode=SideloadOnly
 ```
 
 For **multi-platform bundle** (recommended for Store):

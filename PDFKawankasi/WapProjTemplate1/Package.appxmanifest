@@ -6,6 +6,15 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
+  <!-- 
+    IMPORTANT: These Identity and Publisher values are placeholders.
+    Before Store submission, use Visual Studio's "Associate App with the Store" feature:
+    1. Right-click WapProjTemplate1 project
+    2. Select Publish > Associate App with the Store
+    3. Sign in to Partner Center
+    4. Select your app reservation
+    This will automatically update Name, Publisher, and PublisherDisplayName with your actual Store values.
+  -->
   <Identity
     Name="PDFKawankasi"
     Publisher="CN=YourPublisherName"
