@@ -733,69 +733,66 @@ public partial class PdfEditorViewModel : ObservableObject
 
         try
         {
-            // Use Windows Print Dialog
-            var printDialog = new System.Windows.Controls.PrintDialog();
+            StatusMessage = "Preparing document for printing...";
             
-            if (printDialog.ShowDialog() == true)
+            // Print the PDF using the OS print dialog
+            // We'll print the current working copy that includes all annotations
+            if (_pdfBytes != null && _pdfBytes.Length > 0)
             {
-                StatusMessage = "Preparing document for printing...";
+                // Save current state to a temporary file
+                var tempFile = Path.Combine(Path.GetTempPath(), $"print_{Guid.NewGuid()}.pdf");
+                await File.WriteAllBytesAsync(tempFile, _pdfBytes);
                 
-                // Print the PDF using the OS print dialog
-                // We'll print the current working copy that includes all annotations
-                if (_pdfBytes != null && _pdfBytes.Length > 0)
+                try
                 {
-                    // Save current state to a temporary file
-                    var tempFile = Path.Combine(Path.GetTempPath(), $"print_{Guid.NewGuid()}.pdf");
-                    await File.WriteAllBytesAsync(tempFile, _pdfBytes);
-                    
-                    try
+                    // Use Process.Start with shell execute and "print" verb to open OS print dialog
+                    var processInfo = new System.Diagnostics.ProcessStartInfo
                     {
-                        // Use Windows.System.Launcher to open the PDF with the default PDF viewer's print dialog
-                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
-                        var options = new Windows.System.LauncherOptions
-                        {
-                            Verb = "print"
-                        };
+                        FileName = tempFile,
+                        Verb = "print",
+                        CreateNoWindow = true,
+                        UseShellExecute = true
+                    };
+                    
+                    var process = System.Diagnostics.Process.Start(processInfo);
+                    
+                    if (process != null)
+                    {
+                        StatusMessage = "Document sent to printer";
                         
-                        var success = await Windows.System.Launcher.LaunchFileAsync(file, options);
-                        
-                        if (success)
-                        {
-                            StatusMessage = "Document sent to printer";
-                        }
-                        else
-                        {
-                            StatusMessage = "Failed to open print dialog";
-                        }
-                        
-                        // Clean up temp file after a delay
+                        // Clean up temp file after process exits
                         _ = Task.Run(async () =>
                         {
-                            await Task.Delay(5000); // Wait 5 seconds before cleanup
                             try
                             {
+                                // Wait for the print dialog to close (or timeout after 30 seconds)
+                                await Task.Delay(30000);
+                                
                                 if (File.Exists(tempFile))
                                     File.Delete(tempFile);
                             }
                             catch { /* Ignore cleanup errors */ }
                         });
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        StatusMessage = $"Print error: {ex.Message}";
+                        StatusMessage = "Failed to open print dialog";
                         // Clean up temp file on error
                         if (File.Exists(tempFile))
                             File.Delete(tempFile);
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    StatusMessage = "No document data available to print";
+                    StatusMessage = $"Print error: {ex.Message}";
+                    // Clean up temp file on error
+                    if (File.Exists(tempFile))
+                        File.Delete(tempFile);
                 }
             }
             else
             {
-                StatusMessage = "Print cancelled";
+                StatusMessage = "No document data available to print";
             }
         }
         catch (Exception ex)
