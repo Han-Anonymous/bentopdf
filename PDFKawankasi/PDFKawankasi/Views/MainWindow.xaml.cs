@@ -11,6 +11,8 @@ using System.Threading;
 using System.IO.Pipes;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 
 namespace PDFKawankasi.Views;
 
@@ -19,6 +21,15 @@ namespace PDFKawankasi.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
+    // Windows API for bringing window to foreground
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+    
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    
+    private const int SW_RESTORE = 9;
+    
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private int _tabCounter = 1;
     private TabItem? _draggedTab;
@@ -455,11 +466,18 @@ public partial class MainWindow : Window
                     // Always bring window to foreground (even if no files)
                     Dispatcher.Invoke(() =>
                     {
-                        // Bring window to foreground
+                        // Get window handle for Windows API calls
+                        var windowHandle = new WindowInteropHelper(this).Handle;
+                        
+                        // Restore window if minimized
                         if (WindowState == WindowState.Minimized)
                         {
+                            ShowWindow(windowHandle, SW_RESTORE);
                             WindowState = WindowState.Normal;
                         }
+                        
+                        // Bring window to foreground using Windows API
+                        SetForegroundWindow(windowHandle);
                         Activate();
                         Focus();
 
