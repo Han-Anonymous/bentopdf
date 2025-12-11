@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
+using Windows.System;
 
 namespace PDFKawankasi.Views;
 
@@ -100,14 +101,8 @@ public partial class MainWindow : Window
             // Launch Windows Settings directly to the default apps page for this app
             string settingsUri = $"ms-settings:defaultapps?registeredAUMID={Uri.EscapeDataString(appAumid)}";
             
-            // Use Process.Start for WPF apps (Windows.System.Launcher is for UWP)
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = settingsUri,
-                UseShellExecute = true
-            };
-            
-            System.Diagnostics.Process.Start(psi);
+            // Use Windows.System.Launcher for Store-safe launching (avoids blocked executable APIs)
+            await Launcher.LaunchUriAsync(new Uri(settingsUri));
             
             MessageBox.Show(
                 "Windows Settings will open where you can set PDF Kawankasi as the default PDF viewer.\n\n" +

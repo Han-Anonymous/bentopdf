@@ -13,6 +13,7 @@ using Docnet.Core.Models;
 using PDFKawankasi.Models;
 using PDFKawankasi.Services;
 using PdfSharpCore.Drawing;
+using Windows.System;
 
 // Use aliases to avoid conflicts between PdfSharpCore and iText7
 using PdfSharpDocument = PdfSharpCore.Pdf.PdfDocument;
@@ -1505,17 +1506,15 @@ public partial class PdfEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenSavedFile()
+    private async void OpenSavedFile()
     {
         if (!string.IsNullOrEmpty(LastSavedFilePath) && File.Exists(LastSavedFilePath))
         {
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = LastSavedFilePath,
-                    UseShellExecute = true
-                });
+                // Use Windows.System.Launcher for Store-safe file opening (avoids blocked executable APIs)
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(LastSavedFilePath);
+                await Launcher.LaunchFileAsync(file);
             }
             catch (Exception ex)
             {
