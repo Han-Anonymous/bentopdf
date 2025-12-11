@@ -1,6 +1,10 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Linq;
+using System.Threading;
+using System.IO.Pipes;
+using System.IO;
+using System.Text;
 
 namespace PDFKawankasi;
 
@@ -12,10 +16,37 @@ public partial class App : Application
     // File extension constant for PDF files
     private const string PdfExtension = ".pdf";
     
+    // Single instance mechanism
+    private const string MutexName = "PDFKawankasi_SingleInstance_Mutex";
+    private const string PipeName = "PDFKawankasi_IPC_Pipe";
+    private Mutex? _instanceMutex;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        
+        // Try to create or open the mutex
+        bool createdNew;
+        _instanceMutex = new Mutex(true, MutexName, out createdNew);
+        
+        if (!createdNew)
+        {
+            // Another instance is already running
+            // Extract PDF files from command-line arguments
+            var pdfFiles = e.Args.Where(arg => 
+                !arg.StartsWith("--") && 
+                System.IO.File.Exists(arg) && 
+                arg.EndsWith(PdfExtension, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            // Send files to the existing instance (empty list will just activate the window)
+            SendFilesToExistingInstance(pdfFiles);
+            
+            // Shutdown this instance
+            Shutdown();
+            return;
+        }
+        
+        // This is the first instance, continue with normal startup
         
         // Check for command-line arguments
         if (e.Args.Length > 0)
@@ -78,5 +109,62 @@ public partial class App : Application
             testWindow.Show();
             e.Handled = true;
         }
+    }
+
+    private void SendFilesToExistingInstance(List<string> pdfFiles)
+    {
+        try
+        {
+            using var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+            pipeClient.Connect(5000); // 5 second timeout
+            
+            using var writer = new StreamWriter(pipeClient, Encoding.UTF8);
+            
+            if (pdfFiles.Any())
+            {
+                // Send file paths
+                foreach (var file in pdfFiles)
+                {
+                    writer.WriteLine(file);
+                }
+            }
+            else
+            {
+                // Send empty line to signal "just activate window"
+                writer.WriteLine("");
+            }
+            
+            writer.Flush();
+        }
+        catch (TimeoutException)
+        {
+            // Pipe connection timeout - existing instance may be busy or unresponsive
+        }
+        catch (IOException)
+        {
+            // Pipe communication error - existing instance may have crashed
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Access denied to the pipe
+        }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        try
+        {
+            _instanceMutex?.ReleaseMutex();
+        }
+        catch (ApplicationException)
+        {
+            // Mutex was already released or not owned by this thread
+        }
+        finally
+        {
+            _instanceMutex?.Dispose();
+        }
+        
+        base.OnExit(e);
     }
 }

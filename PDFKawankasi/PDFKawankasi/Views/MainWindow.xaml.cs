@@ -7,6 +7,10 @@ using Microsoft.Win32;
 using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
 using Windows.System;
+using System.Threading;
+using System.IO.Pipes;
+using System.IO;
+using System.Text;
 
 namespace PDFKawankasi.Views;
 
@@ -19,6 +23,8 @@ public partial class MainWindow : Window
     private int _tabCounter = 1;
     private TabItem? _draggedTab;
     private Point _dragStartPoint;
+    private const string PipeName = "PDFKawankasi_IPC_Pipe";
+    private CancellationTokenSource? _pipeListenerCancellation;
 
     public MainWindow()
     {
@@ -33,6 +39,10 @@ public partial class MainWindow : Window
         
         // Handle PDF files passed via file association
         Loaded += MainWindow_Loaded;
+        Closing += MainWindow_Closing;
+        
+        // Start listening for files from other instances
+        StartPipeListener();
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -49,6 +59,11 @@ public partial class MainWindow : Window
             // Clear the property so files aren't opened again
             Application.Current.Properties.Remove("PdfFilesToOpen");
         }
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        _pipeListenerCancellation?.Cancel();
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
@@ -408,5 +423,70 @@ public partial class MainWindow : Window
             ToolType.TextToPdf => "Text Files (*.txt)|*.txt",
             _ => "PDF Files (*.pdf)|*.pdf|All Files (*.*)|*.*"
         };
+    }
+
+    private void StartPipeListener()
+    {
+        _pipeListenerCancellation = new CancellationTokenSource();
+        var cancellationToken = _pipeListenerCancellation.Token;
+
+        Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    // Create a new pipe server for each connection
+                    // maxNumberOfServerInstances is set to 1 to handle connections sequentially
+                    using var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                    await pipeServer.WaitForConnectionAsync(cancellationToken);
+
+                    using var reader = new StreamReader(pipeServer, Encoding.UTF8);
+                    var filePaths = new List<string>();
+                    string? line;
+                    while ((line = await reader.ReadLineAsync()) != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(line))
+                        {
+                            filePaths.Add(line);
+                        }
+                    }
+
+                    // Always bring window to foreground (even if no files)
+                    Dispatcher.Invoke(() =>
+                    {
+                        // Bring window to foreground
+                        if (WindowState == WindowState.Minimized)
+                        {
+                            WindowState = WindowState.Normal;
+                        }
+                        Activate();
+                        Focus();
+
+                        // Open each PDF file in a new tab if any files were sent
+                        if (filePaths.Any())
+                        {
+                            foreach (var filePath in filePaths)
+                            {
+                                OpenPdfInNewTab(filePath);
+                            }
+                        }
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when cancellation is requested
+                    break;
+                }
+                catch (IOException)
+                {
+                    // Pipe communication error - log and continue
+                }
+                catch (InvalidOperationException)
+                {
+                    // Pipe operation error - log and continue
+                }
+            }
+        }, cancellationToken);
     }
 }
