@@ -77,7 +77,7 @@ After creating your app in Partner Center:
 ### Associate App in Visual Studio
 
 1. Open `PDFKawankasi.sln` in Visual Studio 2022
-2. Right-click **PDFKawankasi.Package** project
+2. Right-click **WapProjTemplate1** project (the official Microsoft Store packaging project)
 3. Select **Publish** → **Associate App with the Store**
 4. Sign in with your Partner Center credentials
 5. Select **PDF Kawankasi** from the list
@@ -115,7 +115,7 @@ Run the Windows App Certification Kit (WACK) before creating Store package:
 #### Option A: Using Visual Studio (Recommended)
 
 1. Open `PDFKawankasi.sln`
-2. Right-click **PDFKawankasi.Package** project
+2. Right-click **WapProjTemplate1** project (the official Microsoft Store packaging project)
 3. Select **Publish** → **Create App Packages**
 4. Select **Microsoft Store using an existing app name**
 5. Sign in and select your app
@@ -130,21 +130,22 @@ Run the Windows App Certification Kit (WACK) before creating Store package:
 8. Optionally run WACK tests
 9. Note the output location
 
-**Output:** `PDFKawankasi.Package_{version}_x86_x64_ARM64.msixupload`
+**Output:** `WapProjTemplate1_{version}_x86_x64_ARM64.msixupload`
 
 #### Option B: Using MSBuild
 
 ```powershell
 cd PDFKawankasi
-msbuild PDFKawankasi\PDFKawankasi.Package\PDFKawankasi.Package.wapproj `
+msbuild WapProjTemplate1\WapProjTemplate1.wapproj `
   /p:Configuration=Release `
   /p:Platform=x64 `
   /p:UapAppxPackageBuildMode=StoreUpload `
   /p:AppxBundle=Always `
   /p:AppxBundlePlatforms="x86|x64|ARM64" `
-  /p:AppxPackageSigningEnabled=true `
-  /p:PackageCertificateKeyFile="PDFKawankasi.Package_TemporaryKey.pfx"
+  /p:AppxPackageSigningEnabled=false
 ```
+
+> **Note:** For Store submissions, Microsoft automatically signs your package, so `AppxPackageSigningEnabled` is set to `false`.
 
 **Microsoft Learn Reference:**
 - [Create an MSIX package from a desktop installer](https://learn.microsoft.com/windows/msix/packaging-tool/create-app-package)

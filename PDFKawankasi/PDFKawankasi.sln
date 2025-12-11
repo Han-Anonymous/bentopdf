@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDFKawankasi", "PDFKawankas
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "PDFKawankasi.Package", "PDFKawankasi\PDFKawankasi.Package\PDFKawankasi.Package.wapproj", "{702511CB-908C-4742-8133-5E1818049AA0}"
 EndProject
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "WapProjTemplate1", "WapProjTemplate1\WapProjTemplate1.wapproj", "{78515480-5D50-4FC9-BFA0-D5476A47F308}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,28 @@ Global
 		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.ActiveCfg = Release|x86
 		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.Build.0 = Release|x86
 		{702511CB-908C-4742-8133-5E1818049AA0}.Release|x86.Deploy.0 = Release|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|Any CPU.Build.0 = Debug|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|ARM64.Build.0 = Debug|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x64.ActiveCfg = Debug|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x64.Build.0 = Debug|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x64.Deploy.0 = Debug|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x86.ActiveCfg = Debug|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x86.Build.0 = Debug|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Debug|x86.Deploy.0 = Debug|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|Any CPU.ActiveCfg = Release|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|Any CPU.Build.0 = Release|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|ARM64.ActiveCfg = Release|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|ARM64.Build.0 = Release|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|ARM64.Deploy.0 = Release|ARM64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x64.ActiveCfg = Release|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x64.Build.0 = Release|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x64.Deploy.0 = Release|x64
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x86.ActiveCfg = Release|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x86.Build.0 = Release|x86
+		{78515480-5D50-4FC9-BFA0-D5476A47F308}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

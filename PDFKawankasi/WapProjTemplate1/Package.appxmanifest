@@ -7,13 +7,13 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="40030HanzalahAdalan.Azan-WaktuSolat"
-    Publisher="CN=FD627B2F-9EAF-46D2-8F1D-217754E48DDF"
+    Name="PDFKawankasi"
+    Publisher="CN=YourPublisherName"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Azan - Waktu Solat</DisplayName>
-    <PublisherDisplayName>Hanzalah Adalan</PublisherDisplayName>
+    <DisplayName>PDF Kawankasi</DisplayName>
+    <PublisherDisplayName>Your Publisher Display Name</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
@@ -31,19 +31,32 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Azan - Waktu Solat"
-        Description="WapProjTemplate1"
+        DisplayName="PDF Kawankasi"
+        Description="A powerful, privacy-first PDF toolkit for Windows. Manipulate, edit, merge, and process PDF files directly on your device. No uploads, no servers, complete privacy."
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
         Square44x44Logo="Images\Square44x44Logo.png">
         <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Images\SplashScreen.png" />
       </uap:VisualElements>
+
+      <!-- File type associations -->
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="pdfkawankasi">
+            <uap:DisplayName>PDF Kawankasi</uap:DisplayName>
+            <uap:Logo>Images\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType ContentType="application/pdf">.pdf</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient" />
   </Capabilities>
 </Package>
