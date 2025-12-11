@@ -18,7 +18,7 @@
   <Identity
     Name="40030HanzalahAdalan.2620788AAD821"
     Publisher="CN=FD627B2F-9EAF-46D2-8F1D-217754E48DDF"
-    Version="1.0.3.0" />
+    Version="1.0.4.0" />
 
   <Properties>
     <DisplayName>PDF Kawankasi</DisplayName>
