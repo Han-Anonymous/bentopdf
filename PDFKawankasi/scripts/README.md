@@ -35,7 +35,7 @@ This directory contains helper scripts for building, signing, and deploying PDF 
 |-----------|------|----------|---------|-------------|
 | `MsixPath` | string | Yes | - | Path to the MSIX package to sign |
 | `Publisher` | string | No | "CN=PDF Kawankasi Development" | Publisher name (must match manifest) |
-| `CertPassword` | string | No | "Pass@word1" | Password for PFX certificate |
+| `CertPassword` | string | No | (auto-generated) | Password for PFX certificate (random by default) |
 | `CertPath` | string | No | ".\PDFKawankasi_TemporaryKey.pfx" | Where to save the certificate |
 | `ValidityYears` | int | No | 5 | Certificate validity period in years |
 | `SkipCertInstall` | switch | No | false | Skip certificate installation (sign only) |
