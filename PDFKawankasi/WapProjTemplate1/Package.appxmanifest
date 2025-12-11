@@ -7,13 +7,13 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="17badf1a-cd38-4c28-be32-e8e245ec6dc9"
-    Publisher="CN=Acer"
+    Name="40030HanzalahAdalan.Azan-WaktuSolat"
+    Publisher="CN=FD627B2F-9EAF-46D2-8F1D-217754E48DDF"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>WapProjTemplate1</DisplayName>
-    <PublisherDisplayName>Acer</PublisherDisplayName>
+    <DisplayName>Azan - Waktu Solat</DisplayName>
+    <PublisherDisplayName>Hanzalah Adalan</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
@@ -31,7 +31,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="WapProjTemplate1"
+        DisplayName="Azan - Waktu Solat"
         Description="WapProjTemplate1"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
