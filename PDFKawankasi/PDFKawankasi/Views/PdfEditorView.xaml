@@ -462,12 +462,12 @@
                     Background="{StaticResource CardBrush}"
                     ClipToBounds="True">
                 <Grid>
-                    <!-- PDF Display with InkCanvas -->
+                    <!-- Single Page View (default mode) -->
                     <ScrollViewer x:Name="PdfScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
                                   ScrollChanged="OnScrollChanged"
-                                  Visibility="{Binding IsPdfLoaded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                  Visibility="{Binding IsSinglePageMode, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}" Background="White">
                             <!-- PDF Page Image as background -->
                             <Image x:Name="PdfPageImage"
@@ -548,6 +548,60 @@
                                 </InkCanvas.Children>
                             </InkCanvas>
                         </Grid>
+                    </ScrollViewer>
+
+                    <!-- Continuous Scroll View (all pages like thumbnail panel) -->
+                    <ScrollViewer x:Name="ContinuousScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Visible"
+                                  Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Background="#F0F0F0"
+                                  Padding="20"
+                                  CanContentScroll="True">
+                        <ItemsControl ItemsSource="{Binding PageThumbnails}"
+                                      ScrollViewer.CanContentScroll="True"
+                                      VirtualizingPanel.ScrollUnit="Pixel"
+                                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="White"
+                                            BorderBrush="#CCCCCC"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Margin="0,0,0,20"
+                                            HorizontalAlignment="Center"
+                                            MaxWidth="800">
+                                        <StackPanel>
+                                            <!-- Page number header -->
+                                            <Border Background="#F5F5F5"
+                                                    BorderBrush="#CCCCCC"
+                                                    BorderThickness="0,0,0,1"
+                                                    Padding="12,8">
+                                                <TextBlock Text="{Binding PageNumber, StringFormat='Page {0}'}"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12"/>
+                                            </Border>
+                                            
+                                            <!-- Full-size page image -->
+                                            <Image Source="{Binding PageFullImage}"
+                                                   Stretch="Uniform"
+                                                   MaxWidth="800"
+                                                   Margin="0"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                   Cursor="Hand"
+                                                   MouseLeftButtonUp="OnContinuousPageClick"
+                                                   Tag="{Binding PageNumber}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </ScrollViewer>
 
                     <!-- Empty State with Recent Documents -->

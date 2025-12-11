@@ -504,6 +504,35 @@ public partial class PdfEditorView : UserControl
         }
     }
 
+    private void OnContinuousPageClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Image image && image.Tag is int pageNumber)
+        {
+            // Exit continuous scroll mode and go to the clicked page
+            ViewModel.IsContinuousScrollMode = false;
+            
+            // Save current page strokes, images, and text boxes before switching
+            if (PdfInkCanvas != null)
+            {
+                ViewModel.SaveCurrentPageStrokes(PdfInkCanvas.Strokes);
+                ViewModel.SaveCurrentPageImages();
+                ViewModel.SaveCurrentPageTextBoxes();
+            }
+
+            ViewModel.GoToPage(pageNumber);
+
+            // Load new page strokes
+            if (PdfInkCanvas != null)
+            {
+                PdfInkCanvas.Strokes = ViewModel.CurrentPageStrokes;
+            }
+            
+            // Refresh images and text boxes display
+            RefreshImagesDisplay();
+            RefreshTextBoxesDisplay();
+        }
+    }
+
     private void OnThumbnailRightClick(object sender, MouseButtonEventArgs e)
     {
         // Right-click shows context menu - handled by XAML context menu
