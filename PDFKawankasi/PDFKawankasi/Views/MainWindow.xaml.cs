@@ -436,6 +436,8 @@ public partial class MainWindow : Window
             {
                 try
                 {
+                    // Create a new pipe server for each connection
+                    // maxNumberOfServerInstances is set to 1 to handle connections sequentially
                     using var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                     await pipeServer.WaitForConnectionAsync(cancellationToken);
 
@@ -476,9 +478,13 @@ public partial class MainWindow : Window
                     // Expected when cancellation is requested
                     break;
                 }
-                catch
+                catch (IOException)
                 {
-                    // Ignore errors and continue listening
+                    // Pipe communication error - log and continue
+                }
+                catch (InvalidOperationException)
+                {
+                    // Pipe operation error - log and continue
                 }
             }
         }, cancellationToken);

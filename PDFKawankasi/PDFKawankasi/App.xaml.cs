@@ -136,17 +136,35 @@ public partial class App : Application
             
             writer.Flush();
         }
-        catch
+        catch (TimeoutException)
         {
-            // If we can't send to the existing instance, fail silently
-            // The mutex holder might have crashed or be shutting down
+            // Pipe connection timeout - existing instance may be busy or unresponsive
+        }
+        catch (IOException)
+        {
+            // Pipe communication error - existing instance may have crashed
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Access denied to the pipe
         }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _instanceMutex?.ReleaseMutex();
-        _instanceMutex?.Dispose();
+        try
+        {
+            _instanceMutex?.ReleaseMutex();
+        }
+        catch (ApplicationException)
+        {
+            // Mutex was already released or not owned by this thread
+        }
+        finally
+        {
+            _instanceMutex?.Dispose();
+        }
+        
         base.OnExit(e);
     }
 }
