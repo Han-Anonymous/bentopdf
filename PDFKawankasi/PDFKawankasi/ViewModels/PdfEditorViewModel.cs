@@ -497,7 +497,7 @@ public partial class PdfEditorViewModel : ObservableObject
     #region Commands
 
     [RelayCommand]
-    private void OpenPdf()
+    private void OpenPdf(string? filePath = null)
     {
         // Check for pending changes before opening a new file
         if (IsPdfLoaded && HasPendingChanges)
@@ -520,6 +520,16 @@ public partial class PdfEditorViewModel : ObservableObject
             // If No, discard changes and continue opening new file
         }
 
+        // If a file path is provided (e.g., from file association), use it directly
+        if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+        {
+            // Reset all state before loading new PDF
+            ResetEditorState();
+            LoadPdf(filePath);
+            return;
+        }
+
+        // Otherwise, show file picker dialog
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Filter = "PDF Files (*.pdf)|*.pdf",
