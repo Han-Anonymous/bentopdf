@@ -446,6 +446,36 @@ public partial class PdfEditorViewModel : ObservableObject
     // Computed property for right panel column width  
     public double RightPanelWidth => IsRightPanelVisible ? 250 : 0;
 
+    // Computed property for view mode visibility
+    public bool IsSinglePageMode => IsPdfLoaded && !IsContinuousScrollMode;
+    public bool IsContinuousViewMode => IsPdfLoaded && IsContinuousScrollMode;
+
+    #endregion
+
+    #region Property Changed Handlers
+    
+    partial void OnIsContinuousScrollModeChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsSinglePageMode));
+        OnPropertyChanged(nameof(IsContinuousViewMode));
+        
+        // Load full-size images when entering continuous scroll mode
+        if (value && IsPdfLoaded)
+        {
+            // Check if images are already loaded
+            if (PageThumbnails.Any() && PageThumbnails[0].PageFullImage == null)
+            {
+                LoadFullSizePageImages();
+            }
+        }
+    }
+
+    partial void OnIsPdfLoadedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsSinglePageMode));
+        OnPropertyChanged(nameof(IsContinuousViewMode));
+    }
+
     #endregion
 
     public PdfEditorViewModel()
@@ -693,14 +723,77 @@ public partial class PdfEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PrintPdf()
+    private async Task PrintPdf()
     {
         if (!IsPdfLoaded)
         {
             StatusMessage = "No PDF loaded to print";
             return;
         }
-        StatusMessage = "Print feature coming soon";
+
+        try
+        {
+            StatusMessage = "Opening document for printing...";
+            
+            // Open the PDF with default viewer for printing
+            // Using Windows.System.Launcher for Store-safe file opening (avoids WACK test failures)
+            // The user can then use Ctrl+P or the Print button in their PDF viewer
+            if (_pdfBytes != null && _pdfBytes.Length > 0)
+            {
+                // Save current state to a temporary file
+                var tempFile = Path.Combine(Path.GetTempPath(), $"print_{Guid.NewGuid()}.pdf");
+                await File.WriteAllBytesAsync(tempFile, _pdfBytes);
+                
+                try
+                {
+                    // Use Windows.System.Launcher for Store-safe file opening
+                    // This passes WACK tests and works in MSIX-packaged apps
+                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
+                    var success = await Launcher.LaunchFileAsync(file);
+                    
+                    if (success)
+                    {
+                        StatusMessage = "Document opened - use Ctrl+P or Print button in the viewer to print";
+                        
+                        // Clean up temp file after a delay to allow viewer to open it
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                // Wait for the viewer to open and load the file (60 seconds should be enough)
+                                await Task.Delay(60000);
+                                
+                                if (File.Exists(tempFile))
+                                    File.Delete(tempFile);
+                            }
+                            catch { /* Ignore cleanup errors */ }
+                        });
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to open document in PDF viewer";
+                        // Clean up temp file on error
+                        if (File.Exists(tempFile))
+                            File.Delete(tempFile);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Print error: {ex.Message}";
+                    // Clean up temp file on error
+                    if (File.Exists(tempFile))
+                        File.Delete(tempFile);
+                }
+            }
+            else
+            {
+                StatusMessage = "No document data available to print";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Print error: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -1315,10 +1408,24 @@ public partial class PdfEditorViewModel : ObservableObject
         bitmap.WritePixels(new Int32Rect(0, 0, ThumbnailWidth, ThumbnailHeight), pixels, ThumbnailWidth * 4, 0);
         bitmap.Freeze();
 
+        // Create a blank white full-size image for continuous scroll
+        var fullBitmap = new WriteableBitmap(DefaultPageWidth, DefaultPageHeight, 96, 96, PixelFormats.Bgra32, null);
+        var fullPixels = new byte[DefaultPageWidth * DefaultPageHeight * 4];
+        for (int i = 0; i < fullPixels.Length; i += 4)
+        {
+            fullPixels[i] = 255;     // B
+            fullPixels[i + 1] = 255; // G
+            fullPixels[i + 2] = 255; // R
+            fullPixels[i + 3] = 255; // A
+        }
+        fullBitmap.WritePixels(new Int32Rect(0, 0, DefaultPageWidth, DefaultPageHeight), fullPixels, DefaultPageWidth * 4, 0);
+        fullBitmap.Freeze();
+
         return new PageThumbnailModel
         {
             PageNumber = pageNumber,
             Thumbnail = bitmap,
+            PageFullImage = fullBitmap,
             IsCurrentPage = false
         };
     }
@@ -2017,6 +2124,7 @@ public partial class PdfEditorViewModel : ObservableObject
                 {
                     PageNumber = i + 1,
                     Thumbnail = thumbnail,
+                    PageFullImage = null, // Will be loaded on-demand in continuous scroll mode
                     IsCurrentPage = i == 0
                 });
             }
@@ -2024,6 +2132,36 @@ public partial class PdfEditorViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusMessage = $"Error loading thumbnails: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Load full-size page images for continuous scroll mode
+    /// </summary>
+    private void LoadFullSizePageImages()
+    {
+        if (_pdfBytes == null) return;
+
+        try
+        {
+            // Use a reasonable size for full images (not too large to avoid memory issues)
+            const int fullImageWidth = 800;
+            using var reader = _docLib!.GetDocReader(_pdfBytes, new PageDimensions(fullImageWidth, fullImageWidth * 11 / 8)); // Approximate A4 ratio
+
+            for (int i = 0; i < TotalPages && i < PageThumbnails.Count; i++)
+            {
+                using var pageReader = reader.GetPageReader(i);
+                var width = pageReader.GetPageWidth();
+                var height = pageReader.GetPageHeight();
+                var rawBytes = pageReader.GetImage();
+
+                var fullImage = CreateBitmapFromRawBytes(rawBytes, width, height);
+                PageThumbnails[i].PageFullImage = fullImage;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading full-size images: {ex.Message}";
         }
     }
 
