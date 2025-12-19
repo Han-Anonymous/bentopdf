@@ -12,9 +12,9 @@
         ResizeMode="NoResize"
         WindowStyle="None"
         AllowsTransparency="False"
-        materialDesign:ThemeAssist.Theme="Light"
-        Background="White"
-        TextElement.Foreground="#DD000000"
+        materialDesign:ThemeAssist.Theme="Dark"
+        Background="#303030"
+        TextElement.Foreground="#FFFFFF"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
@@ -24,13 +24,13 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
 
-    <materialDesign:Card Background="White"
+    <materialDesign:Card Background="#303030"
                          UniformCornerRadius="0"
                          Margin="0">
         <Grid>
@@ -73,7 +73,7 @@
                     <!-- Printer -->
                     <ComboBox ItemsSource="{Binding AvailablePrinters}"
                               SelectedItem="{Binding SelectedPrinter}"
-                              Style="{StaticResource MaterialDesignFilledComboBox}"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}"
                               materialDesign:HintAssist.Hint="Select Printer"
                               Margin="0,0,0,24"/>
 
@@ -135,7 +135,7 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancel" 
                                 Command="{Binding CancelCommand}" 
-                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
                                 Margin="0,0,8,0"/>
                         
                         <Button Content="Print" 
@@ -147,8 +147,8 @@
 
             <!-- Right Panel: Preview -->
             <Border Grid.Column="1" 
-                    Background="#F5F5F5" 
-                    BorderBrush="#E0E0E0" 
+                    Background="White" 
+                    BorderBrush="White" 
                     BorderThickness="1,0,0,0"
                     ClipToBounds="True">
                 <Grid>
@@ -158,14 +158,14 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Preview Header -->
-                    <materialDesign:ColorZone Mode="Light" Padding="16" Background="#FAFAFA" materialDesign:ElevationAssist.Elevation="Dp2">
-                        <TextBlock Text="Preview" FontSize="14" FontWeight="Medium" Foreground="#212121"/>
+                    <materialDesign:ColorZone Mode="Dark" Padding="16" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <TextBlock Text="Preview" FontSize="14" FontWeight="Medium" Foreground="#FFFFFF"/>
                     </materialDesign:ColorZone>
 
                     <!-- Preview Content -->
-                    <Grid Grid.Row="1" Background="#F5F5F5">
+                    <Grid Grid.Row="1">
                         <ListBox ItemsSource="{Binding PreviewPages}" 
-                                 Background="Transparent" 
+                                 Background="White" 
                                  BorderThickness="0"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  HorizontalContentAlignment="Center"
@@ -187,7 +187,7 @@
                                     <Setter Property="Padding" Value="0"/>
                                     <Setter Property="Margin" Value="0"/>
                                     <Setter Property="BorderThickness" Value="0"/>
-                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Background" Value="White"/>
                                     <Setter Property="Focusable" Value="False"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
@@ -201,10 +201,10 @@
                         </ListBox>
 
                         <!-- Loading Indicator -->
-                        <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80FFFFFF">
+                        <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50" Foreground="#673AB7"/>
-                                <TextBlock Text="Generating preview..." Foreground="#212121" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50" Foreground="#B39DDB"/>
+                                <TextBlock Text="Generating preview..." Foreground="#FFFFFF" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
