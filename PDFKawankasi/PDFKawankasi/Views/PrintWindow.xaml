@@ -13,15 +13,24 @@
         WindowStyle="None"
         AllowsTransparency="False"
         materialDesign:ThemeAssist.Theme="Light"
-        Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        Background="White"
+        TextElement.Foreground="#DD000000"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
         FontFamily="{DynamicResource MaterialDesignFont}">
+    
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
-    <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}"
+    <materialDesign:Card Background="White"
                          UniformCornerRadius="0"
                          Margin="0">
         <Grid>
@@ -138,8 +147,8 @@
 
             <!-- Right Panel: Preview -->
             <Border Grid.Column="1" 
-                    Background="{DynamicResource MaterialDesignPaper}" 
-                    BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                    Background="#F5F5F5" 
+                    BorderBrush="#E0E0E0" 
                     BorderThickness="1,0,0,0"
                     ClipToBounds="True">
                 <Grid>
@@ -149,12 +158,12 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Preview Header -->
-                    <materialDesign:ColorZone Mode="Standard" Padding="16" materialDesign:ElevationAssist.Elevation="Dp2">
-                        <TextBlock Text="Preview" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                    <materialDesign:ColorZone Mode="Light" Padding="16" Background="#FAFAFA" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <TextBlock Text="Preview" FontSize="14" FontWeight="Medium" Foreground="#212121"/>
                     </materialDesign:ColorZone>
 
                     <!-- Preview Content -->
-                    <Grid Grid.Row="1" Background="{DynamicResource MaterialDesignCardBackground}">
+                    <Grid Grid.Row="1" Background="#F5F5F5">
                         <ListBox ItemsSource="{Binding PreviewPages}" 
                                  Background="Transparent" 
                                  BorderThickness="0"
@@ -192,10 +201,10 @@
                         </ListBox>
 
                         <!-- Loading Indicator -->
-                        <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
+                        <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80FFFFFF">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50"/>
-                                <TextBlock Text="Generating preview..." Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50" Foreground="#673AB7"/>
+                                <TextBlock Text="Generating preview..." Foreground="#212121" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
