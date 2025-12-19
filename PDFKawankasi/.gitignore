@@ -128,3 +128,6 @@ publish/
 *.temp
 *.bak
 *.lock.json
+
+# Local Configuration
+.vscode/mcp.json

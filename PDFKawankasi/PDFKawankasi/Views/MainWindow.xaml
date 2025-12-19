@@ -76,7 +76,10 @@
                     <MenuItem Header="Register as Default PDF Viewer" Click="RegisterAsDefaultPdfViewer_Click"/>
                     <Separator/>
                     <MenuItem Header="Export" Command="{Binding DataContext.ExportPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}"/>
-                    <MenuItem Header="Print" Command="{Binding SelectedContent.DataContext.PrintPdfCommand, ElementName=PdfTabControl}" Click="PrintMenuItem_Click" InputGestureText="Ctrl+P"/>
+                    <!-- Use click handler to reliably reach the active PDF editor tab -->
+                    <MenuItem Header="Print"
+                              Click="PrintMenuItem_Click"
+                              InputGestureText="Ctrl+P"/>
                 </MenuItem>
                 
                 <!-- Tools Menu -->

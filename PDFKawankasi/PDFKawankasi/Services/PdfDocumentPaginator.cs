@@ -22,12 +22,13 @@ public class PdfDocumentPaginator : DocumentPaginator
     private readonly int _startPage;
     private readonly int _endPage;
     private readonly int _printablePageCount;
+    private readonly double _renderScale;
 
     /// <summary>
     /// Creates a paginator for all pages in the PDF
     /// </summary>
-    public PdfDocumentPaginator(byte[] pdfBytes, IDocLib docLib, Size pageSize)
-        : this(pdfBytes, docLib, pageSize, 1, -1)
+    public PdfDocumentPaginator(byte[] pdfBytes, IDocLib docLib, Size pageSize, double renderScale = 3.0)
+        : this(pdfBytes, docLib, pageSize, 1, -1, renderScale)
     {
     }
 
@@ -39,11 +40,13 @@ public class PdfDocumentPaginator : DocumentPaginator
     /// <param name="pageSize">Target print page size</param>
     /// <param name="startPage">1-based start page number</param>
     /// <param name="endPage">1-based end page number (-1 for all remaining pages)</param>
-    public PdfDocumentPaginator(byte[] pdfBytes, IDocLib docLib, Size pageSize, int startPage, int endPage)
+    /// <param name="renderScale">Scale factor for rendering (higher = better quality, slower)</param>
+    public PdfDocumentPaginator(byte[] pdfBytes, IDocLib docLib, Size pageSize, int startPage, int endPage, double renderScale = 3.0)
     {
         _pdfBytes = pdfBytes ?? throw new ArgumentNullException(nameof(pdfBytes));
         _docLib = docLib ?? throw new ArgumentNullException(nameof(docLib));
         _pageSize = pageSize;
+        _renderScale = renderScale;
 
         // Get total page count
         using var reader = _docLib.GetDocReader(_pdfBytes, new PageDimensions(100, 100));
@@ -81,9 +84,8 @@ public class PdfDocumentPaginator : DocumentPaginator
         {
             // Render at high DPI for quality printing (300 DPI equivalent)
             // We calculate render dimensions based on page size and target quality
-            int renderScale = 3; // 3x scale for high quality printing
-            int renderWidth = (int)(_pageSize.Width * renderScale);
-            int renderHeight = (int)(_pageSize.Height * renderScale);
+            int renderWidth = (int)(_pageSize.Width * _renderScale);
+            int renderHeight = (int)(_pageSize.Height * _renderScale);
 
             using var reader = _docLib.GetDocReader(_pdfBytes, new PageDimensions(renderWidth, renderHeight));
             using var pageReader = reader.GetPageReader(actualPage - 1); // 0-based index
@@ -96,8 +98,8 @@ public class PdfDocumentPaginator : DocumentPaginator
             var bitmap = BitmapSource.Create(
                 pageWidth,
                 pageHeight,
-                96 * renderScale, // DPI
-                96 * renderScale,
+                96 * _renderScale, // DPI
+                96 * _renderScale,
                 PixelFormats.Bgra32,
                 null,
                 rawBytes,

@@ -17,7 +17,18 @@ namespace PDFKawankasi
         public static void ConvertLogo()
         {
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var projectRoot = Directory.GetParent(baseDir).Parent.Parent.Parent.FullName;
+            var projectRootInfo = Directory.GetParent(baseDir);
+            projectRootInfo = projectRootInfo?.Parent;
+            projectRootInfo = projectRootInfo?.Parent;
+            projectRootInfo = projectRootInfo?.Parent;
+
+            if (projectRootInfo == null)
+            {
+                Console.WriteLine("Unable to resolve project root; aborting SVG conversion.");
+                return;
+            }
+
+            var projectRoot = projectRootInfo.FullName;
             var svgPath = Path.Combine(projectRoot, "Assets", "PDF Editor", "Kawankasi", "PDF Kawankasi logo.svg");
             var assetsPath = Path.Combine(projectRoot, "Assets");
 

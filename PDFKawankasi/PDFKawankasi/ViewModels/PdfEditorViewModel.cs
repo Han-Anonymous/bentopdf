@@ -12,8 +12,10 @@ using Docnet.Core;
 using Docnet.Core.Models;
 using PDFKawankasi.Models;
 using PDFKawankasi.Services;
+using PDFKawankasi.Views;
 using PdfSharpCore.Drawing;
 using Windows.System;
+using System.Printing;
 
 // Use aliases to avoid conflicts between PdfSharpCore and iText7
 using PdfSharpDocument = PdfSharpCore.Pdf.PdfDocument;
@@ -725,41 +727,81 @@ public partial class PdfEditorViewModel : ObservableObject
     [RelayCommand]
     private async Task PrintPdf()
     {
-        if (!IsPdfLoaded)
+        try
         {
-            StatusMessage = "No PDF loaded to print";
-            return;
-        }
+            if (!IsPdfLoaded)
+            {
+                StatusMessage = "No PDF loaded to print";
+                System.Windows.MessageBox.Show("Please open a PDF file to print.", "Print", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                return;
+            }
 
-        if (_pdfBytes == null || _pdfBytes.Length == 0 || _docLib == null)
+            if (_pdfBytes == null || _pdfBytes.Length == 0 || _docLib == null)
+            {
+                StatusMessage = "No document data available to print";
+                System.Windows.MessageBox.Show("No document data available to print.", "Print Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            StatusMessage = "Opening print dialog...";
+
+            // Create the Print Window ViewModel
+            var printViewModel = new PrintWindowViewModel(_pdfBytes, _docLib, TotalPages, CurrentPage);
+            
+            // Create the Print Window
+            var printWindow = new PrintWindow();
+            printWindow.Configure(printViewModel);
+            
+            if (Application.Current.MainWindow != null)
+            {
+                printWindow.Owner = Application.Current.MainWindow;
+            }
+            
+            bool? result = printWindow.ShowDialog();
+            
+            if (result == true)
+            {
+                // User clicked Print
+                await PrintPdfInternal(printViewModel);
+            }
+            
+            StatusMessage = "Ready";
+        }
+        catch (Exception ex)
         {
-            StatusMessage = "No document data available to print";
-            return;
+            StatusMessage = $"Print error: {ex.Message}";
+            System.Windows.MessageBox.Show(
+                $"An error occurred while printing:\n\n{ex.Message}",
+                "Print Error",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
+    }
 
+    private async Task PrintPdfInternal(PrintWindowViewModel settings)
+    {
         try
         {
             StatusMessage = "Preparing document for printing...";
             
-            // Create and configure the Windows Print Dialog
-            var printDialog = new System.Windows.Controls.PrintDialog
-            {
-                UserPageRangeEnabled = true,
-                PageRangeSelection = System.Windows.Controls.PageRangeSelection.AllPages
-            };
-
-            // Show the print dialog
-            bool? result = printDialog.ShowDialog();
+            // Create the standard PrintDialog just for the actual printing process (no UI)
+            var printDialog = new System.Windows.Controls.PrintDialog();
             
-            if (result != true)
+            // Configure printer from settings
+            if (!string.IsNullOrEmpty(settings.SelectedPrinter))
             {
-                StatusMessage = "Print cancelled";
-                return;
+                printDialog.PrintQueue = new PrintQueue(new LocalPrintServer(), settings.SelectedPrinter);
+            }
+            
+            // Configure copies
+            if (printDialog.PrintQueue != null)
+            {
+                printDialog.PrintTicket.CopyCount = settings.Copies;
             }
 
             StatusMessage = "Printing document...";
 
-            // Get the printable area size from the selected printer
+            // Get the printable area size
             var pageSize = new Size(
                 printDialog.PrintableAreaWidth,
                 printDialog.PrintableAreaHeight);
@@ -768,19 +810,28 @@ public partial class PdfEditorViewModel : ObservableObject
             int startPage = 1;
             int endPage = TotalPages;
 
-            if (printDialog.PageRangeSelection == System.Windows.Controls.PageRangeSelection.UserPages)
+            if (settings.PrintCurrentPage)
             {
-                startPage = printDialog.PageRange.PageFrom;
-                endPage = printDialog.PageRange.PageTo;
+                startPage = CurrentPage;
+                endPage = CurrentPage;
+            }
+            else if (settings.PrintCustomRange)
+            {
+                if (ParsePageRange(settings.CustomPageRange, out int s, out int e))
+                {
+                    startPage = s;
+                    endPage = e;
+                }
             }
 
-            // Create the document paginator for printing
+            // Create the document paginator for printing (High Quality: 3.0 scale)
             var paginator = new PdfDocumentPaginator(
-                _pdfBytes,
-                _docLib,
+                _pdfBytes!,
+                _docLib!,
                 pageSize,
                 startPage,
-                endPage);
+                endPage,
+                3.0);
 
             // Get document name for print job
             string documentName = !string.IsNullOrEmpty(_currentFilePath) 
@@ -811,6 +862,43 @@ public partial class PdfEditorViewModel : ObservableObject
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
+    }
+
+    private bool ParsePageRange(string rangeText, out int start, out int end)
+    {
+        start = 1;
+        end = TotalPages;
+        
+        if (string.IsNullOrWhiteSpace(rangeText)) return false;
+        
+        try 
+        {
+            var parts = rangeText.Split('-');
+            if (parts.Length == 1)
+            {
+                if (int.TryParse(parts[0].Trim(), out int p))
+                {
+                    start = p;
+                    end = p;
+                    return true;
+                }
+            }
+            else if (parts.Length == 2)
+            {
+                bool sOk = int.TryParse(parts[0].Trim(), out int s);
+                bool eOk = int.TryParse(parts[1].Trim(), out int e);
+                
+                if (sOk && eOk)
+                {
+                    start = s;
+                    end = e;
+                    return true;
+                }
+            }
+        }
+        catch { }
+        
+        return false;
     }
 
     [RelayCommand]
@@ -1662,7 +1750,7 @@ public partial class PdfEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async void OpenSavedFile()
+    private async Task OpenSavedFile()
     {
         if (!string.IsNullOrEmpty(LastSavedFilePath) && File.Exists(LastSavedFilePath))
         {

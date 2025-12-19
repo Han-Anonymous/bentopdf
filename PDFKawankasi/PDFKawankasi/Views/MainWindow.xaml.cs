@@ -3,6 +3,8 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using Microsoft.Win32;
 using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
@@ -189,18 +191,73 @@ public partial class MainWindow : Window
                 e.Handled = true;
             }
         }
+
+        // Ctrl+P to print
+        if (e.Key == Key.P && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            PrintMenuItem_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
     }
 
     private void PrintMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        var currentTab = PdfTabControl.SelectedItem as TabItem;
-        if (currentTab?.Content is PdfEditorView view && view.DataContext is PdfEditorViewModel vm)
+        var vm = GetActivePdfEditorViewModel();
+        if (vm == null)
         {
-            if (vm.PrintPdfCommand.CanExecute(null))
+            MessageBox.Show("Please open a PDF tab to print.", "Print", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (vm.PrintPdfCommand.CanExecute(null))
+        {
+            vm.PrintPdfCommand.Execute(null);
+        }
+        else
+        {
+            MessageBox.Show("Print command cannot be executed right now.", "Print", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private PdfEditorViewModel? GetActivePdfEditorViewModel()
+    {
+        // Try direct TabItem.Content
+        if (PdfTabControl.SelectedItem is TabItem tabItem)
+        {
+            if (tabItem.Content is PdfEditorView view && view.DataContext is PdfEditorViewModel vmFromView)
+                return vmFromView;
+
+            // If a ContentPresenter wraps the view
+            if (tabItem.Content is ContentPresenter cp)
             {
-                vm.PrintPdfCommand.Execute(null);
+                if (cp.Content is PdfEditorView view2 && view2.DataContext is PdfEditorViewModel vmFromPresenter)
+                    return vmFromPresenter;
             }
         }
+
+        // Fallback: walk visual tree of selected tab
+        if (PdfTabControl.ItemContainerGenerator.ContainerFromItem(PdfTabControl.SelectedItem) is TabItem container)
+        {
+            var presenter = FindVisualChild<ContentPresenter>(container);
+            if (presenter?.Content is PdfEditorView view && view.DataContext is PdfEditorViewModel vmFromTree)
+                return vmFromTree;
+        }
+
+        return null;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+        {
+            var child = VisualTreeHelper.GetChild(obj, i);
+            if (child is T target)
+                return target;
+            var result = FindVisualChild<T>(child);
+            if (result != null)
+                return result;
+        }
+        return null;
     }
 
     private void OnBrowseFilesClick(object sender, RoutedEventArgs e)

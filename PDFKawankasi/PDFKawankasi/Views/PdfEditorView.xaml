@@ -133,7 +133,7 @@
                                   Margin="0,0,2,0">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Pen.svg}" Width="18" Height="18"/>
                     </ToggleButton>
-                    
+
                     <!-- Erase Tool with SVG -->
                     <ToggleButton x:Name="EraseToolBtn"
                                   ToolTip="Erase ink strokes"

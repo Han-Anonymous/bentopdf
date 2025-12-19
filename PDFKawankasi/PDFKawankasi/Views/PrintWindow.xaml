@@ -1,0 +1,206 @@
+<Window x:Class="PDFKawankasi.Views.PrintWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="Print"
+        Height="650" Width="950"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        materialDesign:ThemeAssist.Theme="Light"
+        Background="{DynamicResource MaterialDesignPaper}"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        FontFamily="{DynamicResource MaterialDesignFont}">
+
+    <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}"
+                         UniformCornerRadius="0"
+                         Margin="0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360"/> <!-- Settings Panel -->
+                <ColumnDefinition Width="*"/>   <!-- Preview Panel -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Settings -->
+            <Grid Grid.Column="0" Margin="32">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Text="Print"
+                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+
+                    <!-- Close Button -->
+                    <Button Grid.Column="1"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            ToolTip="Close"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top">
+                        <materialDesign:PackIcon Kind="Close" />
+                    </Button>
+                </Grid>
+
+                <!-- Settings Form -->
+                <StackPanel Grid.Row="1">
+                    <!-- Printer -->
+                    <ComboBox ItemsSource="{Binding AvailablePrinters}"
+                              SelectedItem="{Binding SelectedPrinter}"
+                              Style="{StaticResource MaterialDesignFilledComboBox}"
+                              materialDesign:HintAssist.Hint="Select Printer"
+                              Margin="0,0,0,24"/>
+
+                    <!-- Copies -->
+                    <TextBox Text="{Binding Copies}" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="Copies"
+                             Width="120" 
+                             HorizontalAlignment="Left" 
+                             Margin="0,0,0,32"/>
+
+                    <!-- Pages -->
+                    <TextBlock Text="Pages" Style="{StaticResource MaterialDesignSubtitle2TextBlock}" Margin="0,0,0,16"/>
+                    
+                    <StackPanel Margin="0,0,0,0">
+                        <RadioButton GroupName="PageRange" 
+                                     IsChecked="{Binding PrintAllPages}" 
+                                     Content="All pages" 
+                                     Style="{StaticResource MaterialDesignRadioButton}"
+                                     Margin="0,0,0,12"/>
+                        
+                        <RadioButton GroupName="PageRange" 
+                                     IsChecked="{Binding PrintCurrentPage}" 
+                                     Content="Current page only" 
+                                     Style="{StaticResource MaterialDesignRadioButton}"
+                                     Margin="0,0,0,12"/>
+                        
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <RadioButton GroupName="PageRange" 
+                                         IsChecked="{Binding PrintCustomRange}" 
+                                         Content="Custom range:" 
+                                         Style="{StaticResource MaterialDesignRadioButton}"
+                                         VerticalAlignment="Center"/>
+                            
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding CustomPageRange}" 
+                                     IsEnabled="{Binding PrintCustomRange}" 
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     materialDesign:HintAssist.Hint="e.g. 1-5, 8"
+                                     Margin="16,0,0,0" 
+                                     VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Footer Actions -->
+                <StackPanel Grid.Row="2" Margin="0,32,0,0">
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Opacity="0.7"
+                               TextTrimming="CharacterEllipsis" 
+                               Margin="0,0,0,16"/>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" 
+                                Command="{Binding CancelCommand}" 
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Margin="0,0,8,0"/>
+                        
+                        <Button Content="Print" 
+                                Command="{Binding PrintCommand}" 
+                                Style="{StaticResource MaterialDesignRaisedButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Right Panel: Preview -->
+            <Border Grid.Column="1" 
+                    Background="{DynamicResource MaterialDesignPaper}" 
+                    BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                    BorderThickness="1,0,0,0"
+                    ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Preview Header -->
+                    <materialDesign:ColorZone Mode="Standard" Padding="16" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <TextBlock Text="Preview" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                    </materialDesign:ColorZone>
+
+                    <!-- Preview Content -->
+                    <Grid Grid.Row="1" Background="{DynamicResource MaterialDesignCardBackground}">
+                        <ListBox ItemsSource="{Binding PreviewPages}" 
+                                 Background="Transparent" 
+                                 BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 HorizontalContentAlignment="Center"
+                                 Padding="32">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <materialDesign:Card Margin="0,0,0,24" UniformCornerRadius="0" materialDesign:ElevationAssist.Elevation="Dp4">
+                                        <Image Source="{Binding}" Stretch="Uniform" MaxWidth="450"/>
+                                    </materialDesign:Card>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel Orientation="Vertical"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Focusable" Value="False"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <ContentPresenter/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+
+                        <!-- Loading Indicator -->
+                        <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}" Background="#80000000">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50"/>
+                                <TextBlock Text="Generating preview..." Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </materialDesign:Card>
+</Window>
