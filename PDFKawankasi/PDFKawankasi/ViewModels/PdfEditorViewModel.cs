@@ -731,68 +731,85 @@ public partial class PdfEditorViewModel : ObservableObject
             return;
         }
 
+        if (_pdfBytes == null || _pdfBytes.Length == 0 || _docLib == null)
+        {
+            StatusMessage = "No document data available to print";
+            return;
+        }
+
         try
         {
-            StatusMessage = "Opening document for printing...";
+            StatusMessage = "Preparing document for printing...";
             
-            // Open the PDF with default viewer for printing
-            // Using Windows.System.Launcher for Store-safe file opening (avoids WACK test failures)
-            // The user can then use Ctrl+P or the Print button in their PDF viewer
-            if (_pdfBytes != null && _pdfBytes.Length > 0)
+            // Create and configure the Windows Print Dialog
+            var printDialog = new System.Windows.Controls.PrintDialog
             {
-                // Save current state to a temporary file
-                var tempFile = Path.Combine(Path.GetTempPath(), $"print_{Guid.NewGuid()}.pdf");
-                await File.WriteAllBytesAsync(tempFile, _pdfBytes);
-                
-                try
-                {
-                    // Use Windows.System.Launcher for Store-safe file opening
-                    // This passes WACK tests and works in MSIX-packaged apps
-                    var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(tempFile);
-                    var success = await Launcher.LaunchFileAsync(file);
-                    
-                    if (success)
-                    {
-                        StatusMessage = "Document opened - use Ctrl+P or Print button in the viewer to print";
-                        
-                        // Clean up temp file after a delay to allow viewer to open it
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                // Wait for the viewer to open and load the file (60 seconds should be enough)
-                                await Task.Delay(60000);
-                                
-                                if (File.Exists(tempFile))
-                                    File.Delete(tempFile);
-                            }
-                            catch { /* Ignore cleanup errors */ }
-                        });
-                    }
-                    else
-                    {
-                        StatusMessage = "Failed to open document in PDF viewer";
-                        // Clean up temp file on error
-                        if (File.Exists(tempFile))
-                            File.Delete(tempFile);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Print error: {ex.Message}";
-                    // Clean up temp file on error
-                    if (File.Exists(tempFile))
-                        File.Delete(tempFile);
-                }
-            }
-            else
+                UserPageRangeEnabled = true,
+                PageRangeSelection = System.Windows.Controls.PageRangeSelection.AllPages
+            };
+
+            // Show the print dialog
+            bool? result = printDialog.ShowDialog();
+            
+            if (result != true)
             {
-                StatusMessage = "No document data available to print";
+                StatusMessage = "Print cancelled";
+                return;
             }
+
+            StatusMessage = "Printing document...";
+
+            // Get the printable area size from the selected printer
+            var pageSize = new Size(
+                printDialog.PrintableAreaWidth,
+                printDialog.PrintableAreaHeight);
+
+            // Determine page range
+            int startPage = 1;
+            int endPage = TotalPages;
+
+            if (printDialog.PageRangeSelection == System.Windows.Controls.PageRangeSelection.UserPages)
+            {
+                startPage = printDialog.PageRange.PageFrom;
+                endPage = printDialog.PageRange.PageTo;
+            }
+
+            // Create the document paginator for printing
+            var paginator = new PdfDocumentPaginator(
+                _pdfBytes,
+                _docLib,
+                pageSize,
+                startPage,
+                endPage);
+
+            // Get document name for print job
+            string documentName = !string.IsNullOrEmpty(_currentFilePath) 
+                ? Path.GetFileName(_currentFilePath) 
+                : "PDF Document";
+
+            // Print the document
+            await Task.Run(() =>
+            {
+                // PrintDocument must be called on the UI thread
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    printDialog.PrintDocument(paginator, $"Printing {documentName}");
+                });
+            });
+
+            int pagesPrinted = endPage - startPage + 1;
+            StatusMessage = pagesPrinted == 1 
+                ? "Document sent to printer (1 page)" 
+                : $"Document sent to printer ({pagesPrinted} pages)";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Print error: {ex.Message}";
+            System.Windows.MessageBox.Show(
+                $"An error occurred while printing:\n\n{ex.Message}",
+                "Print Error",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
     }
 

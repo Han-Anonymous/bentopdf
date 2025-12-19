@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using PDFKawankasi.Models;
 using PDFKawankasi.ViewModels;
+using PDFKawankasi.Views;
 using Windows.System;
 using System.Threading;
 using System.IO.Pipes;
@@ -186,6 +187,18 @@ public partial class MainWindow : Window
                     CloseTab(currentTab);
                 }
                 e.Handled = true;
+            }
+        }
+    }
+
+    private void PrintMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var currentTab = PdfTabControl.SelectedItem as TabItem;
+        if (currentTab?.Content is PdfEditorView view && view.DataContext is PdfEditorViewModel vm)
+        {
+            if (vm.PrintPdfCommand.CanExecute(null))
+            {
+                vm.PrintPdfCommand.Execute(null);
             }
         }
     }
