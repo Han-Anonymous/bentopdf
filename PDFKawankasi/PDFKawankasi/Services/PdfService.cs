@@ -412,7 +412,23 @@ public class PdfService
     }
 
     /// <summary>
-    /// Convert PDF pages to JPG images
+    /// Convert PDF pages to JPG images.
+    /// NOTE: This method requires a PDF rendering library that is not currently included.
+    /// 
+    /// PdfSharpCore (the library used in this project) does NOT support rendering PDF to images.
+    /// 
+    /// To implement this feature, you would need to add one of these libraries:
+    /// 1. SkiaSharp with SkiaSharp.Views.Desktop.Common - Lightweight, cross-platform rendering
+    /// 2. PDFium.NET or similar wrapper around Google's PDFium engine
+    /// 3. GhostScript.NET - Wrapper around GhostScript for PDF rendering
+    /// 4. Magick.NET (ImageMagick wrapper) - Comprehensive image processing
+    /// 
+    /// Example implementation with SkiaSharp:
+    /// - Load PDF with pdfium or similar
+    /// - Render each page to a bitmap/SKBitmap
+    /// - Save as JPG with quality settings
+    /// 
+    /// Current implementation: Returns empty list as this feature is not yet implemented.
     /// </summary>
     public async Task<List<byte[]>> PdfToJpgAsync(string filePath, int quality = 90, IProgress<int>? progress = null)
     {
@@ -434,7 +450,23 @@ public class PdfService
     }
 
     /// <summary>
-    /// Convert PDF pages to PNG images
+    /// Convert PDF pages to PNG images.
+    /// NOTE: This method requires a PDF rendering library that is not currently included.
+    /// 
+    /// PdfSharpCore (the library used in this project) does NOT support rendering PDF to images.
+    /// 
+    /// To implement this feature, you would need to add one of these libraries:
+    /// 1. SkiaSharp with SkiaSharp.Views.Desktop.Common - Lightweight, cross-platform rendering
+    /// 2. PDFium.NET or similar wrapper around Google's PDFium engine
+    /// 3. GhostScript.NET - Wrapper around GhostScript for PDF rendering
+    /// 4. Magick.NET (ImageMagick wrapper) - Comprehensive image processing
+    /// 
+    /// Example implementation with SkiaSharp:
+    /// - Load PDF with pdfium or similar
+    /// - Render each page to a bitmap/SKBitmap
+    /// - Save as PNG with transparency support if needed
+    /// 
+    /// Current implementation: Returns empty list as this feature is not yet implemented.
     /// </summary>
     public async Task<List<byte[]>> PdfToPngAsync(string filePath, IProgress<int>? progress = null)
     {
@@ -457,8 +489,18 @@ public class PdfService
 
     /// <summary>
     /// Convert PDF to greyscale.
-    /// NOTE: This is currently a placeholder. Full greyscale conversion requires 
-    /// direct manipulation of content streams or iText library. Returns a copy of the PDF.
+    /// NOTE: This is currently a PLACEHOLDER implementation. Full greyscale conversion requires 
+    /// direct manipulation of content streams or advanced iText library features with proper color space conversion.
+    /// 
+    /// Current implementation: Returns a copy of the PDF without color conversion.
+    /// 
+    /// To implement properly, you would need to:
+    /// 1. Use iText7's PdfCanvas and content stream manipulation
+    /// 2. Convert all color operations to DeviceGray color space
+    /// 3. Process images to convert them to grayscale
+    /// 4. Handle different PDF color models (RGB, CMYK, etc.)
+    /// 
+    /// For now, this method returns the PDF unchanged.
     /// </summary>
     public async Task<byte[]> PdfToGreyscaleAsync(string filePath, IProgress<int>? progress = null)
     {
@@ -485,7 +527,17 @@ public class PdfService
 
     /// <summary>
     /// Flatten PDF (make form fields and annotations non-editable).
-    /// NOTE: Basic flattening - copies pages. Full form flattening requires iText library.
+    /// NOTE: This is a BASIC implementation that copies the PDF structure. 
+    /// 
+    /// Current implementation: Copies all pages to a new PDF document, which may preserve some form field data
+    /// but doesn't guarantee full flattening of all interactive elements.
+    /// 
+    /// For FULL flattening that converts form fields and annotations into static content, you would need:
+    /// 1. iText7's PdfFormField.flattenFields() method
+    /// 2. Annotation flattening using PdfAnnotation APIs
+    /// 3. AcroForm processing to convert fillable fields to static text
+    /// 
+    /// The current implementation provides basic functionality but may not handle all edge cases.
     /// </summary>
     public async Task<byte[]> FlattenPdfAsync(string filePath, IProgress<int>? progress = null)
     {
@@ -859,8 +911,20 @@ public class PdfService
 
     /// <summary>
     /// Invert colors in PDF (dark mode effect).
-    /// NOTE: This is a placeholder. Color inversion requires direct manipulation of 
-    /// content streams and is complex to implement. Returns a copy of the PDF.
+    /// NOTE: This is currently a PLACEHOLDER implementation. Color inversion requires direct manipulation of 
+    /// PDF content streams and is complex to implement properly.
+    /// 
+    /// Current implementation: Returns a copy of the PDF without color changes.
+    /// 
+    /// To implement properly, you would need to:
+    /// 1. Parse and modify PDF content streams for each page
+    /// 2. Invert color operators (rg, RG, k, K commands)
+    /// 3. Process embedded images to invert their colors
+    /// 4. Handle different color spaces (RGB, CMYK, Gray, etc.)
+    /// 5. Use iText7's PdfCanvas and color manipulation APIs
+    /// 
+    /// This is a complex feature requiring low-level PDF manipulation.
+    /// For now, this method returns the PDF unchanged.
     /// </summary>
     public async Task<byte[]> InvertColorsAsync(string filePath, IProgress<int>? progress = null)
     {
@@ -935,8 +999,20 @@ public class PdfService
 
     /// <summary>
     /// Remove blank pages from PDF.
-    /// NOTE: This is a placeholder. Blank page detection requires analyzing page 
-    /// content streams for actual content. Returns a copy of the PDF.
+    /// NOTE: This is currently a PLACEHOLDER implementation. Blank page detection requires analyzing page 
+    /// content streams for actual content.
+    /// 
+    /// Current implementation: Returns a copy of all pages without blank page detection.
+    /// 
+    /// To implement properly, you would need to:
+    /// 1. Analyze each page's content stream to detect text, images, or vector graphics
+    /// 2. Use iText7's LocationTextExtractionStrategy to extract text content
+    /// 3. Check for embedded images using PdfPage.getResources()
+    /// 4. Analyze vector graphics operations in the content stream
+    /// 5. Define thresholds for what constitutes a "blank" page (e.g., page with only whitespace)
+    /// 
+    /// Proper blank page detection is complex and may have false positives/negatives.
+    /// For now, this method returns all pages unchanged.
     /// </summary>
     public async Task<byte[]> RemoveBlankPagesAsync(string filePath, IProgress<int>? progress = null)
     {
@@ -962,8 +1038,20 @@ public class PdfService
 
     /// <summary>
     /// Remove annotations from PDF.
-    /// NOTE: This is a placeholder. Proper annotation removal requires modifying 
-    /// page dictionaries. Returns a copy of the PDF.
+    /// NOTE: This is currently a PLACEHOLDER implementation. Proper annotation removal requires modifying 
+    /// page dictionaries and PDF objects.
+    /// 
+    /// Current implementation: Returns a copy of the PDF without removing annotations.
+    /// 
+    /// To implement properly, you would need to:
+    /// 1. Access each page's annotation array from the page dictionary
+    /// 2. Use iText7's PdfPage.getAnnotations() to retrieve all annotations
+    /// 3. Remove or modify annotation objects (comments, highlights, stamps, etc.)
+    /// 4. Update the page's Annots entry in the page dictionary
+    /// 5. Handle different annotation types (Text, Highlight, Underline, Stamp, etc.)
+    /// 6. Optionally preserve certain annotation types while removing others
+    /// 
+    /// For now, this method returns the PDF with all annotations intact.
     /// </summary>
     public async Task<byte[]> RemoveAnnotationsAsync(string filePath, IProgress<int>? progress = null)
     {
