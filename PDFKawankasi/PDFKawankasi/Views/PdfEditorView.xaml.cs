@@ -186,7 +186,15 @@ public partial class PdfEditorView : UserControl
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        // Ctrl+Mouse Wheel for zooming
+        // In continuous scrolling mode, let the ContinuousScrollViewer handle all events
+        // (both zoom with Ctrl and normal scrolling)
+        if (ViewModel.IsContinuousScrollMode)
+        {
+            // Don't handle the event - let it bubble to ContinuousScrollViewer
+            return;
+        }
+
+        // Single page mode: Ctrl+Mouse Wheel for zooming
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             if (ViewModel.IsPdfLoaded)
@@ -198,8 +206,8 @@ public partial class PdfEditorView : UserControl
             return;
         }
 
-        // Continuous scrolling mode: navigate pages when scrolling at boundaries
-        if (ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
+        // Single page mode: navigate pages when scrolling at boundaries
+        if (ViewModel.IsPdfLoaded && PdfScrollViewer != null)
         {
             var verticalOffset = PdfScrollViewer.VerticalOffset;
             var scrollableHeight = PdfScrollViewer.ScrollableHeight;
@@ -531,6 +539,21 @@ public partial class PdfEditorView : UserControl
             RefreshImagesDisplay();
             RefreshTextBoxesDisplay();
         }
+    }
+
+    private void OnContinuousScrollViewerMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        // Handle Ctrl+MouseWheel for zooming in continuous scroll mode
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            if (ViewModel.IsPdfLoaded)
+            {
+                double delta = e.Delta > 0 ? 0.1 : -0.1;
+                ViewModel.ApplyZoomDelta(delta);
+            }
+            e.Handled = true;
+        }
+        // Otherwise, let the scroll event bubble to the ScrollViewer for normal scrolling
     }
 
     private void OnThumbnailRightClick(object sender, MouseButtonEventArgs e)
