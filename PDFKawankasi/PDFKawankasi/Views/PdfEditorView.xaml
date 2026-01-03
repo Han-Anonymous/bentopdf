@@ -17,7 +17,7 @@
         <vm:PdfEditorViewModel/>
     </UserControl.DataContext>
 
-    <Grid>
+    <Grid Background="Yellow">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -79,9 +79,9 @@
                             Padding="8,4"
                             Margin="0,0,4,0"
                             Visibility="{Binding HasLastSavedFile, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    
+
                     <Separator Margin="8,0"/>
-                    
+
                     <!-- Undo/Redo Buttons -->
                     <Button Content="↩"
                             Style="{StaticResource SecondaryButtonStyle}"
@@ -111,7 +111,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0"/>
-                    
+
                     <!-- Highlight Tool with SVG -->
                     <ToggleButton x:Name="HighlightToolBtn"
                                   ToolTip="Highlight text (Hold Shift for straight line)"
@@ -122,7 +122,7 @@
                                   Margin="0,0,2,0">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Highlighter.svg}" Width="18" Height="18"/>
                     </ToggleButton>
-                    
+
                     <!-- Draw Tool with SVG -->
                     <ToggleButton x:Name="DrawToolBtn"
                                   ToolTip="Free-hand draw (Hold Shift for straight line)"
@@ -144,7 +144,7 @@
                                   Click="OnEraseToolClick">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Eraser.svg}" Width="18" Height="18"/>
                     </ToggleButton>
-                    
+
                     <!-- Text Tool -->
                     <ToggleButton x:Name="TextToolBtn"
                                   Content="📝"
@@ -154,7 +154,7 @@
                                   IsEnabled="{Binding IsPdfLoaded}"
                                   Padding="6,4"
                                   Margin="0,0,2,0"/>
-                    
+
                     <!-- Shape Tool with SVG -->
                     <ToggleButton x:Name="ShapeToolBtn"
                                   ToolTip="Add shapes"
@@ -165,7 +165,7 @@
                                   Margin="0,0,2,0">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Add Shape.svg}" Width="18" Height="18"/>
                     </ToggleButton>
-                    
+
                     <!-- Comment Tool with SVG -->
                     <ToggleButton x:Name="CommentToolBtn"
                                   ToolTip="Add comment (click to expand/collapse)"
@@ -176,7 +176,7 @@
                                   Margin="0,0,2,0">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Add Comment.svg}" Width="18" Height="18"/>
                     </ToggleButton>
-                    
+
                     <!-- Image Tool with SVG - Opens file picker immediately -->
                     <Button x:Name="ImageToolBtn"
                             ToolTip="Add image (opens file picker)"
@@ -187,7 +187,7 @@
                             Click="OnAddImageClick">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Add Image.svg}" Width="18" Height="18"/>
                     </Button>
-                    
+
                     <!-- Redact Tool -->
                     <ToggleButton x:Name="RedactToolBtn"
                                   Content="█"
@@ -198,9 +198,9 @@
                                   Padding="6,4"
                                   Margin="0,0,2,0"
                                   Foreground="{StaticResource DangerBrush}"/>
-                    
+
                     <Separator Margin="8,0"/>
-                    
+
                     <!-- Color Picker -->
                     <Border Width="24" Height="24" 
                             CornerRadius="4"
@@ -213,7 +213,7 @@
                             <SolidColorBrush Color="{Binding SelectedColor}"/>
                         </Border.Background>
                     </Border>
-                    
+
                     <!-- Pen Thickness Slider -->
                     <Slider Width="60"
                             Minimum="1"
@@ -234,9 +234,9 @@
                             Padding="6,4"
                             Margin="0,0,2,0"/>
 
-                    
+
                     <Separator Margin="4,0"/>
-                    
+
                     <!-- Zoom controls with SVG icons -->
                     <Button Style="{StaticResource SecondaryButtonStyle}"
                             Command="{Binding ZoomOutCommand}"
@@ -260,7 +260,7 @@
                             IsEnabled="{Binding IsPdfLoaded}">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Zoom In.svg}" Width="16" Height="16"/>
                     </Button>
-                    
+
                     <!-- Fit buttons with SVG icons -->
                     <Button Style="{StaticResource SecondaryButtonStyle}"
                             ToolTip="Fit page width to screen"
@@ -278,7 +278,7 @@
                             Click="OnFitToPageClick">
                         <Image Source="{svgc:SvgImage /Assets/PDF Editor/Fit Whole Page Content to screen.svg}" Width="16" Height="16"/>
                     </Button>
-                    
+
                     <!-- Continuous scroll toggle -->
                     <ToggleButton Content="📜"
                                   Style="{StaticResource ToolToggleButtonStyle}"
@@ -287,7 +287,7 @@
                                   Padding="6,4"
                                   Margin="0,0,2,0"
                                   IsEnabled="{Binding IsPdfLoaded}"/>
-                    
+
                     <!-- Dual page toggle -->
                     <ToggleButton Content="📖"
                                   Style="{StaticResource ToolToggleButtonStyle}"
@@ -296,7 +296,7 @@
                                   Padding="6,4"
                                   Margin="0,0,4,0"
                                   IsEnabled="{Binding IsPdfLoaded}"/>
-                    
+
                     <!-- Fullscreen toggle -->
                     <Button Content="⛶"
                             Style="{StaticResource SecondaryButtonStyle}"
@@ -368,7 +368,7 @@
                                FontWeight="SemiBold"
                                FontSize="12"
                                Padding="8"/>
-                    
+
                     <ScrollViewer Grid.Row="1" 
                                   VerticalScrollBarVisibility="Auto"
                                   Padding="4">
@@ -458,269 +458,265 @@
                           Visibility="{Binding IsLeftPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
             <!-- PDF Canvas/Viewer Area -->
-            <Border Grid.Column="2" 
-                    Background="{StaticResource CardBrush}"
-                    ClipToBounds="True">
-                <Grid>
-                    <!-- Single Page View (default mode) -->
-                    <ScrollViewer x:Name="PdfScrollViewer"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto"
-                                  ScrollChanged="OnScrollChanged"
-                                  Visibility="{Binding IsSinglePageMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}" Background="White">
-                            <!-- PDF Page Image as background -->
-                            <Image x:Name="PdfPageImage"
-                                   Source="{Binding CurrentPageImage}"
-                                   Stretch="Fill"/>
-                            
-                            <!-- Windows InkCanvas for native stylus/pen/touch support -->
-                            <InkCanvas x:Name="PdfInkCanvas"
-                                       Background="Transparent"
-                                       Width="{Binding CanvasWidth}"
-                                       Height="{Binding CanvasHeight}"
-                                       EditingMode="{Binding InkEditingMode}"
-                                       DefaultDrawingAttributes="{Binding InkDrawingAttributes}"
-                                       StrokeCollected="OnInkStrokeCollected"
-                                       StrokeErasing="OnInkStrokeErasing"
-                                       MouseLeftButtonDown="OnInkCanvasMouseDown"
-                                       MouseLeftButtonUp="OnInkCanvasMouseUp"
-                                       MouseMove="OnInkCanvasMouseMove">
-                                <!-- Existing non-ink annotations overlay -->
-                                <InkCanvas.Children>
-                                    <ItemsControl ItemsSource="{Binding CurrentPageAnnotations}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <Canvas Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemContainerStyle>
-                                            <Style>
-                                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                            </Style>
-                                        </ItemsControl.ItemContainerStyle>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid>
-                                                    <!-- Comment callout icon (Adobe-style) - clickable to expand -->
-                                                    <Border Cursor="Hand"
-                                                            MouseLeftButtonUp="OnCommentCalloutClick"
-                                                            Background="#FFF3C0"
-                                                            BorderBrush="#FFB800"
-                                                            BorderThickness="1"
-                                                            CornerRadius="4"
-                                                            Padding="4"
-                                                            Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}}">
-                                                        <StackPanel>
-                                                            <!-- Comment icon/indicator -->
-                                                            <TextBlock Text="💬" FontSize="16" HorizontalAlignment="Center"/>
-                                                            <!-- Expanded content callout box -->
-                                                            <Border Background="White"
-                                                                    BorderBrush="#FFB800"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="4"
-                                                                    Margin="0,4,0,0"
-                                                                    Padding="8"
-                                                                    MinWidth="150"
-                                                                    MaxWidth="250"
-                                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Text}"
-                                                                               TextWrapping="Wrap"
-                                                                               FontSize="12"
-                                                                               Foreground="#333333"/>
-                                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='Added: {0:g}'}"
-                                                                               FontSize="9"
-                                                                               Foreground="#888888"
-                                                                               Margin="0,4,0,0"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <!-- Other annotation types (non-comment) -->
-                                                    <ContentPresenter Content="{Binding}" 
-                                                                      Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}, ConverterParameter=Invert}"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </InkCanvas.Children>
-                            </InkCanvas>
-                        </Grid>
-                    </ScrollViewer>
+            <Grid Grid.Column="2" 
+                  Background="{StaticResource CardBrush}">
+                
+                <!-- Single Page View (default mode) -->
+                <ScrollViewer x:Name="PdfScrollViewer"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto"
+                  ScrollChanged="OnScrollChanged"
+                  Visibility="{Binding IsSinglePageMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}" Background="White">
+                        <!-- PDF Page Image as background -->
+                        <Image x:Name="PdfPageImage"
+                   Source="{Binding CurrentPageImage}"
+                   Stretch="Fill"/>
 
-                    <!-- Continuous Scroll View (all pages like thumbnail panel) -->
-                    <ScrollViewer x:Name="ContinuousScrollViewer"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Visible"
-                                  Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                                  Background="#F0F0F0"
-                                  Padding="20"
-                                  CanContentScroll="False"
-                                  PreviewMouseWheel="OnContinuousScrollViewerMouseWheel">
-                        <ItemsControl ItemsSource="{Binding PageThumbnails}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="White"
-                                            BorderBrush="#CCCCCC"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Margin="0,0,0,20"
-                                            HorizontalAlignment="Center">
-                                        <Border.LayoutTransform>
-                                            <ScaleTransform ScaleX="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          ScaleY="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                        </Border.LayoutTransform>
-                                        <StackPanel MaxWidth="800">
-                                            <!-- Page number header -->
-                                            <Border Background="#F5F5F5"
-                                                    BorderBrush="#CCCCCC"
-                                                    BorderThickness="0,0,0,1"
-                                                    Padding="12,8">
-                                                <TextBlock Text="{Binding PageNumber, StringFormat='Page {0}'}"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="12"/>
-                                            </Border>
-                                            
-                                            <!-- Full-size page image -->
-                                            <Image Source="{Binding PageFullImage}"
-                                                   Stretch="Uniform"
-                                                   Width="800"
-                                                   Margin="0"
-                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <!-- Empty State with Recent Documents -->
-                    <StackPanel VerticalAlignment="Center" 
-                                HorizontalAlignment="Center"
-                                MaxWidth="600"
-                                Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                        <TextBlock Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                        <TextBlock Text="PDF Editor"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   FontSize="24"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,8"/>
-                        <TextBlock Text="Open a PDF to start annotating, drawing, and editing"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   FontSize="14"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,24"/>
-                        
-                        <!-- File Drop Zone -->
-                        <Border Background="{StaticResource CardBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="2"
-                                CornerRadius="12"
-                                Padding="40,32"
-                                Margin="0,0,0,24"
-                                AllowDrop="True"
-                                Drop="OnFileDrop"
-                                DragOver="OnDragOver">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                                <TextBlock Text="Drag and drop PDF here"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           FontSize="16"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,0,0,8"/>
-                                <TextBlock Text="or"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           FontSize="14"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,4"/>
-                            </StackPanel>
-                        </Border>
-                        
-                        <Button Content="📂 Open PDF File"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Command="{Binding OpenPdfCommand}"
-                                Padding="24,12"
-                                FontSize="16"
-                                Margin="0,0,0,32"/>
-                        
-                        <!-- Recent Documents -->
-                        <Border Background="{StaticResource SurfaceBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16"
-                                Visibility="{Binding RecentDocuments.Count, Converter={StaticResource NonZeroToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="Recent Documents"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           FontSize="14"
-                                           FontWeight="SemiBold"
-                                           Margin="0,0,0,12"/>
-                                <ItemsControl ItemsSource="{Binding RecentDocuments}" MaxHeight="300">
+                        <!-- Windows InkCanvas for native stylus/pen/touch support -->
+                        <InkCanvas x:Name="PdfInkCanvas"
+                       Background="Transparent"
+                       Width="{Binding CanvasWidth}"
+                       Height="{Binding CanvasHeight}"
+                       EditingMode="{Binding InkEditingMode}"
+                       DefaultDrawingAttributes="{Binding InkDrawingAttributes}"
+                       StrokeCollected="OnInkStrokeCollected"
+                       StrokeErasing="OnInkStrokeErasing"
+                       MouseLeftButtonDown="OnInkCanvasMouseDown"
+                       MouseLeftButtonUp="OnInkCanvasMouseUp"
+                       MouseMove="OnInkCanvasMouseMove">
+                            <!-- Existing non-ink annotations overlay -->
+                            <InkCanvas.Children>
+                                <ItemsControl ItemsSource="{Binding CurrentPageAnnotations}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas Width="{Binding CanvasWidth}" Height="{Binding CanvasHeight}"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style>
+                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Margin="0,0,0,4">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Button Grid.Column="0"
-                                                        Style="{StaticResource SecondaryButtonStyle}"
-                                                        Command="{Binding DataContext.OpenRecentDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        HorizontalContentAlignment="Left"
-                                                        Padding="12,8">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0" 
-                                                                   Text="📄" 
-                                                                   FontSize="18" 
-                                                                   Margin="0,0,12,0"
-                                                                   VerticalAlignment="Center"/>
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Text="{Binding FileName}"
-                                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                                       FontSize="12"
-                                                                       TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding FilePath}"
-                                                                       Foreground="{StaticResource TextMutedBrush}"
-                                                                       FontSize="10"
-                                                                       TextTrimming="CharacterEllipsis"/>
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Button>
-                                                <Button Grid.Column="1"
-                                                        Content="✕"
-                                                        Style="{StaticResource SecondaryButtonStyle}"
-                                                        Command="{Binding DataContext.RemoveRecentDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Padding="8,4"
-                                                        Margin="4,0,0,0"
-                                                        ToolTip="Remove from recent"
-                                                        FontSize="12"/>
+                                            <Grid>
+                                                <!-- Comment callout icon (Adobe-style) - clickable to expand -->
+                                                <Border Cursor="Hand"
+                                            MouseLeftButtonUp="OnCommentCalloutClick"
+                                            Background="#FFF3C0"
+                                            BorderBrush="#FFB800"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="4"
+                                            Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}}">
+                                                    <StackPanel>
+                                                        <!-- Comment icon/indicator -->
+                                                        <TextBlock Text="💬" FontSize="16" HorizontalAlignment="Center"/>
+                                                        <!-- Expanded content callout box -->
+                                                        <Border Background="White"
+                                                    BorderBrush="#FFB800"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Margin="0,4,0,0"
+                                                    Padding="8"
+                                                    MinWidth="150"
+                                                    MaxWidth="250"
+                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Text}"
+                                                               TextWrapping="Wrap"
+                                                               FontSize="12"
+                                                               Foreground="#333333"/>
+                                                                <TextBlock Text="{Binding CreatedAt, StringFormat='Added: {0:g}'}"
+                                                               FontSize="9"
+                                                               Foreground="#888888"
+                                                               Margin="0,4,0,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                                <!-- Other annotation types (non-comment) -->
+                                                <ContentPresenter Content="{Binding}" 
+                                                      Visibility="{Binding Type, Converter={StaticResource AnnotationTypeToCommentVisibilityConverter}, ConverterParameter=Invert}"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </Border>
+                            </InkCanvas.Children>
+                        </InkCanvas>
+                    </Grid>
+                </ScrollViewer>
 
+                <!-- Continuous Scroll View (all pages like thumbnail panel) -->
+                <ScrollViewer x:Name="ContinuousScrollViewer"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Visible"
+                  Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Background="#F0F0F0"
+                  Padding="20"
+                  CanContentScroll="False"
+                  PreviewMouseWheel="OnContinuousScrollViewerMouseWheel">
+                    <ItemsControl ItemsSource="{Binding PageThumbnails}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="White"
+                            BorderBrush="#CCCCCC"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Margin="0,0,0,20"
+                            HorizontalAlignment="Center">
+                                    <Border.LayoutTransform>
+                                        <ScaleTransform ScaleX="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          ScaleY="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </Border.LayoutTransform>
+                                    <StackPanel MaxWidth="800">
+                                        <!-- Page number header -->
+                                        <Border Background="#F5F5F5"
+                                    BorderBrush="#CCCCCC"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="12,8">
+                                            <TextBlock Text="{Binding PageNumber, StringFormat='Page {0}'}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"/>
+                                        </Border>
 
+                                        <!-- Full-size page image -->
+                                        <Image Source="{Binding PageFullImage}"
+                                   Stretch="Uniform"
+                                   Width="800"
+                                   Margin="0"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Empty State with Recent Documents -->
+                <StackPanel VerticalAlignment="Center" 
+                HorizontalAlignment="Center"
+                MaxWidth="600"
+                Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                    <TextBlock Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="PDF Editor"
+                   Foreground="{StaticResource TextPrimaryBrush}"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,8"/>
+                    <TextBlock Text="Open a PDF to start annotating, drawing, and editing"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   FontSize="14"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,24"/>
+
+                    <!-- File Drop Zone -->
+                    <Border Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="2"
+                CornerRadius="12"
+                Padding="40,32"
+                Margin="0,0,0,24"
+                AllowDrop="True"
+                Drop="OnFileDrop"
+                DragOver="OnDragOver">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="Drag and drop PDF here"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="16"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,8"/>
+                            <TextBlock Text="or"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Margin="0,4"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="📂 Open PDF File"
+                Style="{StaticResource PrimaryButtonStyle}"
+                Command="{Binding OpenPdfCommand}"
+                Padding="24,12"
+                FontSize="16"
+                Margin="0,0,0,32"/>
+
+                    <!-- Recent Documents -->
+                    <Border Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Visibility="{Binding RecentDocuments.Count, Converter={StaticResource NonZeroToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Recent Documents"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                            <ItemsControl ItemsSource="{Binding RecentDocuments}" MaxHeight="300">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding DataContext.OpenRecentDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="12,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" 
+                                                   Text="📄" 
+                                                   FontSize="18" 
+                                                   Margin="0,0,12,0"
+                                                   VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding FileName}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding FilePath}"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       FontSize="10"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                            <Button Grid.Column="1"
+                                        Content="✕"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding DataContext.RemoveRecentDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Padding="8,4"
+                                        Margin="4,0,0,0"
+                                        ToolTip="Remove from recent"
+                                        FontSize="12"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
 
 
         </Grid>

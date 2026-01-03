@@ -25,7 +25,8 @@
         <vm:MainViewModel/>
     </Window.DataContext>
 
-    <Grid>
+    <Grid HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch" Background="Red">
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
@@ -202,7 +203,7 @@
         <!-- Main Content Area - PDF Editor Only -->
         <Grid Grid.Row="1">
             <!-- Tools Grid View (hidden by default, PDF Editor is default) -->
-            <ScrollViewer x:Name="ToolsScrollViewer"
+            <!--<ScrollViewer x:Name="ToolsScrollViewer"
                           Visibility="Collapsed"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
@@ -211,11 +212,11 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,0,0,24">
-                                <!-- Category Header -->
+                                --><!-- Category Header --><!--
                                 <TextBlock Text="{Binding Name}" 
                                            Style="{StaticResource CategoryHeaderStyle}"/>
                                 
-                                <!-- Tools in this category -->
+                                --><!-- Tools in this category --><!--
                                 <ItemsControl ItemsSource="{Binding Tools}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -249,7 +250,7 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </ScrollViewer>
+            </ScrollViewer>-->
 
             <Grid>
                 <Grid.RowDefinitions>
