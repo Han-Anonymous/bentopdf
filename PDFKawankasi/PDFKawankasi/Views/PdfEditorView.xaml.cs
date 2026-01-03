@@ -186,7 +186,15 @@ public partial class PdfEditorView : UserControl
 
     private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        // Ctrl+Mouse Wheel for zooming
+        // In continuous scrolling mode, let the ContinuousScrollViewer handle all events
+        // (both zoom with Ctrl and normal scrolling)
+        if (ViewModel.IsContinuousScrollMode)
+        {
+            // Don't handle the event - let it bubble to ContinuousScrollViewer
+            return;
+        }
+
+        // Single page mode: Ctrl+Mouse Wheel for zooming
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             if (ViewModel.IsPdfLoaded)
@@ -198,16 +206,8 @@ public partial class PdfEditorView : UserControl
             return;
         }
 
-        // In continuous scrolling mode, let the ContinuousScrollViewer handle normal scrolling
-        // The page navigation logic is not needed since all pages are shown in a single scrollable view
-        if (ViewModel.IsContinuousScrollMode)
-        {
-            // Don't handle the event - let it bubble to ContinuousScrollViewer for natural scrolling
-            return;
-        }
-
         // Single page mode: navigate pages when scrolling at boundaries
-        if (!ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
+        if (ViewModel.IsPdfLoaded && PdfScrollViewer != null)
         {
             var verticalOffset = PdfScrollViewer.VerticalOffset;
             var scrollableHeight = PdfScrollViewer.ScrollableHeight;

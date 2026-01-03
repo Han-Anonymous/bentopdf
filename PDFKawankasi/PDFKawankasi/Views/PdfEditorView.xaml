@@ -557,6 +557,7 @@
                                   Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Background="#F0F0F0"
                                   Padding="20"
+                                  CanContentScroll="False"
                                   PreviewMouseWheel="OnContinuousScrollViewerMouseWheel">
                         <ItemsControl ItemsSource="{Binding PageThumbnails}">
                             <ItemsControl.ItemsPanel>
@@ -593,10 +594,7 @@
                                                    Stretch="Uniform"
                                                    Width="800"
                                                    Margin="0"
-                                                   RenderOptions.BitmapScalingMode="HighQuality"
-                                                   Cursor="Hand"
-                                                   MouseLeftButtonUp="OnContinuousPageClick"
-                                                   Tag="{Binding PageNumber}"/>
+                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
