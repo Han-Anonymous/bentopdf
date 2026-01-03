@@ -49,7 +49,8 @@ public class EmptyStringToVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -67,7 +68,8 @@ public class ZeroToVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -85,7 +87,8 @@ public class NonZeroToVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -103,7 +106,8 @@ public class NonZeroToBoolConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -121,7 +125,8 @@ public class ToolTypeToSplitVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -139,7 +144,8 @@ public class ToolTypeToNotSplitVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -195,7 +201,8 @@ public class NullToCollapsedConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -211,7 +218,8 @@ public class NullToVisibleConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -229,7 +237,8 @@ public class ToolTypeToPdfEditorVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -247,7 +256,8 @@ public class ToolTypeToNotPdfEditorVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }
 
@@ -273,6 +283,7 @@ public class AnnotationTypeToCommentVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // ConvertBack not needed for one-way bindings
+        return Binding.DoNothing;
     }
 }

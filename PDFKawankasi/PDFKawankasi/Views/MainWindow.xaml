@@ -69,17 +69,18 @@
                 
                 <!-- File Menu -->
                 <MenuItem Header="_File">
-                    <MenuItem Header="Open" Command="{Binding DataContext.OpenPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+O"/>
-                    <MenuItem Header="Save" Command="{Binding DataContext.SavePdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+S"/>
-                    <MenuItem Header="Save As" Command="{Binding DataContext.SaveAsPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+Shift+S"/>
+                    <MenuItem Header="Open" Command="{Binding DataContext.OpenPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+O" ToolTip="Open a PDF file"/>
+                    <MenuItem Header="Save" Command="{Binding DataContext.SavePdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+S" ToolTip="Save the current PDF"/>
+                    <MenuItem Header="Save As" Command="{Binding DataContext.SaveAsPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+Shift+S" ToolTip="Save the PDF with a new name"/>
                     <Separator/>
-                    <MenuItem Header="Register as Default PDF Viewer" Click="RegisterAsDefaultPdfViewer_Click"/>
+                    <MenuItem Header="Register as Default PDF Viewer" Click="RegisterAsDefaultPdfViewer_Click" ToolTip="Set PDF Kawankasi as your default PDF viewer"/>
                     <Separator/>
-                    <MenuItem Header="Export" Command="{Binding DataContext.ExportPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}"/>
+                    <MenuItem Header="Export" Command="{Binding DataContext.ExportPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" ToolTip="Export PDF to various formats"/>
                     <!-- Use click handler to reliably reach the active PDF editor tab -->
                     <MenuItem Header="Print"
                               Click="PrintMenuItem_Click"
-                              InputGestureText="Ctrl+P"/>
+                              InputGestureText="Ctrl+P"
+                              ToolTip="Print the current document"/>
                 </MenuItem>
                 
                 <!-- Tools Menu -->
@@ -131,6 +132,7 @@
                         Foreground="{StaticResource TextPrimaryBrush}"
                         BorderThickness="0"
                         Click="MinimizeButton_Click"
+                        ToolTip="Minimize"
                         Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -154,6 +156,7 @@
                         Foreground="{StaticResource TextPrimaryBrush}"
                         BorderThickness="0"
                         Click="MaximizeRestoreButton_Click"
+                        ToolTip="Maximize"
                         Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -177,6 +180,7 @@
                         Foreground="{StaticResource TextPrimaryBrush}"
                         BorderThickness="0"
                         Click="CloseButton_Click"
+                        ToolTip="Close"
                         Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
