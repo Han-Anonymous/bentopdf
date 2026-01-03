@@ -198,8 +198,16 @@ public partial class PdfEditorView : UserControl
             return;
         }
 
-        // Continuous scrolling mode: navigate pages when scrolling at boundaries
-        if (ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
+        // In continuous scrolling mode, let the ContinuousScrollViewer handle normal scrolling
+        // The page navigation logic is not needed since all pages are shown in a single scrollable view
+        if (ViewModel.IsContinuousScrollMode)
+        {
+            // Don't handle the event - let it bubble to ContinuousScrollViewer for natural scrolling
+            return;
+        }
+
+        // Single page mode: navigate pages when scrolling at boundaries
+        if (!ViewModel.IsContinuousScrollMode && ViewModel.IsPdfLoaded && PdfScrollViewer != null)
         {
             var verticalOffset = PdfScrollViewer.VerticalOffset;
             var scrollableHeight = PdfScrollViewer.ScrollableHeight;
@@ -531,6 +539,21 @@ public partial class PdfEditorView : UserControl
             RefreshImagesDisplay();
             RefreshTextBoxesDisplay();
         }
+    }
+
+    private void OnContinuousScrollViewerMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        // Handle Ctrl+MouseWheel for zooming in continuous scroll mode
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            if (ViewModel.IsPdfLoaded)
+            {
+                double delta = e.Delta > 0 ? 0.1 : -0.1;
+                ViewModel.ApplyZoomDelta(delta);
+            }
+            e.Handled = true;
+        }
+        // Otherwise, let the scroll event bubble to the ScrollViewer for normal scrolling
     }
 
     private void OnThumbnailRightClick(object sender, MouseButtonEventArgs e)

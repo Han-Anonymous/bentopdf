@@ -557,14 +557,11 @@
                                   Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Background="#F0F0F0"
                                   Padding="20"
-                                  CanContentScroll="True">
-                        <ItemsControl ItemsSource="{Binding PageThumbnails}"
-                                      ScrollViewer.CanContentScroll="True"
-                                      VirtualizingPanel.ScrollUnit="Pixel"
-                                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                  PreviewMouseWheel="OnContinuousScrollViewerMouseWheel">
+                        <ItemsControl ItemsSource="{Binding PageThumbnails}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel/>
+                                    <StackPanel/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
@@ -574,9 +571,12 @@
                                             BorderThickness="1"
                                             CornerRadius="4"
                                             Margin="0,0,0,20"
-                                            HorizontalAlignment="Center"
-                                            MaxWidth="800">
-                                        <StackPanel>
+                                            HorizontalAlignment="Center">
+                                        <Border.LayoutTransform>
+                                            <ScaleTransform ScaleX="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          ScaleY="{Binding DataContext.ZoomLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                        </Border.LayoutTransform>
+                                        <StackPanel MaxWidth="800">
                                             <!-- Page number header -->
                                             <Border Background="#F5F5F5"
                                                     BorderBrush="#CCCCCC"
@@ -591,7 +591,7 @@
                                             <!-- Full-size page image -->
                                             <Image Source="{Binding PageFullImage}"
                                                    Stretch="Uniform"
-                                                   MaxWidth="800"
+                                                   Width="800"
                                                    Margin="0"
                                                    RenderOptions.BitmapScalingMode="HighQuality"
                                                    Cursor="Hand"
