@@ -26,7 +26,7 @@
     </Window.DataContext>
 
     <Grid HorizontalAlignment="Stretch"
-          VerticalAlignment="Stretch" Background="Red">
+          VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>

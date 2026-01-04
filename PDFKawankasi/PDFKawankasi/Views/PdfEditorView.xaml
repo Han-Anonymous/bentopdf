@@ -17,7 +17,7 @@
         <vm:PdfEditorViewModel/>
     </UserControl.DataContext>
 
-    <Grid Background="Yellow">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
