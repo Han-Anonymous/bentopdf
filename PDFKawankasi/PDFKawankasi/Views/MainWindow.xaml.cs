@@ -61,6 +61,10 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        // Initialize system tray service
+        bool startMinimized = Application.Current.Properties.Contains("StartMinimized");
+        App.TrayService?.Initialize(this, startMinimized);
+        
         // Check if PDF files were passed via command-line (file association)
         if (Application.Current.Properties["PdfFilesToOpen"] is List<string> pdfFiles && pdfFiles.Any())
         {
@@ -73,10 +77,30 @@ public partial class MainWindow : Window
             // Clear the property so files aren't opened again
             Application.Current.Properties.Remove("PdfFilesToOpen");
         }
+        
+        // Handle startup minimized
+        if (startMinimized)
+        {
+            // Hide the window instead of showing it
+            WindowState = WindowState.Minimized;
+            Hide();
+            
+            // Clear the flag
+            Application.Current.Properties.Remove("StartMinimized");
+        }
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        // Check if we should minimize to tray instead of closing
+        // (unless Shift key is held down for force exit)
+        if (!Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+        {
+            e.Cancel = true;
+            App.TrayService?.HideToTray();
+            return;
+        }
+        
         _pipeListenerCancellation?.Cancel();
     }
 
@@ -99,7 +123,8 @@ public partial class MainWindow : Window
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        // Minimize to tray instead of taskbar
+        App.TrayService?.HideToTray();
     }
 
     private void MaximizeRestoreButton_Click(object sender, RoutedEventArgs e)

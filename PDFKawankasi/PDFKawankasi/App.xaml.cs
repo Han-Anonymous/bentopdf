@@ -5,6 +5,7 @@ using System.Threading;
 using System.IO.Pipes;
 using System.IO;
 using System.Text;
+using PDFKawankasi.Services;
 
 namespace PDFKawankasi;
 
@@ -20,10 +21,16 @@ public partial class App : Application
     private const string MutexName = "PDFKawankasi_SingleInstance_Mutex";
     private const string PipeName = "PDFKawankasi_IPC_Pipe";
     private Mutex? _instanceMutex;
+    
+    // System tray service
+    public static SystemTrayService? TrayService { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        
+        // Check for --minimized argument (from Windows startup)
+        bool startMinimized = e.Args.Contains("--minimized");
         
         // Try to create or open the mutex
         bool createdNew;
@@ -47,6 +54,9 @@ public partial class App : Application
         }
         
         // This is the first instance, continue with normal startup
+        
+        // Initialize system tray service
+        TrayService = new SystemTrayService();
         
         // Check for command-line arguments
         if (e.Args.Length > 0)
@@ -80,6 +90,12 @@ public partial class App : Application
                 // Store PDF files to open after MainWindow is initialized
                 Current.Properties["PdfFilesToOpen"] = pdfFiles;
             }
+        }
+        
+        // Store the start minimized flag
+        if (startMinimized)
+        {
+            Current.Properties["StartMinimized"] = true;
         }
         
         // Set up global exception handling
@@ -164,6 +180,10 @@ public partial class App : Application
         {
             _instanceMutex?.Dispose();
         }
+        
+        // Dispose system tray service
+        TrayService?.Dispose();
+        TrayService = null;
         
         base.OnExit(e);
     }
