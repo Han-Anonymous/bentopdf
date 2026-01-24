@@ -490,6 +490,13 @@ public partial class PdfEditorView : UserControl
                 return;
             }
 
+            // In continuous scroll mode, scroll to the page instead of switching views
+            if (ViewModel.IsContinuousScrollMode && ContinuousScrollViewer != null)
+            {
+                ScrollToPageInContinuousMode(thumbnail.PageNumber);
+                return;
+            }
+
             // Save current page strokes, images, and text boxes before switching
             if (PdfInkCanvas != null)
             {
@@ -554,6 +561,77 @@ public partial class PdfEditorView : UserControl
             e.Handled = true;
         }
         // Otherwise, let the scroll event bubble to the ScrollViewer for normal scrolling
+    }
+
+    private void OnContinuousScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        // Update current page based on scroll position
+        if (ViewModel.IsContinuousScrollMode && ContinuousScrollViewer != null && ViewModel.PageThumbnails.Count > 0)
+        {
+            UpdateCurrentPageFromScrollPosition();
+        }
+    }
+
+    private void UpdateCurrentPageFromScrollPosition()
+    {
+        if (ContinuousScrollViewer == null || ViewModel == null) return;
+
+        var scrollViewer = ContinuousScrollViewer;
+        var verticalOffset = scrollViewer.VerticalOffset;
+        var viewportHeight = scrollViewer.ViewportHeight;
+        var viewportCenter = verticalOffset + (viewportHeight / 2);
+
+        // Find which page is at the center of the viewport
+        double accumulatedHeight = 0;
+        int currentPage = 1;
+
+        foreach (var thumbnail in ViewModel.PageThumbnails)
+        {
+            // Calculate approximate height of each page in the continuous view
+            // Each page has: top margin (0), page content (~1000 * zoom), bottom margin (20)
+            double pageHeight = (1000 * ViewModel.ZoomLevel) + 20;
+            
+            if (viewportCenter >= accumulatedHeight && viewportCenter < accumulatedHeight + pageHeight)
+            {
+                currentPage = thumbnail.PageNumber;
+                break;
+            }
+            
+            accumulatedHeight += pageHeight;
+        }
+
+        // Update current page if it changed
+        if (ViewModel.CurrentPage != currentPage)
+        {
+            ViewModel.CurrentPage = currentPage;
+            ViewModel.UpdateThumbnailCurrentPageStates();
+        }
+    }
+
+    private void ScrollToPageInContinuousMode(int pageNumber)
+    {
+        if (ContinuousScrollViewer == null || ViewModel == null || pageNumber < 1 || pageNumber > ViewModel.TotalPages)
+            return;
+
+        // Calculate the vertical offset to scroll to the desired page
+        double targetOffset = 0;
+        double pageHeight = (1000 * ViewModel.ZoomLevel) + 20; // Page height + margin
+
+        // Sum up heights of all pages before the target page
+        for (int i = 1; i < pageNumber; i++)
+        {
+            targetOffset += pageHeight;
+        }
+
+        // Add padding at the top of the ScrollViewer
+        targetOffset += 20; // Account for the Padding="20" on the ScrollViewer
+
+        // Scroll to the calculated position
+        ContinuousScrollViewer.ScrollToVerticalOffset(targetOffset);
+        
+        // Update current page
+        ViewModel.CurrentPage = pageNumber;
+        ViewModel.UpdateThumbnailCurrentPageStates();
     }
 
     private void OnThumbnailRightClick(object sender, MouseButtonEventArgs e)

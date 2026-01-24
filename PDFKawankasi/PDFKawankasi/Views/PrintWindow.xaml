@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:PDFKawankasi.ViewModels"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Print"
         Height="650" Width="950"
@@ -12,27 +11,22 @@
         ResizeMode="NoResize"
         WindowStyle="None"
         AllowsTransparency="False"
-        materialDesign:ThemeAssist.Theme="Dark"
         Background="#303030"
         TextElement.Foreground="#FFFFFF"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="Auto"
-        FontFamily="{DynamicResource MaterialDesignFont}">
+        FontFamily="Segoe UI">
     
     <Window.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
-            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
 
-    <materialDesign:Card Background="#303030"
-                         UniformCornerRadius="0"
-                         Margin="0">
+    <Border Background="#303030"
+            CornerRadius="0"
+            Margin="0">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="360"/> <!-- Settings Panel -->
@@ -55,50 +49,49 @@
                     </Grid.ColumnDefinitions>
                     
                     <TextBlock Text="Print"
-                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+                               FontSize="24"
+                               FontWeight="SemiBold"/>
 
                     <!-- Close Button -->
                     <Button Grid.Column="1"
                             Command="{Binding CancelCommand}"
-                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            Content="✕"
                             ToolTip="Close"
                             HorizontalAlignment="Right"
-                            VerticalAlignment="Top">
-                        <materialDesign:PackIcon Kind="Close" />
-                    </Button>
+                            VerticalAlignment="Top"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="18"
+                            Padding="8"/>
                 </Grid>
 
                 <!-- Settings Form -->
                 <StackPanel Grid.Row="1">
                     <!-- Printer -->
+                    <TextBlock Text="Printer" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <ComboBox ItemsSource="{Binding AvailablePrinters}"
                               SelectedItem="{Binding SelectedPrinter}"
-                              Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                              materialDesign:HintAssist.Hint="Select Printer"
                               Margin="0,0,0,24"/>
 
                     <!-- Copies -->
+                    <TextBlock Text="Copies" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <TextBox Text="{Binding Copies}" 
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                             materialDesign:HintAssist.Hint="Copies"
                              Width="120" 
                              HorizontalAlignment="Left" 
                              Margin="0,0,0,32"/>
 
                     <!-- Pages -->
-                    <TextBlock Text="Pages" Style="{StaticResource MaterialDesignSubtitle2TextBlock}" Margin="0,0,0,16"/>
+                    <TextBlock Text="Pages" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
                     
                     <StackPanel Margin="0,0,0,0">
                         <RadioButton GroupName="PageRange" 
                                      IsChecked="{Binding PrintAllPages}" 
                                      Content="All pages" 
-                                     Style="{StaticResource MaterialDesignRadioButton}"
                                      Margin="0,0,0,12"/>
                         
                         <RadioButton GroupName="PageRange" 
                                      IsChecked="{Binding PrintCurrentPage}" 
                                      Content="Current page only" 
-                                     Style="{StaticResource MaterialDesignRadioButton}"
                                      Margin="0,0,0,12"/>
                         
                         <Grid Margin="0,4,0,0">
@@ -110,16 +103,14 @@
                             <RadioButton GroupName="PageRange" 
                                          IsChecked="{Binding PrintCustomRange}" 
                                          Content="Custom range:" 
-                                         Style="{StaticResource MaterialDesignRadioButton}"
                                          VerticalAlignment="Center"/>
                             
                             <TextBox Grid.Column="1"
                                      Text="{Binding CustomPageRange}" 
                                      IsEnabled="{Binding PrintCustomRange}" 
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     materialDesign:HintAssist.Hint="e.g. 1-5, 8"
                                      Margin="16,0,0,0" 
-                                     VerticalAlignment="Center"/>
+                                     VerticalAlignment="Center"
+                                     ToolTip="e.g. 1-5, 8"/>
                         </Grid>
                     </StackPanel>
                 </StackPanel>
@@ -127,7 +118,7 @@
                 <!-- Footer Actions -->
                 <StackPanel Grid.Row="2" Margin="0,32,0,0">
                     <TextBlock Text="{Binding StatusMessage}" 
-                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               FontSize="11"
                                Opacity="0.7"
                                TextTrimming="CharacterEllipsis" 
                                Margin="0,0,0,16"/>
@@ -135,12 +126,15 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancel" 
                                 Command="{Binding CancelCommand}" 
-                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="20,8"
                                 Margin="0,0,8,0"/>
                         
                         <Button Content="Print" 
                                 Command="{Binding PrintCommand}" 
-                                Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                Padding="20,8"
+                                Background="#6200EA"
+                                Foreground="White"
+                                BorderThickness="0"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -158,9 +152,9 @@
                     </Grid.RowDefinitions>
                     
                     <!-- Preview Header -->
-                    <materialDesign:ColorZone Mode="Dark" Padding="16" materialDesign:ElevationAssist.Elevation="Dp2">
+                    <Border Background="#424242" Padding="16">
                         <TextBlock Text="Preview" FontSize="14" FontWeight="Medium" Foreground="#FFFFFF"/>
-                    </materialDesign:ColorZone>
+                    </Border>
 
                     <!-- Preview Content -->
                     <Grid Grid.Row="1">
@@ -172,9 +166,12 @@
                                  Padding="32">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <materialDesign:Card Margin="0,0,0,24" UniformCornerRadius="0" materialDesign:ElevationAssist.Elevation="Dp4">
+                                    <Border Margin="0,0,0,24" 
+                                            CornerRadius="0" 
+                                            BorderBrush="#E0E0E0" 
+                                            BorderThickness="1">
                                         <Image Source="{Binding}" Stretch="Uniform" MaxWidth="450"/>
-                                    </materialDesign:Card>
+                                    </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                             <ListBox.ItemsPanel>
@@ -203,7 +200,7 @@
                         <!-- Loading Indicator -->
                         <Grid Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" Width="50" Height="50" Foreground="#B39DDB"/>
+                                <ProgressBar IsIndeterminate="True" Value="0" Width="200" Height="20" Foreground="#B39DDB"/>
                                 <TextBlock Text="Generating preview..." Foreground="#FFFFFF" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -211,5 +208,5 @@
                 </Grid>
             </Border>
         </Grid>
-    </materialDesign:Card>
+    </Border>
 </Window>

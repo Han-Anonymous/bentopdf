@@ -13,14 +13,14 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="SingleBorderWindow"
         Icon="/Assets/icon.png">
-    
+
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40"
                       ResizeBorderThickness="5"
                       GlassFrameThickness="0"
                       CornerRadius="0"/>
     </WindowChrome.WindowChrome>
-    
+
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
@@ -43,7 +43,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
+
             <!-- App Icon -->
             <Viewbox Grid.Column="0" 
                      Width="20" Height="20"
@@ -53,21 +53,24 @@
                        RenderOptions.BitmapScalingMode="HighQuality"
                        Stretch="Uniform"/>
             </Viewbox>
-            
+
             <!-- App Title -->
             <TextBlock Grid.Column="2"
                        Text="PDF Kawankasi"
                        Foreground="{StaticResource TextPrimaryBrush}"
                        FontSize="12"
-                       VerticalAlignment="Center"/>
-            
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0"/>
+
             <!-- Menu Bar (merged into title bar) -->
             <Menu x:Name="AppMenuBar" Grid.Column="3"
                   Background="Transparent"
                   Foreground="{StaticResource TextPrimaryBrush}"
                   VerticalAlignment="Center"
+                  Margin="0"
+                  Padding="0"
                   WindowChrome.IsHitTestVisibleInChrome="True">
-                
+
                 <!-- File Menu -->
                 <MenuItem Header="_File">
                     <MenuItem Header="Open" Command="{Binding DataContext.OpenPdfCommand, RelativeSource={RelativeSource AncestorType=Grid}}" InputGestureText="Ctrl+O" ToolTip="Open a PDF file"/>
@@ -83,7 +86,7 @@
                               InputGestureText="Ctrl+P"
                               ToolTip="Print the current document"/>
                 </MenuItem>
-                
+
                 <!-- Tools Menu -->
                 <MenuItem Header="_Tools">
                     <MenuItem Header="Merge PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.MergePdf}"/>
@@ -94,7 +97,7 @@
                     <MenuItem Header="Delete Pages" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.DeletePages}"/>
                     <MenuItem Header="Rotate PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RotatePdf}"/>
                 </MenuItem>
-                
+
                 <!-- Edit Menu -->
                 <MenuItem Header="_Edit">
                     <MenuItem Header="Add Page Numbers" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.AddPageNumbers}"/>
@@ -103,24 +106,24 @@
                     <MenuItem Header="Change Background Colors" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.BackgroundColor}"/>
                     <MenuItem Header="Remove Annotations" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.RemoveAnnotations}"/>
                 </MenuItem>
-                
+
                 <!-- Image Menu -->
                 <MenuItem Header="_Image">
                     <MenuItem Header="Image to PDF" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ImageToPdf}"/>
                     <MenuItem Header="PDF to Image" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToJpg}"/>
                     <MenuItem Header="PDF to Grayscale" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.PdfToGreyscale}"/>
                 </MenuItem>
-                
+
                 <!-- Metadata Menu -->
                 <MenuItem Header="_Metadata">
                     <MenuItem Header="View Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.ViewMetadata}"/>
                     <MenuItem Header="Edit Metadata" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static local:ToolsMenuHelper.EditMetadata}"/>
                 </MenuItem>
             </Menu>
-            
+
             <!-- Drag Region (empty space for dragging window) -->
             <Border Grid.Column="4" Background="Transparent"/>
-            
+
             <!-- Window Control Buttons -->
             <StackPanel Grid.Column="5" Orientation="Horizontal" 
                        WindowChrome.IsHitTestVisibleInChrome="True">
@@ -212,11 +215,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,0,0,24">
-                                --><!-- Category Header --><!--
+                                -->
+            <!-- Category Header -->
+            <!--
                                 <TextBlock Text="{Binding Name}" 
                                            Style="{StaticResource CategoryHeaderStyle}"/>
                                 
-                                --><!-- Tools in this category --><!--
+                                -->
+            <!-- Tools in this category -->
+            <!--
                                 <ItemsControl ItemsSource="{Binding Tools}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -468,33 +475,30 @@
                 </Grid>
 
                 <!-- PDF Editor View - Always Visible -->
-                <Grid Margin="0">
+                <Grid Grid.Row="1" Margin="0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Tab Control Header Area -->
-                    <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="0"/>
-
                     <!-- PDF Editor Tab Control with New Tab Button -->
-                <TabControl Grid.Row="1"
+                    <TabControl 
                             x:Name="PdfTabControl"
                             Background="{StaticResource BackgroundBrush}"
                             BorderThickness="0"
                             Padding="0">
-                    <TabControl.Resources>
-                        <!-- TabItem Style -->
-                        <Style TargetType="TabItem">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="TabItem">
-                                        <Border x:Name="TabBorder"
+                        <TabControl.Resources>
+                            <!-- TabItem Style -->
+                            <Style TargetType="TabItem">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TabItem">
+                                            <Border x:Name="TabBorder"
                                                 Background="{StaticResource CardBrush}"
                                                 BorderBrush="{StaticResource BorderBrush}"
                                                 BorderThickness="1,1,1,0"
                                                 CornerRadius="6,6,0,0"
-                                                Padding="8,4"
+                                                Padding="8,2"
                                                 Margin="2,0,0,0"
                                                 AllowDrop="True"
                                                 MouseMove="OnTabMouseMove"
@@ -502,12 +506,12 @@
                                                 DragEnter="OnTabDragEnter"
                                                 DragLeave="OnTabDragLeave"
                                                 MouseLeftButtonDown="OnTabMouseDown">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0"
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0"
                                                            Text="{Binding Content.DataContext.DocumentTitle, RelativeSource={RelativeSource TemplatedParent}, FallbackValue='New Document'}"
                                                            Foreground="{StaticResource TextSecondaryBrush}"
                                                            FontSize="12"
@@ -515,7 +519,7 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            MaxWidth="180"
                                                            Margin="0,0,8,0"/>
-                                                <Button Grid.Column="1"
+                                                    <Button Grid.Column="1"
                                                         Content="✕"
                                                         FontSize="11"
                                                         Padding="4,2"
@@ -526,59 +530,61 @@
                                                         Cursor="Hand"
                                                         Click="OnTabCloseClick"
                                                         Tag="{Binding RelativeSource={RelativeSource TemplatedParent}}">
-                                                    <Button.Style>
-                                                        <Style TargetType="Button">
-                                                            <Setter Property="Opacity" Value="0.6"/>
-                                                            <Style.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Opacity" Value="1"/>
-                                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                                                </Trigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Button.Style>
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
-                                                <Setter TargetName="TabBorder" Property="BorderThickness" Value="1,2,1,0"/>
-                                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
-                                            </Trigger>
-                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </TabControl.Resources>
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Setter Property="Opacity" Value="0.6"/>
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Opacity" Value="1"/>
+                                                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1,2,1,0"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TabControl.Resources>
 
-                    <!-- ItemsPanel - Define horizontal TabPanel for tab headers -->
-                    <TabControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </TabControl.ItemsPanel>
+                        <!-- ItemsPanel - Define horizontal TabPanel for tab headers -->
+                        <TabControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </TabControl.ItemsPanel>
 
-                    <!-- Custom Template with Add Tab Button -->
-                    <TabControl.Template>
-                        <ControlTemplate TargetType="TabControl">
-                            <Grid Background="{TemplateBinding Background}">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                
-                                <!-- Tab Header Panel with Add Button -->
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" Background="{StaticResource BackgroundBrush}">
-                                    <!-- Tab Items Container -->
-                                    <ItemsPresenter/>
-                                    
-                                    <!-- New Tab Button (Browser Style) -->
-                                    <Button Content="+"
+                        <!-- Custom Template with Add Tab Button -->
+                        <TabControl.Template>
+                            <ControlTemplate TargetType="TabControl">
+                                <Grid Background="{TemplateBinding Background}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Tab Header Panel with Add Button -->
+                                    <StackPanel Grid.Row="0" 
+                                                Orientation="Horizontal"
+                                                Background="{StaticResource BackgroundBrush}">
+                                        <!-- Tab Items Container -->
+                                        <ItemsPresenter/>
+
+                                        <!-- New Tab Button (Browser Style) -->
+                                        <Button Content="+"
                                             Click="OnNewTabClick"
                                             ToolTip="New tab (Ctrl+T)"
                                             Background="Transparent"
@@ -587,77 +593,78 @@
                                             FontSize="18"
                                             FontWeight="Normal"
                                             Padding="8,4"
-                        Margin="4,0,4,0"
-                        Cursor="Hand"
-                        VerticalAlignment="Top"
-                        HorizontalAlignment="Left">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}"
+                                            Margin="4,0,4,0"
+                                            Cursor="Hand"
+                                            VerticalAlignment="Top"
+                                            HorizontalAlignment="Left">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
                                                 Padding="{TemplateBinding Padding}"
                                                 CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{StaticResource CardBrush}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                </StackPanel>
-                                
-                                <!-- Tab Content Area -->
-                                <Border Grid.Row="1"
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Tab Content Area -->
+                                    <Border Grid.Row="1"
                                         Background="{StaticResource SurfaceBrush}"
                                         BorderBrush="{StaticResource BorderBrush}"
                                         BorderThickness="1,0,1,1"
                                         CornerRadius="0,0,8,8"
                                         Padding="0">
-                                    <ContentPresenter x:Name="PART_SelectedContentHost"
+                                        <ContentPresenter x:Name="PART_SelectedContentHost"
                                                       Content="{TemplateBinding SelectedContent}"
                                                       ContentTemplate="{TemplateBinding SelectedContentTemplate}"
                                                       ContentTemplateSelector="{TemplateBinding SelectedContentTemplateSelector}"
                                                       ContentStringFormat="{TemplateBinding SelectedContentStringFormat}"/>
-                                </Border>
-                            </Grid>
-                        </ControlTemplate>
-                    </TabControl.Template>
+                                    </Border>
+                                </Grid>
+                            </ControlTemplate>
+                        </TabControl.Template>
 
-                    <!-- Default Tab -->
-                    <TabItem Header="Document 1">
-                        <local:PdfEditorView/>
-                    </TabItem>
-                </TabControl>
+                        <!-- Default Tab -->
+                        <TabItem Header="Document 1">
+                            <local:PdfEditorView/>
+                        </TabItem>
+                    </TabControl>
 
-                <!-- Processing Overlay -->
-                <Border Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
+                    <!-- Processing Overlay -->
+                    <Border Grid.Row="1" 
+                        Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisibilityConverter}}"
                         Background="#CC000000">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <ProgressBar Width="300" Height="8"
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <ProgressBar Width="300" Height="8"
                                      Value="{Binding ProgressValue}"
                                      Maximum="100"
                                      Foreground="{StaticResource PrimaryBrush}"
                                      Background="{StaticResource CardBrush}"/>
-                        <TextBlock Text="{Binding StatusMessage}"
+                            <TextBlock Text="{Binding StatusMessage}"
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    FontSize="16"
                                    HorizontalAlignment="Center"
                                    Margin="0,16,0,0"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
-        </Grid>
+            </Grid>
 
         </Grid>
 

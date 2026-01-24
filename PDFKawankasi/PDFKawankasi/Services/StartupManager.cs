@@ -47,10 +47,18 @@ public static class StartupManager
                 // Get the application executable path
                 var exePath = Assembly.GetExecutingAssembly().Location;
                 
-                // If running as .dll (self-contained deployment), use the .exe path
+                // For .NET 8+, the location points to .dll, we need .exe in the same directory
                 if (exePath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
                 {
-                    exePath = Path.ChangeExtension(exePath, ".exe");
+                    var directory = Path.GetDirectoryName(exePath);
+                    var exeName = Path.GetFileNameWithoutExtension(exePath) + ".exe";
+                    exePath = Path.Combine(directory ?? "", exeName);
+                }
+                
+                // Verify the .exe exists
+                if (!File.Exists(exePath))
+                {
+                    return false;
                 }
                 
                 // Add --minimized argument to start minimized

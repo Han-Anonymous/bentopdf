@@ -460,7 +460,7 @@
             <!-- PDF Canvas/Viewer Area -->
             <Grid Grid.Column="2" 
                   Background="{StaticResource CardBrush}">
-                
+
                 <!-- Single Page View (default mode) -->
                 <ScrollViewer x:Name="PdfScrollViewer"
                   HorizontalScrollBarVisibility="Auto"
@@ -554,9 +554,10 @@
                   HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Visible"
                   Visibility="{Binding IsContinuousViewMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                  Background="#F0F0F0"
+                  Background="{StaticResource CardBrush}"
                   Padding="20"
                   CanContentScroll="False"
+                  ScrollChanged="OnContinuousScrollViewerScrollChanged"
                   PreviewMouseWheel="OnContinuousScrollViewerMouseWheel">
                     <ItemsControl ItemsSource="{Binding PageThumbnails}">
                         <ItemsControl.ItemsPanel>
@@ -578,8 +579,8 @@
                                     </Border.LayoutTransform>
                                     <StackPanel MaxWidth="800">
                                         <!-- Page number header -->
-                                        <Border Background="#F5F5F5"
-                                    BorderBrush="#CCCCCC"
+                                        <Border Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="0,0,0,1"
                                     Padding="12,8">
                                             <TextBlock Text="{Binding PageNumber, StringFormat='Page {0}'}"
@@ -606,15 +607,14 @@
                 HorizontalAlignment="Center"
                 MaxWidth="600"
                 Visibility="{Binding IsPdfLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                    <TextBlock Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                    <TextBlock Text="PDF Editor"
-                   Foreground="{StaticResource TextPrimaryBrush}"
+                    <TextBlock Foreground="White" Text="✏️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Foreground="White" Text="PDF Editor"
                    FontSize="24"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
                    Margin="0,0,0,8"/>
                     <TextBlock Text="Open a PDF to start annotating, drawing, and editing"
-                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Foreground="White"
                    FontSize="14"
                    HorizontalAlignment="Center"
                    Margin="0,0,0,24"/>
@@ -630,14 +630,14 @@
                 Drop="OnFileDrop"
                 DragOver="OnDragOver">
                         <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Foreground="White" Text="📁" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
                             <TextBlock Text="Drag and drop PDF here"
-                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Foreground="White"
                            FontSize="16"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,8"/>
                             <TextBlock Text="or"
-                           Foreground="{StaticResource TextMutedBrush}"
+                           Foreground="White"
                            FontSize="14"
                            HorizontalAlignment="Center"
                            Margin="0,4"/>

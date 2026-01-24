@@ -1543,7 +1543,7 @@ public partial class PdfEditorViewModel : ObservableObject
         }
     }
 
-    private void UpdateThumbnailCurrentPageStates()
+    public void UpdateThumbnailCurrentPageStates()
     {
         foreach (var thumb in PageThumbnails)
         {

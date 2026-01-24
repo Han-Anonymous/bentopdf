@@ -28,13 +28,17 @@ public class SystemTrayService : IDisposable
         _mainWindow = mainWindow;
         StartMinimized = startMinimized;
 
-        // Create the system tray icon
-        _trayIcon = new TaskbarIcon
+        // Get the TaskbarIcon from App resources
+        _trayIcon = Application.Current.FindResource("TrayIcon") as TaskbarIcon;
+        
+        if (_trayIcon == null)
         {
-            IconSource = new System.Windows.Media.Imaging.BitmapImage(
-                new Uri("pack://application:,,,/Assets/app-icon.ico")),
-            ToolTipText = "PDF Kawankasi - Click to open"
-        };
+            throw new InvalidOperationException("TaskbarIcon resource 'TrayIcon' not found in App.xaml");
+        }
+
+        // CRITICAL: ForceCreate() is required to make the tray icon visible
+        // when defined in App.xaml resources
+        _trayIcon.ForceCreate();
 
         // Create context menu for the tray icon
         var contextMenu = new ContextMenu();
@@ -76,9 +80,6 @@ public class SystemTrayService : IDisposable
         contextMenu.Items.Add(exitItem);
 
         _trayIcon.ContextMenu = contextMenu;
-
-        // Double-click to restore window
-        _trayIcon.TrayMouseDoubleClick += (s, e) => ShowMainWindow();
         
         // Show balloon tip on first startup if minimized
         if (startMinimized)
@@ -143,7 +144,7 @@ public class SystemTrayService : IDisposable
     {
         if (_isDisposed) return;
 
-        _trayIcon?.Dispose();
+        // Don't dispose the TaskbarIcon - it's managed by XAML resources
         _trayIcon = null;
         _isDisposed = true;
 

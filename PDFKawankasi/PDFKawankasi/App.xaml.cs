@@ -126,6 +126,12 @@ public partial class App : Application
             e.Handled = true;
         }
     }
+    
+    private void TrayIcon_TrayMouseDoubleClick(object? sender, RoutedEventArgs e)
+    {
+        // Restore the main window when tray icon is double-clicked
+        TrayService?.ShowMainWindow();
+    }
 
     private void SendFilesToExistingInstance(List<string> pdfFiles)
     {
